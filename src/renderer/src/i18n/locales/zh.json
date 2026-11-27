@@ -1358,7 +1358,25 @@
       "soulEmpty": "还没有指令。双击或选择“编辑”开始撰写",
       "muteNotifications": "静音通知",
       "muteNotificationsDescription": "不再发送系统通知。未读圆点仍会显示",
-      "teamDisabled": "你的团队已关闭 Bots"
+      "teamDisabled": "你的团队已关闭 Bots",
+      "avatarPacks": {
+        "title": "动态头像包",
+        "description": "让动态矢量角色跟随 Bot 的实时活动，替换静态头像。",
+        "enable": "启用动态头像包",
+        "enableDescription": "让 Bot 头像随智能体阅读、编辑、运行命令、思考或休眠而变化。",
+        "packsLocation": "头像包文件夹",
+        "packsLocationDescription": "包含 catalog_index.json 和头像包的文件夹。默认为 ~/.orca/avatar-packs。",
+        "browse": "浏览",
+        "save": "保存",
+        "emptyTitle": "未找到头像包",
+        "emptyDescription": "选择包含 catalog_index.json 的文件夹以加载动态头像包。",
+        "chooseFolder": "选择文件夹",
+        "defaultPack": "默认头像包",
+        "defaultPackDescription": "用于未单独选择动态角色的 Bot。",
+        "previewTitle": "动作预览",
+        "previewDescription": "正在预览 {{pack}} 的{{state}}状态。Bot 会随智能体工作自动切换状态。",
+        "packsPlaceholder": "~/.orca/avatar-packs"
+      }
     },
     "automaticUpdates": {
       "title": "自动更新",
@@ -30802,6 +30820,27 @@
       "removeServer": "移除 {{server}}",
       "search": "搜索已配对的服务器",
       "tooltip": "这些服务器上的 bot 和智能体可以向 {{name}} 提问，无需每次征得你的同意"
+    },
+    "avatarPacks": {
+      "state": {
+        "idle": "空闲",
+        "think": "思考",
+        "run": "运行",
+        "read": "阅读",
+        "edit": "编辑",
+        "help": "等待帮助",
+        "done": "完成",
+        "asleep": "休眠",
+        "dizzy": "困惑"
+      },
+      "tabAnimated": "动态头像包",
+      "tabClassic": "经典吉祥物",
+      "resetToClassic": "使用经典吉祥物",
+      "emptyTitle": "未找到动态头像包",
+      "emptyDescription": "选择包含 catalog_index.json 的文件夹，或将头像包放入 ~/.orca/avatar-packs。",
+      "chooseFolder": "选择文件夹",
+      "openSettings": "Bot 设置",
+      "previewAction": "预览动作"
     }
   },
   "speechModelUpdate": {
