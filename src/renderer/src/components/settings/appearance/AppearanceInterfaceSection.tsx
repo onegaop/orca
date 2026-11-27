@@ -20,6 +20,7 @@ import {
   getTypographyEntries
 } from './appearance-search'
 import { getMenuBarIconEntries, getSystemTrayEntries } from './appearance-system-presence-search'
+import { MacWindowCloseBehaviorSetting } from './MacWindowCloseBehaviorSetting'
 import { SHOW_UI_LANGUAGE_SETTING } from '@/i18n/supported-languages'
 import { useTranslate } from '@/i18n/use-translate'
 import { matchesSettingsSearch, normalizeSettingsSearchQuery } from '../search/settings-search'
@@ -331,6 +332,13 @@ export function AppearanceInterfaceSection({
           ) : null}
 
           {isDesktopMac ? (
+            <MacWindowCloseBehaviorSetting
+              value={settings.macWindowCloseBehavior}
+              onChange={(value) => updateSettings({ macWindowCloseBehavior: value })}
+            />
+          ) : null}
+
+          {isDesktopMac ? (
             <SearchableSetting
               title={t('settings.appearance.menuBarIcon.026624e2ec', 'Show menu bar icon')}
               description={menuBarIconEntry?.description}
@@ -338,12 +346,22 @@ export function AppearanceInterfaceSection({
             >
               <SettingsSwitchRow
                 label={t('settings.appearance.menuBarIcon.026624e2ec', 'Show menu bar icon')}
-                // Hiding the status item preserves Dock activation and close-keeps-running behavior.
-                description={t(
-                  'settings.appearance.menuBarIcon.description',
-                  'Keep an Orca shortcut and activity indicator in the macOS menu bar.'
-                )}
-                checked={settings.showMenuBarIcon !== false}
+                description={
+                  settings.macWindowCloseBehavior === 'hide-to-menu-bar'
+                    ? t(
+                        'settings.appearance.macWindowCloseBehavior.iconRequired',
+                        'The icon stays visible while the close button is set to Hide to menu bar.'
+                      )
+                    : t(
+                        'settings.appearance.menuBarIcon.description',
+                        'Keep an Orca shortcut and activity indicator in the macOS menu bar.'
+                      )
+                }
+                disabled={settings.macWindowCloseBehavior === 'hide-to-menu-bar'}
+                checked={
+                  settings.showMenuBarIcon !== false ||
+                  settings.macWindowCloseBehavior === 'hide-to-menu-bar'
+                }
                 onChange={() =>
                   updateSettings({ showMenuBarIcon: settings.showMenuBarIcon === false })
                 }

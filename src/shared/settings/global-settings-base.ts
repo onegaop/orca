@@ -38,11 +38,13 @@ import type { ChatDeleteSettings } from '../agent-session/chat-deletion/orca-cha
 import type { CustomAcpAgentSettings } from '../agent-launch/custom-acp/custom-acp-agent'
 import type { ProjectBadgeAppearanceSettings } from '../repository/appearance/repo-mark-appearance'
 import type { ProjectTreeSettings } from '../sidebar-list/project-tree-settings'
+import type { MacWindowCloseBehavior } from '../app-lifecycle/windows/macos-window-close-behavior'
 
 type DesktopWindowSettings = {
   /** Windows-only: close (X) hides to tray instead of quitting; the tray icon is always present regardless. */
   minimizeToTrayOnClose?: boolean
-  /** macOS: toggles the additive menu-bar entry (Orca survives last-window close); doesn't change Dock behavior. */
+  macWindowCloseBehavior?: MacWindowCloseBehavior
+  /** macOS: shows the menu bar icon even when the close behavior does not require it. */
   showMenuBarIcon?: boolean
   /** Linux: disables titlebar dragging and keeps only the close button. */
   linuxTilingWindowMode?: boolean
