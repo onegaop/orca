@@ -15,11 +15,13 @@ import { formatSparseDirectoryPreview } from '../controller/worktree-card-model'
 export function WorktreeCardRepoChip({
   repo,
   card,
-  hasHoverDetails = false
+  hasHoverDetails = false,
+  showName = false
 }: {
   repo: Repo
   card?: IdentityBadgeProps['card']
   hasHoverDetails?: boolean
+  showName?: boolean
 }): React.JSX.Element {
   const t = useTranslate()
   const hover = card ? identityIndicatorHoverHandlers({ card, hasHoverDetails }) : null
@@ -33,7 +35,6 @@ export function WorktreeCardRepoChip({
   }
   return (
     <ProjectPeekPopover repo={repo} onOpenChange={handleEditorOpenChange}>
-      {/* Why: the name squeezed titles out of narrow cards; the mark is kept distinct per project instead. */}
       <button
         type="button"
         aria-haspopup="dialog"
@@ -55,9 +56,20 @@ export function WorktreeCardRepoChip({
           }
         }}
         onFocus={hover?.onFocus}
-        className="inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className={cn(
+          'inline-flex h-4 shrink-0 items-center rounded-[4px] outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          showName
+            ? // Why: an inset ring sits under the mark, so the mark meets the chip edge with no gap.
+              'max-w-24 gap-1 bg-worktree-sidebar-accent/55 pr-1 ring-1 ring-inset ring-worktree-sidebar-border'
+            : 'w-4 justify-center'
+        )}
       >
         <RepoMark repo={repo} />
+        {showName && (
+          <span className="min-w-0 truncate text-3xs leading-3.5 text-muted-foreground">
+            {repo.displayName}
+          </span>
+        )}
       </button>
     </ProjectPeekPopover>
   )

@@ -85,6 +85,18 @@ export const worktreeListRowStyles = themedStyleSheet(() => ({
     borderColor: colors.borderSubtle,
     backgroundColor: colors.bgRaised
   },
+  repoChipNamed: {
+    width: undefined,
+    maxWidth: 96,
+    flexDirection: 'row',
+    gap: 4,
+    paddingRight: 4
+  },
+  repoChipName: {
+    flexShrink: 1,
+    fontSize: 10,
+    color: colors.textSecondary
+  },
   folderBadge: {
     backgroundColor: colors.bgRaised,
     paddingHorizontal: 5,
