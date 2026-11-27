@@ -5104,6 +5104,20 @@
                   "14965cc123": "移动端"
                 }
               }
+            },
+            "search": {
+              "TabSearch": {
+                "789246b689": "搜索标签页",
+                "7f56c1fde9": "搜索所有工作区中已打开的标签页",
+                "bc2174bc27": "没有匹配的标签页",
+                "3b27fc7f7c": "没有打开的标签页",
+                "e6d5cf7750": "已打开的标签页",
+                "e555a5a097": "切换",
+                "tabsFound_other": "找到 {{count}} 个标签页"
+              },
+              "TabSearchRow": {
+                "10e04285dd": "关闭标签页"
+              }
             }
           },
           "TabWorkspaceLayoutMenuSection": {
@@ -7013,7 +7027,8 @@
           "folderPathIdentity": "分支 / 文件夹路径",
           "cli": "Orca CLI",
           "optionsActiveFilters_other": "工作区选项（{{count}} 个筛选条件已启用）",
-          "optionsFilterCount_other": "工作区选项（{{count}} 个筛选条件）"
+          "optionsFilterCount_other": "工作区选项（{{count}} 个筛选条件）",
+          "projectBadges": "项目徽章"
         },
         "SshTargetRow": {
           "4677394048": "正在连接…",
@@ -9862,7 +9877,8 @@
           "integrationsLink": "集成",
           "skillHint": " 中管理，连接 Linear 后，可到设置 → Linear 查看使用示例",
           "incompleteBannerBodyWithLinear": "隐藏不用的提供商，或展开卡片完成其中的步骤，Linear 需要 API 访问权限、代理技能，并在任务中显示",
-          "30255b39dc": "任务提供者"
+          "30255b39dc": "任务提供者",
+          "pageTitle": "任务页面"
         },
         "TerminalAppearanceSection": {
           "a14a427ae4": "窗格分隔线的厚度",
@@ -10523,7 +10539,17 @@
             "museUsageDescription": "在状态栏中显示 Muse 订阅配额",
             "muse": "muse",
             "meta": "meta",
-            "e8d2710689": "Muse 使用情况"
+            "e8d2710689": "Muse 使用情况",
+            "defaultProjectBadgeStyle": {
+              "title": "默认项目徽章",
+              "description": "用于没有自定义图标的项目。",
+              "project": "项目",
+              "badge": "徽章",
+              "icon": "图标",
+              "letters": "字母",
+              "initials": "缩写",
+              "folder": "文件夹"
+            }
           }
         },
         "auto": {
@@ -11648,7 +11674,12 @@
             "apiKey": "API 密钥",
             "skill": "技能",
             "connect": "连接",
-            "12d2fdff3c": "任务提供者"
+            "12d2fdff3c": "任务提供者",
+            "preloadTitle": "预加载任务",
+            "preloadDescription": "启动后在后台加载任务，切换页面时保留任务列表。再次打开时可立即看到上次的列表。此功能会使用更多内存。",
+            "preload": "预加载",
+            "background": "后台",
+            "reload": "重新加载"
           }
         },
         "terminal": {
@@ -15603,7 +15634,9 @@
             "resumeInNewCliUnavailable": "无法在 CLI 中打开此会话",
             "resumeInNewCliHostTooOld": "请更新运行此聊天的主机上的 Orca，才能在新的 CLI 中恢复它",
             "folderWorkspaceUnavailable": "文件夹工作区不再可用",
-            "transcriptsSkippedCount_other": "已跳过 {{count}} 份对话记录"
+            "transcriptsSkippedCount_other": "已跳过 {{count}} 份对话记录",
+            "pinnedOutsideHistory": "有 {{count}} 条较早的置顶会话尚未加载",
+            "loadFullHistory": "加载完整历史"
           },
           "AiVaultPanelControls": {
             "scanningSessions": "正在扫描会话",
@@ -15704,7 +15737,9 @@
             "resumeInNewNativeChat": "在新聊天中恢复",
             "resumeInNewCli": "在新终端中恢复",
             "resumeInNewCliTooltipFork": "使用此对话的副本启动新的终端代理会话",
-            "resumeInNewCliTooltipChat": "此聊天保持不变"
+            "resumeInNewCliTooltipChat": "此聊天保持不变",
+            "unpinSession": "取消置顶",
+            "pinSession": "置顶会话"
           },
           "AiVaultSessionDeleteDialog": {
             "description": "\"{{value0}}\"将被删除，删除后，也将无法通过 {{value1}} 自身的命令行恢复",
@@ -15915,6 +15950,9 @@
             "createInProgress": "正在创建 PR...",
             "workspaceHostUnresolved": "无法解析工作区主机。请刷新工作区后重试",
             "branchDiscoveryFailed": "分支发现失败"
+          },
+          "AiVaultSessionList": {
+            "pinnedSessions": "已置顶"
           }
         }
       },
@@ -15986,7 +16024,10 @@
           "stylePicture": "图片",
           "undo": "撤销",
           "useLetters": "使用“{{value0}}”",
-          "usingGitHubAvatar": "正在使用 GitHub 头像"
+          "usingGitHubAvatar": "正在使用 GitHub 头像",
+          "applyToAll": "应用到所有项目",
+          "appliedToAll_other": "已应用到 {{count}} 个项目",
+          "applyToAllFailed": "部分项目徽章更新失败。"
         }
       },
       "pet": {
@@ -26262,7 +26303,8 @@
       "tabNewBrowserSplitRight": "在右侧拆分窗格中新建浏览器标签页",
       "5468defe61": "折叠/展开所有项目",
       "botItemPrevious": "上一个事项",
-      "botItemNext": "下一个事项"
+      "botItemNext": "下一个事项",
+      "tabSearch": "搜索标签页"
     },
     "group": {
       "global": "全局",
