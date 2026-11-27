@@ -59,6 +59,10 @@ export type PersistedUIState = {
   activityBarBotOrder?: string[]
   activityBarHidden?: string[]
   markdownTocPanelWidth?: number
+  /** The left vertical tab list's expanded width; shared by every split. */
+  verticalTabListWidth?: number
+  /** The left vertical tab list shows icons only. */
+  verticalTabListCollapsed?: boolean
   combinedDiffFileTreeWidth?: number
   groupBy: 'none' | 'workspace-status' | 'repo' | 'pr-status'
   sortBy: 'name' | 'smart' | 'recent' | 'repo' | 'manual'
@@ -127,6 +131,8 @@ export type PersistedUIState = {
   agentsGroupBy?: ActivityGroupBy
   collapsedGroups: string[]
   uiZoomLevel: number
+  /** Older profiles used the panel zoom for the entire window. */
+  sidebarZoomLevel?: number
   editorFontZoomLevel: number
   worktreeCardProperties: WorktreeCardProperty[]
   /** One-shot migration flag for deriving card properties from the two worktree card modes. */

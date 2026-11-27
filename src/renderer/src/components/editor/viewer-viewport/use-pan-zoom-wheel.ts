@@ -1,4 +1,5 @@
 import type React from 'react'
+import { clientPointInElement } from '@/lib/dom/client-point-in-element'
 import { useEffect } from 'react'
 import { getPinchZoomFactor, getWheelDeltaPixels } from './image-viewer-zoom'
 import {
@@ -38,8 +39,7 @@ export function usePanZoomWheel(
       const fitted = getFittedPanZoomView(geometry.content)
       // Pinch arrives as Ctrl+wheel.
       if (event.ctrlKey || (metaZooms && event.metaKey)) {
-        const rect = canvas.getBoundingClientRect()
-        const anchor = { x: event.clientX - rect.left, y: event.clientY - rect.top }
+        const anchor = clientPointInElement(canvas, event)
         setManualView((current) => {
           const from = current ? settleView(current, geometry) : fitted
           return zoomViewAt({
@@ -53,8 +53,9 @@ export function usePanZoomWheel(
       }
       // Shift+wheel needs an axis swap on Windows/Linux; macOS already supplies horizontal deltas.
       const sideways = event.shiftKey && event.deltaX === 0
-      const deltaX = getWheelDeltaPixels(event.deltaX, event.deltaMode)
-      const deltaY = getWheelDeltaPixels(event.deltaY, event.deltaMode)
+      const zoom = event.deltaMode === WheelEvent.DOM_DELTA_PIXEL ? canvas.currentCSSZoom || 1 : 1
+      const deltaX = getWheelDeltaPixels(event.deltaX, event.deltaMode) / zoom
+      const deltaY = getWheelDeltaPixels(event.deltaY, event.deltaMode) / zoom
       const delta = sideways ? { x: -deltaY, y: 0 } : { x: -deltaX, y: -deltaY }
       setManualView((current) => {
         const from = current ? settleView(current, geometry) : fitted

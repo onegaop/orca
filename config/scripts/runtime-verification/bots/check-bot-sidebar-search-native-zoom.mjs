@@ -54,6 +54,7 @@ async function setup(theme) {
   await page.evaluate(() => {
     window.api.ui.getZoomLevel = window.__orcaNativeZoom.get
     window.api.ui.setZoomLevel = window.__orcaNativeZoom.set
+    window.api.ui.syncPanelZoom = () => {}
     const frame = document.querySelector('#component-fixture-frame')
     Object.assign(frame.style, { padding: '0', width: '220px' })
     document.querySelector('[data-sidebar-window]').style.height = '100dvh'
@@ -67,8 +68,8 @@ async function setup(theme) {
 }
 async function zoom(level) {
   await page.evaluate(async (value) => {
-    const { applyUIZoom } = await import('/src/app-shell/chrome/ui-zoom.ts')
-    applyUIZoom(value)
+    const { applyPanelZoom } = await import('/src/app-shell/chrome/ui-zoom.ts')
+    applyPanelZoom(value)
   }, level)
   const state = await native()
   assert.ok(Math.abs(state.level - level) < 0.001)

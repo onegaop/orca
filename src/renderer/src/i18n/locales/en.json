@@ -1013,6 +1013,12 @@
       "uiZoom": {
         "zoomOut": "Zoom out",
         "zoomIn": "Zoom in"
+      },
+      "zoom": {
+        "sidebar": "Sidebar zoom",
+        "panel": "Panel zoom",
+        "sidebarDescription": "Scale the bot list, projects, and worktree cards.",
+        "panelDescription": "Scale tabs, terminals, chats, editors, and the right sidebar."
       }
     },
     "browser": {
@@ -2365,7 +2371,9 @@
     "toggleFullScreen": "Toggle Full Screen",
     "undo": "Undo",
     "unhide": "Show All",
-    "zoom": "Zoom"
+    "zoom": "Zoom",
+    "sidebarZoom": "Sidebar Zoom",
+    "panelZoom": "Panel Zoom"
   },
   "tray": {
     "openOrca": "Open Orca",
@@ -6017,6 +6025,24 @@
             "filePathsCannotContainEmptySegments": "File paths cannot contain empty segments.",
             "filePathsCannotContainDotSegments": "File paths cannot contain . or .. segments.",
             "filePathsCannotContainTildeSegments": "File paths cannot contain ~ segments."
+          },
+          "vertical": {
+            "TabStripPositionMenu": {
+              "54f7297602": "Show Tabs at the Top",
+              "97b6456a5d": "Expand Tab List",
+              "4f597a791a": "Collapse Tab List",
+              "bd0acddbce": "Show Tabs on the Left"
+            },
+            "VerticalTabBar": {
+              "114d8426d7": "Tabs"
+            },
+            "VerticalTabListHeader": {
+              "4214491c78": "Expand tab list",
+              "a08e96025f": "Collapse tab list"
+            },
+            "VerticalTabListResizeHandle": {
+              "f16318a254": "Resize tab list"
+            }
           }
         }
       },
@@ -9283,7 +9309,6 @@
           "0cd9b8228f": "Choose the app icon shown in the Dock and window switcher.",
           "61d842eca0": "Show the Orca Mobile shortcut in the sidebar. It remains available from Toolbox.",
           "dc29f3cc0d": "Sidebar",
-          "ef89200c1f": "when not in a terminal pane.",
           "fd89b5487c": "Light",
           "7d26ccabe8": "Dark",
           "fb0e0b4453": "System",
@@ -9309,7 +9334,6 @@
           },
           "e0f9902e18": "Show tasks button",
           "7e958ee950": "Show Git-ignored files",
-          "173edfb768": "UI zoom",
           "907888cd09": "App icon",
           "8e374ce9a3": "File explorer",
           "3a5d06686d": "Status bar",
@@ -11417,7 +11441,6 @@
             "0c83659f48": "shortcut",
             "0952091186": "scale",
             "3ae5de6101": "zoom",
-            "adddb91a3d": "Scale the entire application interface.",
             "3a9b69d734": "system",
             "44d873fd18": "light",
             "262fe1d24f": "dark",
@@ -12074,6 +12097,24 @@
             "aa1c06eb2c": "Default diff view",
             "8ad175042b": "Rich Markdown spellcheck",
             "da5c42780e": "Open in apps"
+          },
+          "TabStripPositionControl": {
+            "be0f9ce5f5": "Top",
+            "eb473e14e6": "Left"
+          },
+          "tab": {
+            "strip": {
+              "position": {
+                "search": {
+                  "3e515161c1": "Tab position",
+                  "2f44a02656": "vertical tabs",
+                  "69724f255a": "side",
+                  "ce60fea1b4": "left",
+                  "0b8635b33f": "top",
+                  "ced44863c5": "Show tabs in a strip above each split, or in a vertical list on its left."
+                }
+              }
+            }
           }
         },
         "git": {
@@ -20921,7 +20962,6 @@
         "you": "You"
       },
       "ZoomOverlay": {
-        "uiZoom": "UI Zoom",
         "editorZoom": "Editor Zoom",
         "terminalZoom": "Terminal Zoom"
       },
@@ -26948,7 +26988,6 @@
       "57c4fb0edd": "Worktree history forward",
       "5468defe61": "Collapse / expand all projects",
       "02dd0f77a0": "Worktree history back",
-      "bb3beaeef6": "Reset size",
       "258e7f75ec": "Copy context",
       "e0d7e6b665": "Toggle right sidebar",
       "1d2c86248c": "Delete workspace",
@@ -26979,9 +27018,7 @@
       "3acf4e9eb1": "Search settings",
       "5c1a9f83e0": "Open plugins",
       "da4e681113": "Show search",
-      "f233164080": "Zoom in",
       "0feb1f0496": "Select workspace 1–9",
-      "2b20f1f14a": "Zoom out",
       "128cce6e6d": "Set title…",
       "e9da9f872a": "Send review notes to agent",
       "1524825c2c": "Toggle workspace board",
@@ -26989,7 +27026,16 @@
       "botItemBack": "Back to items",
       "botItemPrevious": "Previous item",
       "botItemNext": "Next item",
-      "tabSearch": "Search tabs"
+      "tabSearch": "Search tabs",
+      "zoomFocusedIn": "Zoom in on focused item",
+      "zoomFocusedOut": "Zoom out of focused item",
+      "zoomFocusedReset": "Reset zoom for focused item",
+      "zoomSidebarIn": "Zoom in on sidebar",
+      "zoomSidebarOut": "Zoom out of sidebar",
+      "zoomSidebarReset": "Reset sidebar zoom",
+      "zoomPanelIn": "Zoom in on panels",
+      "zoomPanelOut": "Zoom out of panels",
+      "zoomPanelReset": "Reset panel zoom"
     },
     "group": {
       "global": "Global",

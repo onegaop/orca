@@ -133,6 +133,11 @@ export type UISlicePreferences = {
   setSidebarBotsHeight: (height: number | null) => void
   sidebarProjectsFirst: boolean
   setSidebarProjectsFirst: (projectsFirst: boolean) => void
+  /** Expanded width of the left vertical tab list (Tab position: Left). */
+  verticalTabListWidth: number
+  setVerticalTabListWidth: (width: number) => void
+  verticalTabListCollapsed: boolean
+  setVerticalTabListCollapsed: (collapsed: boolean) => void
   syncTaskStatusFromWorkspaceBoard: boolean
   setSyncTaskStatusFromWorkspaceBoard: (enabled: boolean) => void
   /** Transient: the in-window Agent Dashboard companion drawer is open. Not persisted. */
@@ -211,6 +216,8 @@ export type UISlicePersistence = {
   ) => void
   uiZoomLevel: number
   setUIZoomLevel: (level: number) => void
+  sidebarZoomLevel: number
+  setSidebarZoomLevel: (level: number) => void
   editorFontZoomLevel: number
   setEditorFontZoomLevel: (level: number) => void
   hydratePersistedUI: (ui: PersistedUIState, source?: 'startup' | 'sync') => void
