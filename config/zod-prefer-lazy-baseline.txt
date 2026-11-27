@@ -30,7 +30,6 @@
 5 src/main/bots/sharing/bot-share-client.ts
 1 src/main/bots/sharing/bot-share-picks-store.ts
 1 src/main/bots/sharing/bot-share-receive.ts
-1 src/main/bots/tool-oauth/bot-tool-oauth-discovery.ts
 1 src/main/bots/tool-oauth/bot-tool-oauth.ts
 1 src/main/browser/agent-browser/commands/agent-browser-bridge-capture-commands.ts
 1 src/main/browser/agent-browser/commands/agent-browser-bridge-mouse-commands.ts
@@ -149,7 +148,7 @@
 1 src/main/wsl/host-lifecycle/wsl-host-peer-desktops.ts
 1 src/main/wsl/host-lifecycle/wsl-host-server-stop.ts
 1 src/main/zcode/zcode-v2-plan-credentials.ts
-4 src/shared/agent-accounts/codex/codex-reset-credit-attempt-ledger.ts
+2 src/shared/agent-accounts/codex/codex-reset-credit-attempt-ledger.ts
 1 src/shared/agent-launch/startup/agent-launch-account-env.ts
 1 src/shared/agent-launch/startup/host-account-launch-env.ts
 1 src/shared/agent-session/agent-discovery/agent-session-agent-availability.ts
@@ -175,7 +174,7 @@
 1 src/shared/bots/bot-avatar-color.ts
 1 src/shared/bots/bot-avatar-outfit.ts
 1 src/shared/bots/bot-cancelled-waits.ts
-4 src/shared/bots/bot-chat-tree-schema.ts
+2 src/shared/bots/bot-chat-tree-schema.ts
 1 src/shared/bots/bot-connector-offer.ts
 8 src/shared/bots/bot-first-look.ts
 15 src/shared/bots/bot-group-schema.ts
@@ -202,7 +201,6 @@
 2 src/shared/bots/bot-take-over.ts
 3 src/shared/bots/bot-team-share-seal.ts
 3 src/shared/bots/bot-tidy-up.ts
-26 src/shared/browser/client-hosting/browser-client-host-protocol.ts
 2 src/shared/browser/client-hosting/browser-client-host-request-protocol.ts
 1 src/shared/browser/client-hosting/browser-expected-url.ts
 5 src/shared/browser/extensions/browser-extensions-banner.ts
@@ -235,7 +233,6 @@
 2 src/shared/mobile-web-bundle/locale-catalog-contract.ts
 8 src/shared/mobile-web-bundle/manifest-contract.ts
 2 src/shared/orcad-migration/orcad-migration-terminal-restore-hints.ts
-4 src/shared/orchestration/approvals/worker-approval-payload.ts
 4 src/shared/orchestration/orchestration-removed-work.ts
 4 src/shared/orchestration/remote-owned-wire.ts
 1 src/shared/plugins/approval/plugin-consent-request.ts
@@ -283,7 +280,7 @@
 1 src/shared/remote-runtime/ephemeral-vm-store/pending-vm-checkouts.ts
 1 src/shared/remote-runtime/host-catalog/pending-runtime-repo-removal.ts
 11 src/shared/remote-runtime/host-catalog/runtime-environments.ts
-4 src/shared/remote-runtime/host-catalog/wsl-host-deployment-link.ts
+3 src/shared/remote-runtime/host-catalog/wsl-host-deployment-link.ts
 1 src/shared/remote-runtime/host-status/runtime-host-descriptor.ts
 1 src/shared/remote-runtime/host-store/runtime-environment-sidecar.ts
 1 src/shared/remote-runtime/host-store/runtime-environment-store-records.ts
@@ -298,12 +295,10 @@
 2 src/shared/rpc-contract/accounts/accounts-params.ts
 2 src/shared/rpc-contract/artifacts/artifacts-params.ts
 7 src/shared/rpc-contract/automation-bot-params.ts
-23 src/shared/rpc-contract/automations/automation-params.ts
 21 src/shared/rpc-contract/bots-params.ts
 1 src/shared/rpc-contract/bots-tools-params.ts
 2 src/shared/rpc-contract/browser/browser-extras-params.ts
 1 src/shared/rpc-contract/browser/browser-observation-params.ts
-25 src/shared/rpc-contract/browser/browser-params.ts
 2 src/shared/rpc-contract/client-ui/client-settings-params.ts
 7 src/shared/rpc-contract/client-ui/client-ui-workspace-filter-fields-params.ts
 4 src/shared/rpc-contract/connectors/connector-params.ts
@@ -318,18 +313,13 @@
 2 src/shared/rpc-contract/mcp-servers-params.ts
 3 src/shared/rpc-contract/orchestration/orchestration-worker-release-params.ts
 1 src/shared/rpc-contract/preflight/preflight-params.ts
-4 src/shared/rpc-contract/projects/repo-params.ts
 2 src/shared/rpc-contract/session-tabs/session-tabs-schemas-params.ts
 1 src/shared/rpc-contract/session-tabs/session-terminal-scrollback-params.ts
-70 src/shared/rpc-contract/source-control/git-params.ts
 2 src/shared/rpc-contract/structured-agent-session/agent-session-attachment-params.ts
 2 src/shared/rpc-contract/structured-agent-session/structured-agent-session-create-tab-params.ts
 29 src/shared/rpc-contract/structured-agent-session/structured-agent-session-params.ts
-47 src/shared/rpc-contract/terminal/terminal-unary-params.ts
-36 src/shared/rpc-contract/workspace-layout/workspace-layout-params.ts
 2 src/shared/rpc-contract/workspace-layout/workspace-layout-sleep-wake-params.ts
 9 src/shared/rpc-contract/workspaces/folder-workspace-params.ts
-45 src/shared/rpc-contract/workspaces/worktree-params.ts
 2 src/shared/settings/host-owned-settings.ts
 1 src/shared/sidebar-list/catalog/project-section-catalog-schema.ts
 1 src/shared/sidebar-list/catalog/repo-icon-data-urls-contract.ts
@@ -345,7 +335,7 @@
 2 src/shared/sidebar-list/feed/sidebar-temporal-snapshot.ts
 2 src/shared/skills/installation/skill-install-failure.ts
 1 src/shared/skills/sharing/agent-skill-sharing-contract.ts
-4 src/shared/telemetry/schemas/telemetry-agent-dashboard-event-schemas.ts
+3 src/shared/telemetry/schemas/telemetry-agent-dashboard-event-schemas.ts
 2 src/shared/telemetry/schemas/telemetry-codex-history-move-event-schemas.ts
 1 src/shared/telemetry/schemas/telemetry-codex-legacy-history-event-schemas.ts
 19 src/shared/telemetry/schemas/telemetry-daemon-event-schemas.ts
