@@ -112,6 +112,7 @@ function App() {
         <div data-testid="history-panel" className="h-[600px] flex flex-col border border-border">
           <AiVaultSessionVirtualList
             groups={[{ key: 'project', label: 'Project', sessions }]}
+            pinnedSessions={[]}
             collapsedGroups={new Set()}
             loading={false}
             sessionsCount={sessions.length}
@@ -135,6 +136,7 @@ function App() {
             })}
             getSessionResumeInChat={() => ({ available: false, reason: 'agent' })}
             onToggleGroup={ignore}
+            onTogglePin={ignore}
             onJumpToOriginalPane={ignore}
             onJumpToWorktree={ignore}
             onResume={(session, target) => setResult(`Resume ${session.sessionId} in ${target}`)}
