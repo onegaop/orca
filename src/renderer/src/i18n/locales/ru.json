@@ -21376,7 +21376,6 @@
         "expand": "Развернуть"
       },
       "question": {
-        "step": "Шаг {{value0}}",
         "otherPlaceholder": "Введите ответ",
         "cancel": "Отмена",
         "send": "Ответить",
@@ -21388,12 +21387,11 @@
         "recommended": "Рекомендуется",
         "stepOf": "{{value0}} из {{value1}}",
         "answered": "Есть ответ",
-        "title": "Вопрос",
         "previous": "Предыдущий вопрос",
         "nextQuestion": "Следующий вопрос",
         "back": "Назад",
         "skipAndSubmit": "Пропустить и отправить",
-        "stepLabel": "{{value0}}, {{value1}} из {{value2}}: {{value3}}"
+        "questionStepLabel": "{{value0}}, {{value1}} из {{value2}}"
       },
       "ask": {
         "awaiting": "Ждёт вашего ответа:",
@@ -21575,13 +21573,13 @@
         "senderAmbiguous": "Orca не может определить, в каком терминале работает {{name}}. Откройте его через боковую панель.",
         "senderNotRunning": "{{name}} больше не работает. Запустите нового агента через боковую панель, чтобы продолжить работу.",
         "unnamedSenderSubject": "Агент",
-        "open": "Открыть: {{name}}",
+        "open": "Открыть {{name}}",
         "row": {
           "started": "Запущено",
           "forItems": "для",
           "reopened": "Открыто снова",
-          "followedUp": "Отправлено уточнение:",
-          "handedOff": "Передано:",
+          "followedUp": "Дослано получателю:",
+          "handedOff": "Передано получателю:",
           "task": "Задача от:",
           "update": "Обновление от:",
           "message": "Сообщение от:",
@@ -21590,9 +21588,16 @@
         "kind": {
           "started": "Запущено",
           "reopened": "Открыто снова",
-          "followedUp": "Уточнение",
-          "handedOff": "Передано",
+          "followedUp": "Дослано получателю:",
+          "handedOff": "Передано получателю:",
           "task": "Задача"
+        },
+        "unnamedRecipient": "агент",
+        "event": {
+          "followedUp": "Дополнение отправлено",
+          "update": "Обновление",
+          "message": "Сообщение",
+          "handedOff": "Работа передана"
         }
       },
       "goal": {

@@ -1099,6 +1099,12 @@
           "browse": "Chrome Web Store",
           "openFailed": "Open a workspace to browse the Chrome Web Store."
         },
+        "failure": {
+          "supportDisabled": "Turn on browser extensions in Settings › Browser › Extensions",
+          "invalidWebStoreInput": "Paste a Chrome Web Store link or a 32-letter extension ID",
+          "profileUnavailable": "Browser profile is not available for extensions",
+          "alreadyAdded": "{{name}} is already added"
+        },
         "enabledToggleLabel": "Turn browser extensions on or off"
       },
       "passwords": {
@@ -2086,6 +2092,9 @@
     },
     "computerUse": {
       "teamDisabled": "Computer Use is turned off by your team."
+    },
+    "browserUse": {
+      "teamDisabled": "Browser Use is turned off by your team."
     },
     "artifacts": {
       "teamDisabled": "Artifact sharing is turned off by your team."
@@ -21974,7 +21983,6 @@
         "expand": "Expand"
       },
       "question": {
-        "step": "Step {{value0}}",
         "otherPlaceholder": "Type your answer",
         "cancel": "Cancel",
         "send": "Submit",
@@ -21986,12 +21994,11 @@
         "recommended": "Recommended",
         "stepOf": "{{value0}} of {{value1}}",
         "answered": "Answered",
-        "title": "Question",
         "previous": "Previous question",
         "nextQuestion": "Next question",
         "back": "Back",
         "skipAndSubmit": "Skip and submit",
-        "stepLabel": "{{value0}}, {{value1}} of {{value2}}: {{value3}}"
+        "questionStepLabel": "{{value0}}, {{value1}} of {{value2}}"
       },
       "ask": {
         "awaiting": "Awaiting user input:",
@@ -22176,6 +22183,14 @@
           "followedUp": "Follow-up",
           "handedOff": "Handed off",
           "task": "Task"
+        },
+        "unnamedRecipient": "an agent",
+        "recipientName": "{{name}}",
+        "event": {
+          "followedUp": "Sent follow-up",
+          "update": "Update",
+          "message": "Message",
+          "handedOff": "Handed off"
         }
       },
       "goal": {

@@ -21028,7 +21028,6 @@
         "expand": "Expandir"
       },
       "question": {
-        "step": "Paso {{value0}}",
         "otherPlaceholder": "Escribe tu respuesta",
         "cancel": "Cancelar",
         "send": "Enviar",
@@ -21040,12 +21039,11 @@
         "recommended": "Recomendado",
         "stepOf": "{{value0}} de {{value1}}",
         "answered": "Respondida",
-        "title": "Pregunta",
         "previous": "Pregunta anterior",
         "nextQuestion": "Siguiente pregunta",
         "back": "Atrás",
         "skipAndSubmit": "Omitir y enviar",
-        "stepLabel": "{{value0}}, {{value1}} de {{value2}}: {{value3}}"
+        "questionStepLabel": "{{value0}}, {{value1}} de {{value2}}"
       },
       "approval": {
         "needsNewerOrca": "Esta solicitud necesita una versión más reciente de Orca.",
@@ -21452,6 +21450,13 @@
           "followedUp": "Seguimiento",
           "handedOff": "Traspasado",
           "task": "Tarea"
+        },
+        "unnamedRecipient": "un agente",
+        "event": {
+          "followedUp": "Seguimiento enviado",
+          "update": "Actualización",
+          "message": "Mensaje",
+          "handedOff": "Traspasado"
         }
       },
       "goal": {
