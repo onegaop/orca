@@ -9,6 +9,7 @@ vi.mock('@/runtime/rpc/calls/runtime-rpc-call', () => ({ callRuntimeRpc }))
 
 it('rejects a cached file read from a superseded stream generation with the same PTY ID', async () => {
   const terminal = new Terminal()
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: The fixture supplies the pane, routing and stream fields the Kitty file reader uses.
   const session = {
     pane: { terminal },
     deps: { worktreeId: 'worktree' },
