@@ -143,6 +143,9 @@ function assertPaneActionSizes(frame: HTMLElement, expectedCount: number): void 
 export const toolbarWide = defineFixture({
   width: 800,
   store: toolbarStore,
+  setup: () => {
+    stubBots([])
+  },
   render: () => <ToolbarTranscript />,
   interact: (frame) => assertPaneActionSizes(frame, 4)
 })
