@@ -267,6 +267,7 @@ const AgentBranch = React.memo(function AgentBranch({
     )
   )
   const acknowledgedAt = useAppStore((s) => s.acknowledgedAgentsByPaneKey[paneKey] ?? 0)
+  const showAgentStateAccents = useAppStore((s) => s.settings?.showAgentStateAccents === true)
   const t = useTranslate()
   if (!row) {
     return null
@@ -286,6 +287,7 @@ const AgentBranch = React.memo(function AgentBranch({
     : undefined
   const common = {
     agent: row,
+    showStateAccent: showAgentStateAccents && root && !context.targets,
     showModel: context.showAgentModels,
     now: context.now,
     isUnvisited: row.rowSource === 'live' && acknowledgedAt < agentAttentionTurnAt(row.entry),

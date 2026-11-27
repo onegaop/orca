@@ -157,6 +157,21 @@ export const getDefaultProjectBadgeStyleEntry = createLocalizedCatalog((): Setti
   ]
 }))
 
+export const getAgentStateAccentsEntry = createLocalizedCatalog((): SettingsSearchEntry => ({
+  title: translate('settings.appearance.agentStateAccents.title', 'Agent state colors'),
+  description: translate(
+    'settings.appearance.agentStateAccents.description',
+    'Color the edge of agent tabs and sidebar agent rows by their current status.'
+  ),
+  keywords: [
+    ...translateSearchKeyword(
+      'settings.appearance.agentStateAccents.search',
+      'agent status colors'
+    ),
+    ...translateSearchKeyword('auto.components.settings.appearance.search.5bff6a2ef0', 'sidebar')
+  ]
+}))
+
 export const getSidebarEntries = createLocalizedCatalog((): SettingsSearchEntry[] => [
   {
     title: translate('auto.components.settings.appearance.search.9bc701a4d1', 'Show tasks button'),
@@ -223,5 +238,6 @@ export const getSidebarEntries = createLocalizedCatalog((): SettingsSearchEntry[
   },
   getLeftSidebarAppearanceEntry(),
   getDefaultProjectBadgeStyleEntry(),
-  getShowPinnedWorktreesInGroupsEntry()
+  getShowPinnedWorktreesInGroupsEntry(),
+  getAgentStateAccentsEntry()
 ])

@@ -145,6 +145,11 @@
       }
     },
     "appearance": {
+      "agentStateAccents": {
+        "title": "Agent 状态配色",
+        "description": "按当前状态为 Agent 标签和侧栏 Agent 条目添加彩色边线。",
+        "search": "Agent 状态颜色"
+      },
       "language": {
         "title": "语言",
         "description": "选择 Orca 界面使用的语言",
@@ -25719,6 +25724,9 @@
     "alwaysForceDeleteBranches": "始终删除保留的分支"
   },
   "workspace": {
+    "view": {
+      "projectTasksPreset": "按项目分组，最近活跃优先"
+    },
     "branchChoice": {
       "title": "此工作树使用的分支",
       "existing": "现有分支",

@@ -803,6 +803,11 @@
       }
     },
     "appearance": {
+      "agentStateAccents": {
+        "title": "Agent 狀態配色",
+        "description": "依目前狀態為 Agent 分頁和側欄 Agent 項目加上彩色邊線。",
+        "search": "Agent 狀態顏色"
+      },
       "language": {
         "title": "語言",
         "description": "選擇 Orca 介面使用的語言。",
@@ -25277,6 +25282,9 @@
     "unavailable": "無法播放此媒體檔案。檔案可能不可用或使用了不支援的編解碼器。"
   },
   "workspace": {
+    "view": {
+      "projectTasksPreset": "依專案分組，最近活躍優先"
+    },
     "branchChoice": {
       "title": "此工作樹的分支",
       "existing": "現有分支",

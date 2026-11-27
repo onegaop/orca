@@ -6,6 +6,7 @@ import {
   agentStateLabel,
   type AgentDotState
 } from '@/components/agent/status/AgentStateDot'
+import { AgentStateAccent } from '@/components/agent/status/AgentStateAccent'
 import { AgentChildRowContent } from '@/components/agent/status/AgentChildRowContent'
 import type { DashboardAgentRow as DashboardAgentRowData } from '@/components/dashboard/rows/dashboard-agent-row'
 import { AgentTypeIcon } from '@/components/agent/icons/agent-type-icon'
@@ -96,6 +97,7 @@ function getCompactAgentTime(agent: DashboardAgentRowData, now: number): string 
 }
 
 type CompactAgentRowProps = {
+  showStateAccent?: boolean
   showModel?: boolean
   agent: DashboardAgentRowData
   now: number
@@ -118,6 +120,7 @@ type CompactAgentRowProps = {
 
 export const CompactAgentRow = React.memo(function CompactAgentRow({
   agent,
+  showStateAccent = false,
   showModel = true,
   now,
   parentConversationDescription,
@@ -309,6 +312,7 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
         hasChildDisclosure && 'worktree-agent-lineage-parent-row',
         isLineageChild && 'worktree-agent-lineage-child-row',
         'flex h-6 items-center gap-1',
+        showStateAccent && 'relative',
         highlighted && 'bg-worktree-sidebar-accent',
         sendTargetStatus === 'sending' && 'cursor-progress opacity-75',
         sendTargetStatus === 'disabled' && 'cursor-default opacity-60'
@@ -332,6 +336,13 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
       aria-expanded={hasChildDisclosure ? childAgentsExpanded : undefined}
       title={sendTargetDisabledReason}
     >
+      {showStateAccent && agent.rowSource !== 'subagent' && (
+        <AgentStateAccent
+          state={dotState}
+          unread={isUnvisited && dotState === 'done'}
+          manualColor={agent.tab.color}
+        />
+      )}
       {rowBody}
     </div>
   )

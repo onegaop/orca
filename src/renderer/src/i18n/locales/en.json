@@ -1019,6 +1019,11 @@
         "panel": "Panel zoom",
         "sidebarDescription": "Scale the bot list, projects, and worktree cards.",
         "panelDescription": "Scale tabs, terminals, chats, editors, and the right sidebar."
+      },
+      "agentStateAccents": {
+        "title": "Agent state colors",
+        "description": "Color the edge of agent tabs and sidebar agent rows by their current status.",
+        "search": "agent status colors"
       }
     },
     "browser": {
@@ -26337,6 +26342,9 @@
         "provisionFailed": "The VM was not created, or creation was interrupted. Open Settings to destroy or remove it."
       },
       "suspendFailed": "Failed to suspend VM workspace"
+    },
+    "view": {
+      "projectTasksPreset": "Group by project, newest first"
     }
   },
   "tabHoverCard": {

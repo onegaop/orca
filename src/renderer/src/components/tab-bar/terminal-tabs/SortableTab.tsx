@@ -29,10 +29,12 @@ import { useTabStripSlotProps } from '../strip/use-tab-strip-slot-props'
 import { useTabStripOrientation } from '../strip/tab-strip-orientation'
 import { useTabStripPointerActivation } from '../strip/tab-strip-pointer-activation'
 import { useTabContextMenuOpening } from '../strip/tab-context-menu-opening'
+import { AgentStateAccent } from '@/components/agent/status/AgentStateAccent'
 import { TerminalTabLeadingIcon } from './TerminalTabLeadingIcon'
 import {
   isTerminalTabActivityLive,
-  terminalTabHasUnreadActivity
+  terminalTabHasUnreadActivity,
+  terminalTabActivityToAgentDotState
 } from './terminal-tab-activity-status'
 import { useTerminalTabActivity } from './use-terminal-tab-activity'
 import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from '@/lib/overlay-interaction/close-all-context-menus'
@@ -86,6 +88,7 @@ export default function SortableTab({
   fork
 }: SortableTabProps): React.JSX.Element {
   const t = useTranslate()
+  const showAgentStateAccent = useAppStore((s) => s.settings?.showAgentStateAccents === true)
   const canClose = closable && !isPinned
   const naming = useNativeChatNamingFailure(namingFailure)
   // A chat's status and unread rows still name it by its session's pane address.
@@ -238,6 +241,13 @@ export default function SortableTab({
     >
       {isActive && <span className={getActiveTabIndicatorClasses(orientation)} aria-hidden />}
       {isBotHome && <BotHomeTabAccent />}
+      {showAgentStateAccent && !tab.color && !isEditing && !isBotHome && (
+        <AgentStateAccent
+          state={terminalTabActivityToAgentDotState(activityStatus)}
+          unread={showUnreadActivity}
+          edge={orientation === 'vertical' ? 'end' : 'start'}
+        />
+      )}
       {showUnreadActivity && (
         // Why: a real DOM child keeps both drop-indicator pseudo-elements free and pointer events reaching the tab.
         <span aria-hidden className="pointer-events-none absolute inset-0 bg-amber-500/10" />

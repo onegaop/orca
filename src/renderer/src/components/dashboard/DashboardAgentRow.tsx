@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react'
+import { AgentStateAccent } from '@/components/agent/status/AgentStateAccent'
 import { cn } from '@/lib/class-names'
 import {
   opensClaudeParentConversation,
@@ -82,6 +83,7 @@ function stateDotTooltipLabel(
 }
 
 type Props = {
+  showStateAccent?: boolean
   showModel?: boolean
   agent: DashboardAgentRowData
   onDismiss: (paneKey: string) => void
@@ -114,6 +116,7 @@ type Props = {
 
 const DashboardAgentRow = React.memo(function DashboardAgentRow({
   agent,
+  showStateAccent = false,
   showModel = true,
   onDismiss,
   onActivate,
@@ -281,6 +284,13 @@ const DashboardAgentRow = React.memo(function DashboardAgentRow({
       role={participatesInLineage ? 'treeitem' : undefined}
       aria-level={participatesInLineage ? (lineage?.depth ?? 0) + 1 : undefined}
     >
+      {showStateAccent && agent.rowSource !== 'subagent' && (
+        <AgentStateAccent
+          state={dotState}
+          unread={isUnvisited && dotState === 'done'}
+          manualColor={agent.tab.color}
+        />
+      )}
       {lineageChildCount > 0 && !hideLineageConnectors ? (
         <span
           aria-hidden

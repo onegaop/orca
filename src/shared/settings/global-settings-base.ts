@@ -53,8 +53,13 @@ type TaskPageSettings = {
   preloadTaskPage: boolean
 }
 
+type AgentStateAppearanceSettings = {
+  showAgentStateAccents?: boolean
+}
+
 /** Settings groups owned by their feature modules and composed into GlobalSettings. */
-export type GlobalSettingsBase = AntigravityChatAuthSettings &
+export type GlobalSettingsBase = AgentStateAppearanceSettings &
+  AntigravityChatAuthSettings &
   EmulatorOpeningSettings &
   SshRemoteControlSettings &
   ClaudeAgentViewSettings &

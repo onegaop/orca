@@ -200,6 +200,7 @@ export function buildDefaultSettings(args: {
     showSkillsButton: false,
     showMobileButton: true,
     showPinnedWorktreesInGroups: false,
+    showAgentStateAccents: false,
     ctrlTabOrderMode: 'mru',
     // Why: Orca-first keeps core shortcuts working from a focused terminal; TUI-ownership users opt in.
     terminalShortcutPolicy: 'orca-first',

@@ -12,6 +12,7 @@ import {
 } from '../form-controls/SettingsFormControls'
 import type { SettingsSearchEntry } from '../search/settings-search'
 import {
+  getAgentStateAccentsEntry,
   getDefaultProjectBadgeStyleEntry,
   getShowPinnedWorktreesInGroupsEntry,
   getSidebarEntries
@@ -31,6 +32,7 @@ export function AppearanceSidebarSubsection({
   const t = useTranslate()
   const setWorktreeCardMode = useAppStore((state) => state.setWorktreeCardMode)
   const sidebarEntries = getSidebarEntries()
+  const agentStateAccentsEntry = getAgentStateAccentsEntry()
   const defaultBadgeEntry = getDefaultProjectBadgeStyleEntry()
   const showPinnedEntry = getShowPinnedWorktreesInGroupsEntry()
 
@@ -149,6 +151,21 @@ export function AppearanceSidebarSubsection({
           checked={settings.showMobileButton !== false}
           onChange={() =>
             updateSettings({ showMobileButton: !(settings.showMobileButton !== false) })
+          }
+        />
+      </SearchableSetting>
+
+      <SearchableSetting
+        title={agentStateAccentsEntry.title}
+        description={agentStateAccentsEntry.description}
+        keywords={agentStateAccentsEntry.keywords}
+      >
+        <SettingsSwitchRow
+          label={agentStateAccentsEntry.title}
+          description={agentStateAccentsEntry.description}
+          checked={settings.showAgentStateAccents === true}
+          onChange={() =>
+            updateSettings({ showAgentStateAccents: settings.showAgentStateAccents !== true })
           }
         />
       </SearchableSetting>

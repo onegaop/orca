@@ -1,6 +1,7 @@
 import { Fragment, useMemo, type ComponentType, type JSX } from 'react'
 import { useAppStore } from '@/store'
 import {
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -202,6 +203,23 @@ function SortByOptionItem({ preserveWorkspaceBoardOpen }: OptionItemProps): JSX.
   )
 }
 
+function ProjectTasksViewItem(): JSX.Element {
+  const t = useTranslate()
+  const selected = useAppStore((s) => s.groupBy === 'repo' && s.sortBy === 'recent')
+  return (
+    <DropdownMenuItem
+      disabled={selected}
+      onSelect={() => {
+        const { setGroupBy, setSortBy } = useAppStore.getState()
+        setGroupBy('repo')
+        setSortBy('recent')
+      }}
+    >
+      {t('workspace.view.projectTasksPreset', 'Group by project, newest first')}
+    </DropdownMenuItem>
+  )
+}
+
 function ProjectOrderOptionItem({ preserveWorkspaceBoardOpen }: OptionItemProps): JSX.Element {
   const t = useTranslate()
   const projectOrderBy = useAppStore((s) => s.projectOrderBy)
@@ -303,6 +321,7 @@ export function WorkspaceOptionsMenuItems({
         <Fragment key={section}>
           {index > 0 && <DropdownMenuSeparator />}
           <SectionHeading section={section} />
+          {section === 'arrange' && repoCount > 0 && <ProjectTasksViewItem />}
           {options.map((option) => {
             const OptionItem = OPTION_ITEMS[option.key]
             return (
