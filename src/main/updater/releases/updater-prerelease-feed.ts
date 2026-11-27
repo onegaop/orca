@@ -1,4 +1,5 @@
 import { net } from 'electron'
+import { confirmEmptyWeeklyFeed } from './weekly-empty-feed'
 import { compareVersions, isPrereleaseVersion, isValidVersion } from './updater-fallback'
 import {
   FETCH_TIMEOUT_MS,
@@ -151,7 +152,7 @@ export async function fetchNewerReleaseTagsWithReadiness(
   if (maxTags <= 0) {
     return { tags: [], state: 'no-newer' }
   }
-  const tags = await fetchReleaseFeedTags()
+  const tags = await confirmEmptyWeeklyFeed(await fetchReleaseFeedTags())
   if (!tags) {
     return { tags: [], state: 'unavailable', unavailableReason: 'feed' }
   }

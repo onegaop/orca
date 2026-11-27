@@ -4,6 +4,7 @@ import {
   fetchNewerReleaseTagsWithReadiness
 } from './updater-prerelease-feed'
 import { getReleaseDownloadUrl } from './updater-release-readiness'
+import { shouldSkipStableFallback } from './weekly-empty-feed'
 import { toDelayedUpdate } from './updater-release-delay'
 import { updateDelayDaysToMs } from '../../../shared/updater/update-delay'
 import { isMissingUpdateManifestFailure } from './updater-fallback'
@@ -212,7 +213,7 @@ export abstract class UpdaterReleaseFeed extends UpdaterInstallExecution {
         'Unable to find latest version on GitHub'
       )
     }
-    if (isPerfCheck || minimumVersion) {
+    if (isPerfCheck || minimumVersion || shouldSkipStableFallback(releaseTagsResult)) {
       if (releaseTagsResult.state === 'no-newer') {
         console.info(
           `[updater] matching release not found: current=${currentVersion} includePrerelease=${includePrerelease}`
