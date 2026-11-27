@@ -26932,8 +26932,7 @@
         "failing": "не пройдены",
         "running": "выполняются",
         "cancelled": "отменены",
-        "passing": "пройдены",
-        "more": "ещё {{count}}"
+        "passing": "пройдены"
       }
     },
     "attachments": {
