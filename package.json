@@ -130,6 +130,7 @@
     "fixtures:shot": "node config/scripts/component-fixtures/fixtures-shot.mjs",
     "build:wsl-guest": "pnpm run build:packages && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON config/scripts/remote-host-build/wsl-guest/build-wsl-guest.mjs",
     "build:computer-macos": "node config/scripts/native-build/macos/build-computer-macos.mjs",
+    "build:orca-inbox-macos": "node config/scripts/native-build/macos/build-orca-inbox-macos.mjs",
     "build:keyboard-layout-macos": "node config/scripts/native-build/macos/build-keyboard-layout-macos.mjs",
     "build:process-footprint-macos": "node config/scripts/native-build/macos/build-process-footprint-macos.mjs",
     "build:socket-owner-macos": "node config/scripts/native-build/macos/build-socket-owner-macos.mjs",

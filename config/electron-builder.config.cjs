@@ -601,6 +601,7 @@ module.exports = {
         context.packager
       )
       await signMacComputerUseHelper(join(resourcesDir, 'Orca Computer Use.app'), context.packager)
+      await signMacOptionalCompanionApp(join(resourcesDir, 'Orca Inbox.app'), context.packager)
       await signMacStandaloneHelper(
         join(resourcesDir, '..', 'MacOS', 'orca-notification-status'),
         'orca-notification-status',
@@ -734,6 +735,14 @@ module.exports = {
         from: 'native/computer-use-macos/.build/release/Orca Computer Use.app',
         to: 'Orca Computer Use.app'
       },
+      ...(existsSync(resolve(__dirname, '../native/orca-inbox-macos/.build/release/Orca Inbox.app'))
+        ? [
+            {
+              from: 'native/orca-inbox-macos/.build/release/Orca Inbox.app',
+              to: 'Orca Inbox.app'
+            }
+          ]
+        : []),
       featureWallResources
     ],
     // macOS 26 UNUserNotificationCenter aborts helpers launched from Resources; execute from Contents/MacOS (#7929).
@@ -928,6 +937,33 @@ async function signMacComputerUseHelper(helperAppPath, packager) {
   // the outer Orca.app is sealed so production builds preserve that identity.
   execFileSync('codesign', codesignArgs(identity, helperAppPath), { stdio: 'inherit' })
   execFileSync('codesign', ['--verify', '--deep', '--strict', helperAppPath], {
+    stdio: 'inherit'
+  })
+}
+
+async function signMacOptionalCompanionApp(companionAppPath, packager) {
+  if (!existsSync(companionAppPath)) {
+    return
+  }
+  const codeSigningInfo =
+    isMacRelease && process.env.CSC_LINK && packager?.codeSigningInfo?.value
+      ? await packager.codeSigningInfo.value
+      : null
+  const identity =
+    process.env.ORCA_COMPUTER_MACOS_SIGN_IDENTITY ??
+    process.env.CSC_NAME ??
+    findInstalledMacSigningIdentity(codeSigningInfo?.keychainFile) ??
+    (isMacRelease ? null : '-')
+  if (!identity) {
+    throw new Error(`Missing signing identity for ${companionAppPath}`)
+  }
+  const args = ['--force', '--deep', '--sign', identity]
+  if (isMacRelease) {
+    args.push('--options', 'runtime', '--timestamp')
+  }
+  args.push(companionAppPath)
+  execFileSync('codesign', args, { stdio: 'inherit' })
+  execFileSync('codesign', ['--verify', '--deep', '--strict', companionAppPath], {
     stdio: 'inherit'
   })
 }

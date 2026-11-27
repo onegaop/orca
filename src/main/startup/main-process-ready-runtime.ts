@@ -111,6 +111,21 @@ function startThemeAndSpeech(store: Store, fallbackMs: number): void {
       userDataPath: app.getPath('userData')
     })
   }, fallbackMs)
+  if (process.platform === 'darwin' && app.isPackaged) {
+    runAfterFirstWindowShown(() => {
+      void import('./macos-orca-inbox-sync')
+        .then(({ syncBundledOrcaInboxCompanion }) =>
+          syncBundledOrcaInboxCompanion({
+            homeDir: app.getPath('home'),
+            resourcesPath: process.resourcesPath,
+            isPackaged: app.isPackaged
+          })
+        )
+        .catch((error: unknown) => {
+          console.warn('[orca-inbox] Could not sync bundled Orca Inbox companion:', error)
+        })
+    }, fallbackMs)
+  }
   nativeTheme.themeSource = store.getSettings().theme ?? 'system'
 }
 
