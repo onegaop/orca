@@ -36,7 +36,6 @@ import type { AgentSessionRecordStore } from './agent-session/records/agent-sess
 import { peekOpenedAgentSessionRecordStore } from './agent-session/records/agent-session-record-store-slot'
 import { createAgentLaunchRecordWarmupGate } from './construction/agent-launch-record-warmup-gate'
 import * as WorkspaceLayouts from './terminal/surface/workspace-layout-stream'
-import type { RemoteLayoutSnapshot } from '../../shared/remote-runtime/session-graph/remote-layout-snapshot'
 import { registerDetectedWorktreeScanInvalidation } from '../ipc/worktrees/listing/register-detected-worktree-scan-invalidation'
 import { WorkspaceReferenceQueries } from './runtime-workspace-reference-queries'
 import { registerWorktreeCatalogRoutes } from './workspaces/catalog/worktree-catalog-live-route'
@@ -343,8 +342,8 @@ class OrcaRuntimeService extends OrcaRuntimeWithRelayHostNotices {
   }
 
   /** Display-only copies of paired-server layouts. */
-  getRemoteLayoutSnapshots(): Record<string, RemoteLayoutSnapshot> {
-    return this.store?.getRemoteLayoutSnapshots?.() ?? {}
+  getRemoteLayoutSnapshots(environmentIds?: ReadonlySet<string>) {
+    return this.store?.getRemoteLayoutSnapshots?.(environmentIds) ?? {}
   }
 
   /** Return the already-open record store without waiting. */

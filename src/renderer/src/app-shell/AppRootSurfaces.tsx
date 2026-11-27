@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { RemoteServerUpdateSurface } from './root-surfaces/RemoteServerUpdateSurface'
 import { ModalBoundary, OverlayBoundary } from './root-surfaces/app-root-surface-boundaries'
 import { OnboardingLanguageLoading } from '../components/onboarding/OnboardingLanguageLoading'
 import { useLanguageReadiness } from '../i18n/language-readiness'
@@ -88,9 +89,6 @@ const SshPassphraseDialog = lazy(() =>
   import('../components/ssh-authentication/SshPassphraseDialog').then((module) => ({
     default: module.SshPassphraseDialog
   }))
-)
-const RemoteServerUpdateDialog = lazy(
-  () => import('../components/settings/runtime-environments/updates/RemoteServerUpdateDialog')
 )
 const ContextualTourOverlay = lazy(() =>
   import('../components/contextual-tours/ContextualTourOverlay').then((module) => ({
@@ -276,16 +274,16 @@ export const AppRootSurfaces = memo(function AppRootSurfaces(props: {
           </ModalBoundary>
         ) : null}
       </Suspense>
-      {persistedUIReady ? (
+      {persistedUIReady && (
         <Suspense fallback={null}>
           <SetupGuideTelemetryObserver />
         </Suspense>
-      ) : null}
-      {activeContextualTourId !== null ? (
+      )}
+      {activeContextualTourId !== null && (
         <Suspense fallback={null}>
           <ContextualTourOverlay />
         </Suspense>
-      ) : null}
+      )}
       {/* Wait for UI hydration so default visibility cannot flash a saved-hidden pet. */}
       {shouldRenderPetOverlay({ persistedUIReady, petEnabled, petVisible }) ? (
         <Suspense fallback={null}>
@@ -383,13 +381,13 @@ export const AppRootSurfaces = memo(function AppRootSurfaces(props: {
             document.body
           )
         : null}
-      {voiceEnabled || dictationState !== 'idle' ? (
+      {(voiceEnabled || dictationState !== 'idle') && (
         <Suspense fallback={null}>
           <OverlayBoundary boundaryId="overlay.dictation" resetKey={activeView}>
             <DictationController />
           </OverlayBoundary>
         </Suspense>
-      ) : null}
+      )}
       <OverlayBoundary boundaryId="overlay.recent-tab-switcher" resetKey={activeView}>
         <RecentTabSwitcher />
       </OverlayBoundary>
@@ -398,11 +396,7 @@ export const AppRootSurfaces = memo(function AppRootSurfaces(props: {
       <OverlayBoundary boundaryId="overlay.skill-freshness-update-dialog">
         <SkillFreshnessUpdateDialogHost />
       </OverlayBoundary>
-      <Suspense fallback={null}>
-        <OverlayBoundary boundaryId="overlay.remote-server-update-dialog">
-          <RemoteServerUpdateDialog />
-        </OverlayBoundary>
-      </Suspense>
+      <RemoteServerUpdateSurface />
     </>
   )
 })

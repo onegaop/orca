@@ -1,4 +1,4 @@
-import { Fragment, useMemo, type ComponentType, type JSX } from 'react'
+import { Fragment, type ComponentType, type JSX } from 'react'
 import { useAppStore } from '@/store'
 import {
   DropdownMenuItem,
@@ -11,9 +11,6 @@ import {
   DropdownMenuSubTrigger
 } from '@/components/ui/dropdown-menu'
 import { OptionChoiceSubmenu } from './OptionChoiceSubmenu'
-import { countActiveWorkspaceFilters } from '../../../../../../shared/workspace-view/workspace-row-filters'
-import { useShallow } from 'zustand/react/shallow'
-import { selectSidebarFilterState, sidebarWorkspaceRowFilters } from './sidebar-filter-actions'
 import SidebarRepositoryFilterSection from './SidebarRepositoryFilterSection'
 import { WorkspaceFilterOptionRow } from './workspace-filter-option-row'
 import {
@@ -37,7 +34,6 @@ import {
 import { useTranslate } from '@/i18n/use-translate'
 import { SidebarGroupByToggle } from './SidebarGroupByToggle'
 import { HideBotCreatedFilterRow } from '@/components/bots/HideBotCreatedFilterRow'
-import { withoutHiddenRepos } from '../../../../../../shared/project/catalog/hidden-projects'
 import { selectDrawsNewWorktreeCards } from '@/store/appearance/worktree-card-style'
 import { selectDefaultProjectBadgeStyle } from '@/components/repo/RepoMark'
 import {
@@ -46,27 +42,6 @@ import {
   readCardStyleChoice,
   type CardStyleChoice
 } from './card-style-choice'
-
-export function useWorkspaceOptionsFilterBadge(): {
-  hasAnyFilter: boolean
-  activeFilterCount: number
-} {
-  const filterState = useAppStore(useShallow(selectSidebarFilterState))
-  const repos = useAppStore((s) => s.repos)
-  const activeFilterCount = useMemo(
-    () =>
-      countActiveWorkspaceFilters(
-        sidebarWorkspaceRowFilters(filterState),
-        // A filter id with no listed copy filters nothing, so it does not count.
-        withoutHiddenRepos(repos).map((repo) => repo.id)
-      ),
-    [filterState, repos]
-  )
-  return {
-    hasAnyFilter: activeFilterCount > 0,
-    activeFilterCount
-  }
-}
 
 type OptionItemProps = {
   preserveWorkspaceBoardOpen: boolean
