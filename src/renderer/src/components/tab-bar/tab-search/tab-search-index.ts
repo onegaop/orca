@@ -1,4 +1,8 @@
 import type { AppState } from '@/store/types'
+import {
+  selectFolderWorkspaces,
+  selectWorktreesByRepo
+} from '@/store/workspaces/catalog/workspace-record-fields'
 import { buildSearchableBrowserPages } from '@/lib/browser/palette/browser-palette-page-entries'
 import type { SearchableBrowserPage } from '@/lib/browser/palette/browser-palette-search'
 import { buildSearchableSimulatorTabs } from '@/lib/simulator/search/simulator-palette-search'
@@ -66,12 +70,12 @@ function collectLastFocusedAt(state: AppState): Map<string, number> {
 /** Built when the popup opens (and after a close from the list), never while it is closed. */
 export function buildTabSearchIndex(state: AppState): TabSearchIndex {
   const worktreesByRepo = withoutHiddenVmWorktreesByRepo(
-    state.worktreesByRepo,
+    selectWorktreesByRepo(state),
     readHiddenVmCheckouts()
   )
   const workspaces = buildPaletteWorkspaces({
     worktreesByRepo,
-    folderWorkspaces: state.folderWorkspaces,
+    folderWorkspaces: selectFolderWorkspaces(state),
     repos: state.repos,
     projectGroups: state.projectGroups
   })
