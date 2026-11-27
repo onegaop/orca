@@ -8,6 +8,8 @@ struct ProjectSectionView: View {
     let referenceNow: Date
     let onCopySessionID: (String) -> Void
     let onOpenOrca: () -> Void
+    let environment: String
+    let onOpenSession: (AgentRow) -> Void
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceTransparency) private var systemReduceTransparency
@@ -23,7 +25,9 @@ struct ProjectSectionView: View {
                         workspace: workspace,
                         referenceNow: referenceNow,
                         onCopySessionID: onCopySessionID,
-                        onOpenOrca: onOpenOrca
+                        onOpenOrca: onOpenOrca,
+                        environment: environment,
+                        onOpenSession: onOpenSession
                     )
                 }
             }
@@ -114,6 +118,8 @@ struct WorkspaceGroupView: View {
     let referenceNow: Date
     let onCopySessionID: (String) -> Void
     let onOpenOrca: () -> Void
+    let environment: String
+    let onOpenSession: (AgentRow) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -144,7 +150,9 @@ struct WorkspaceGroupView: View {
                         row: row,
                         referenceNow: referenceNow,
                         onCopySessionID: onCopySessionID,
-                        onOpenOrca: onOpenOrca
+                        onOpenOrca: onOpenOrca,
+                        environment: environment,
+                        onOpenSession: onOpenSession
                     )
                 }
             }
@@ -157,6 +165,8 @@ struct AgentTaskRowView: View {
     let referenceNow: Date
     let onCopySessionID: (String) -> Void
     let onOpenOrca: () -> Void
+    let environment: String
+    let onOpenSession: (AgentRow) -> Void
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceTransparency) private var systemReduceTransparency
@@ -165,7 +175,32 @@ struct AgentTaskRowView: View {
 
     private var isBlocked: Bool { row.stateKind == .blocked }
 
+    private var canOpenSession: Bool { SessionDestination.url(for: row, environment: environment) != nil }
+
     var body: some View {
+        Group {
+            if canOpenSession {
+                Button { onOpenSession(row) } label: { rowContent }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("打开会话，\(accessibilityText)")
+            } else {
+                rowContent
+                    .accessibilityLabel("\(accessibilityText)，缺少完整会话标识，无法直接定位")
+            }
+        }
+        .help(tooltipText)
+        .contextMenu {
+            if canOpenSession {
+                Button("打开此会话") { onOpenSession(row) }
+            }
+            if let id = row.orcaSessionId {
+                Button("复制 Orca 会话 ID") { onCopySessionID(id) }
+            }
+            Button("打开 Orca") { onOpenOrca() }
+        }
+    }
+
+    private var rowContent: some View {
         HStack(alignment: .center, spacing: 0) {
             // Leading status icon aligned on the unified row rail.
             Image(systemName: row.stateKind.symbolName)
@@ -183,7 +218,12 @@ struct AgentTaskRowView: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
 
-                if let agent = row.subtitleAgent {
+                if !canOpenSession {
+                    Text("缺少完整会话标识 · 可右键打开 Orca")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                } else if let agent = row.subtitleAgent {
                     Text(agent)
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
@@ -216,7 +256,7 @@ struct AgentTaskRowView: View {
         .frame(minHeight: 38)
         .overlay(alignment: .leading) {
             if isBlocked {
-                // Structural urgency rail for blocked items — no glass card, no clickable affordance.
+                // Structural urgency rail for blocked items.
                 Capsule()
                     .fill(InboxPalette.blockedFill(colorScheme: colorScheme))
                     .frame(width: 3, height: 24)
@@ -225,23 +265,11 @@ struct AgentTaskRowView: View {
             }
         }
         .contentShape(Rectangle())
-        .help(tooltipText)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilityText)
-        .contextMenu {
-            if let id = row.orcaSessionId {
-                Button("复制 Orca 会话 ID") {
-                    onCopySessionID(id)
-                }
-            }
-            Button("打开 Orca") {
-                onOpenOrca()
-            }
-        }
     }
 
     private var tooltipText: String {
-        var parts = [row.label, "状态：\(row.stateLabel)"]
+        var parts = [row.label, "状态：\(row.stateLabel)", canOpenSession ? "点击打开此会话" : "缺少完整会话标识，无法直接定位"]
         if let agent = row.subtitleAgent {
             parts.append("Agent：\(agent)")
         }

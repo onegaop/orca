@@ -57,10 +57,12 @@ enum Live {
         return data
     }
 
-    static func fetchHosts() -> [HostTarget] {
-        guard let data = try? runCLI(["host", "list", "--json"], timeoutSeconds: 5) else {
-            return [.local]
-        }
+    static func fetchHosts() throws -> [HostTarget] {
+        let data = try runCLI(["host", "list", "--json"], timeoutSeconds: 5)
+        guard let envelope = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              envelope["ok"] as? Bool == true,
+              let result = envelope["result"] as? [String: Any],
+              result["hosts"] is [[String: Any]] else { throw InboxFailure.unreadable }
         return decodeHosts(data)
     }
 

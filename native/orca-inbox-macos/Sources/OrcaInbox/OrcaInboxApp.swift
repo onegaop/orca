@@ -9,7 +9,7 @@ struct OrcaInboxApp: App {
     init() {
         if CommandLine.arguments.contains("--check-live") {
             do {
-                let hosts = Live.fetchHosts()
+                let hosts = try Live.fetchHosts()
                 let envIndex = CommandLine.arguments.firstIndex(of: "--environment")
                 let env = envIndex.flatMap { CommandLine.arguments.indices.contains($0 + 1) ? CommandLine.arguments[$0 + 1] : nil } ?? "local"
                 let snapshot = try Live.fetch(environment: env)
@@ -22,125 +22,51 @@ struct OrcaInboxApp: App {
         }
     }
 
+    @State private var store = InboxStore(
+        fetchHosts: { try await Task.detached(priority: .utility) { try Live.fetchHosts() }.value },
+        fetchSnapshot: { target in
+            try await Task.detached(priority: .utility) { try Live.fetch(environment: target) }.value
+        }
+    )
+
     var body: some Scene {
         MenuBarExtra {
-            InboxWindow()
+            InboxWindow(store: store)
         } label: {
-            Label("Orca 任务收件箱", systemImage: "tray")
+            TimelineView(.periodic(from: .now, by: 15)) { context in
+                let status = InboxMenuStatus(state: store.panelState(at: context.date))
+                Label(status.text, systemImage: status.symbolName)
+                    .monospacedDigit()
+                    .help(status.description)
+                    .accessibilityLabel("Orca 任务收件箱 · \(status.description)")
+            }
+            .task { await store.runPolling() }
         }
         .menuBarExtraStyle(.window)
     }
 }
 
 @MainActor
-@Observable
-private final class InboxStore {
-    private static let selectedHostKey = "orcaInbox.selectedHostId"
-
-    var hosts: [HostTarget] = [.local]
-    var selectedHost: HostTarget = .local
-    var snapshot: Snapshot?
-    var updated: Date?
-    var problem: String?
-    var refreshing = false
-
-    private var snapshotsByHost: [String: (snapshot: Snapshot, updated: Date)] = [:]
-    private var requestToken = 0
-
-    init() {
-        if let saved = UserDefaults.standard.string(forKey: Self.selectedHostKey), !saved.isEmpty {
-            if saved != "local" {
-                selectedHost = HostTarget(id: saved, name: saved, isLocal: false)
-            }
-        }
-    }
-
-    func selectHost(_ host: HostTarget) {
-        guard host.id != selectedHost.id else { return }
-        selectedHost = host
-        UserDefaults.standard.set(host.id, forKey: Self.selectedHostKey)
-        if let cached = snapshotsByHost[host.id] {
-            snapshot = cached.snapshot
-            updated = cached.updated
-        } else {
-            snapshot = nil
-            updated = nil
-        }
-        problem = nil
-        Task { await refresh(force: true) }
-    }
-
-    func refresh(force: Bool = false) async {
-        if refreshing && !force { return }
-        requestToken += 1
-        let token = requestToken
-        refreshing = true
-        defer {
-            if token == requestToken {
-                refreshing = false
-            }
-        }
-
-        let discovered = await Task.detached(priority: .utility) { Live.fetchHosts() }.value
-        guard token == requestToken else { return }
-        hosts = discovered
-        if let matched = discovered.first(where: { $0.id == selectedHost.id }) {
-            selectedHost = matched
-        } else {
-            selectedHost = discovered.first ?? .local
-            UserDefaults.standard.set(selectedHost.id, forKey: Self.selectedHostKey)
-        }
-
-        let targetId = selectedHost.id
-        do {
-            let fetched = try await Task.detached(priority: .utility) {
-                try Live.fetch(environment: targetId)
-            }.value
-            guard token == requestToken, targetId == selectedHost.id else { return }
-            let now = Date.now
-            snapshotsByHost[targetId] = (fetched, now)
-            snapshot = fetched
-            updated = now
-            problem = nil
-        } catch {
-            guard token == requestToken, targetId == selectedHost.id else { return }
-            problem = error.localizedDescription
-        }
-    }
-}
-
-@MainActor
 private struct InboxWindow: View {
-    @State private var store = InboxStore()
+    let store: InboxStore
     @State private var bucket: Bucket = .attention
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 60)) { context in
+        TimelineView(.periodic(from: .now, by: 15)) { context in
+            let state = store.panelState(at: context.date)
             InboxPanelView(
-                state: InboxPanelState(
-                    snapshot: store.snapshot,
-                    updated: store.updated,
-                    problem: store.problem,
-                    refreshing: store.refreshing,
-                    referenceDate: context.date,
-                    hosts: store.hosts,
-                    selectedHost: store.selectedHost
-                ),
+                state: state,
                 bucket: $bucket,
-                onRefresh: { Task { await store.refresh() } },
+                onRefresh: { store.requestRefresh() },
                 onSelectHost: { store.selectHost($0) },
-                onOpenOrca: openOrca,
+                onOpenOrca: { Task { await openOrca() } },
+                onOpenSession: { row in Task { await openSession(row, environment: state.selectedHost.id) } },
                 onCopySessionID: copySessionID,
                 onQuit: { NSApplication.shared.terminate(nil) }
             )
         }
-        .task {
-            // Read only while the popover is open, stop periodic polling after it closes.
-            while !Task.isCancelled {
-                await store.refresh()
-                do { try await Task.sleep(for: .seconds(15)) } catch { break }
-            }
-        }
+        .onAppear { store.setPanelOpen(true) }
+        .onDisappear { store.setPanelOpen(false) }
     }
 
     private func copySessionID(_ id: String) {
@@ -148,8 +74,31 @@ private struct InboxWindow: View {
         NSPasteboard.general.setString(id, forType: .string)
     }
 
-    private func openOrca() {
-        guard let url = Live.resolveAppURL() else { return }
-        NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+    private func openSession(_ row: AgentRow, environment: String) async {
+        guard let destination = SessionDestination.url(for: row, environment: environment) else {
+            store.actionProblem = "这条记录缺少完整会话标识。可右键复制会话 ID 或打开 Orca。"
+            return
+        }
+        await openOrca(destination: destination)
+    }
+
+    private func openOrca(destination: URL? = nil) async {
+        store.actionProblem = nil
+        guard let appURL = Live.resolveAppURL() else {
+            store.actionProblem = InboxFailure.missingCLI.localizedDescription
+            return
+        }
+        do {
+            let configuration = NSWorkspace.OpenConfiguration()
+            if let destination {
+                _ = try await NSWorkspace.shared.open(
+                    [destination], withApplicationAt: appURL, configuration: configuration
+                )
+            } else {
+                _ = try await NSWorkspace.shared.openApplication(at: appURL, configuration: configuration)
+            }
+        } catch {
+            store.actionProblem = "无法打开 Orca：\(error.localizedDescription)"
+        }
     }
 }

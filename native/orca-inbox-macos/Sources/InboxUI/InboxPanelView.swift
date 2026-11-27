@@ -8,6 +8,7 @@ public struct InboxPanelView: View {
     public let onRefresh: () -> Void
     public let onSelectHost: (HostTarget) -> Void
     public let onOpenOrca: () -> Void
+    public let onOpenSession: (AgentRow) -> Void
     public let onCopySessionID: (String) -> Void
     public let onQuit: () -> Void
 
@@ -22,6 +23,7 @@ public struct InboxPanelView: View {
         onRefresh: @escaping () -> Void,
         onSelectHost: @escaping (HostTarget) -> Void = { _ in },
         onOpenOrca: @escaping () -> Void,
+        onOpenSession: @escaping (AgentRow) -> Void = { _ in },
         onCopySessionID: @escaping (String) -> Void,
         onQuit: @escaping () -> Void
     ) {
@@ -30,6 +32,7 @@ public struct InboxPanelView: View {
         self.onRefresh = onRefresh
         self.onSelectHost = onSelectHost
         self.onOpenOrca = onOpenOrca
+        self.onOpenSession = onOpenSession
         self.onCopySessionID = onCopySessionID
         self.onQuit = onQuit
     }
@@ -46,6 +49,15 @@ public struct InboxPanelView: View {
                 .padding(.bottom, 10)
 
             Divider()
+
+            if let problem = state.actionProblem {
+                InlineNoticeBanner(
+                    tone: .warning, symbol: "exclamationmark.triangle", title: "无法打开会话或 Orca",
+                    detail: problem, helpText: nil, actionTitle: nil, actionDisabled: false, action: nil
+                )
+                .padding(.horizontal, InboxMetrics.horizontalPadding)
+                .padding(.top, 10)
+            }
 
             contentArea
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -202,12 +214,20 @@ public struct InboxPanelView: View {
                     )
                     .padding(.horizontal, InboxMetrics.horizontalPadding)
                     .padding(.top, 10)
+                } else if state.stale {
+                    InlineNoticeBanner(
+                        tone: .info, symbol: "clock.arrow.circlepath", title: "当前显示旧数据",
+                        detail: "正在确认当前主机的最新状态。", helpText: nil,
+                        actionTitle: nil, actionDisabled: false, action: nil
+                    )
+                    .padding(.horizontal, InboxMetrics.horizontalPadding)
+                    .padding(.top, 10)
                 } else if snapshot.truncated {
                     InlineNoticeBanner(
                         tone: .info,
                         symbol: "info.circle",
                         title: "仅显示部分任务",
-                        detail: "本机 Orca 返回了截断后的会话列表。",
+                        detail: "当前主机返回了截断后的会话列表。",
                         helpText: nil,
                         actionTitle: nil,
                         actionDisabled: false,
@@ -233,7 +253,9 @@ public struct InboxPanelView: View {
                                     bucket: bucket,
                                     referenceNow: state.effectiveNow,
                                     onCopySessionID: onCopySessionID,
-                                    onOpenOrca: onOpenOrca
+                                    onOpenOrca: onOpenOrca,
+                                    environment: state.selectedHost.id,
+                                    onOpenSession: onOpenSession
                                 )
                             }
                         }
@@ -261,7 +283,7 @@ public struct InboxPanelView: View {
                 showsProgress: true,
                 title: "正在读取任务",
                 description: "通过本机 Orca 读取当前会话状态。",
-                footnote: "仅在打开收件箱时刷新。",
+                footnote: "打开时立即刷新，关闭后每 60 秒更新菜单栏。",
                 primaryActionTitle: nil,
                 primaryActionDisabled: false,
                 primaryAction: nil
@@ -299,7 +321,7 @@ public struct InboxPanelView: View {
                 symbol: "checkmark.circle",
                 showsProgress: false,
                 title: "没有已完成的任务",
-                description: "本机 Orca 已报告完成的会话会显示在这里。",
+                description: "当前主机已报告完成的会话会显示在这里。",
                 footnote: otherSummary,
                 primaryActionTitle: nil,
                 primaryActionDisabled: false,

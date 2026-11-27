@@ -330,6 +330,8 @@ public struct InboxPanelState: Sendable {
     public var referenceDate: Date?
     public var hosts: [HostTarget]
     public var selectedHost: HostTarget
+    public var stale: Bool
+    public var actionProblem: String?
 
     public init(
         snapshot: Snapshot? = nil,
@@ -338,7 +340,9 @@ public struct InboxPanelState: Sendable {
         refreshing: Bool = false,
         referenceDate: Date? = nil,
         hosts: [HostTarget] = [.local],
-        selectedHost: HostTarget = .local
+        selectedHost: HostTarget = .local,
+        stale: Bool = false,
+        actionProblem: String? = nil
     ) {
         self.snapshot = snapshot
         self.updated = updated
@@ -347,6 +351,8 @@ public struct InboxPanelState: Sendable {
         self.referenceDate = referenceDate
         self.hosts = hosts.isEmpty ? [.local] : hosts
         self.selectedHost = selectedHost
+        self.stale = stale
+        self.actionProblem = actionProblem
     }
 
     public var isDisconnectedWithStaleData: Bool {
