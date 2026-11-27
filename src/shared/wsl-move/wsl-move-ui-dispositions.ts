@@ -122,6 +122,7 @@ export const UI_STATE_GLOBAL_FIELDS = [
   'agentsReadFilter',
   'agentsGroupBy',
   'uiZoomLevel',
+  'sidebarZoomLevel',
   'editorFontZoomLevel',
   'worktreeCardProperties',
   '_worktreeCardModeDefaulted',

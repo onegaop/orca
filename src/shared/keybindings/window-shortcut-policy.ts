@@ -2,6 +2,11 @@ import { getKeybindingDefinition } from './definitions'
 import { isKeybindingAllowedInTerminal, isKeybindingPotentialTerminalConflict } from './effective'
 import { keybindingMatchesAction, matchKeybindingDigitIndex } from './matching'
 import { matchesTabSearchChord } from './tab-search-chord'
+import {
+  resolveZoomShortcut,
+  zoomShortcutId,
+  type ZoomShortcutAction
+} from './zoom-shortcut-policy'
 import type {
   KeybindingActionId,
   KeybindingMatchOptions,
@@ -26,7 +31,7 @@ export type WindowShortcutInput = {
 }
 
 export type WindowShortcutAction =
-  | { type: 'zoom'; direction: 'in' | 'out' | 'reset' }
+  | ZoomShortcutAction
   | { type: 'openSettings' }
   | { type: 'forceReload' }
   | { type: 'toggleWorktreePalette' }
@@ -174,16 +179,9 @@ export function resolveWindowShortcutAction(
     return { type: 'toggleFloatingTerminal' }
   }
 
-  if (keybindingMatchesAction('zoom.in', input, platform, keybindings, options)) {
-    return { type: 'zoom', direction: 'in' }
-  }
-
-  if (keybindingMatchesAction('zoom.out', input, platform, keybindings, options)) {
-    return { type: 'zoom', direction: 'out' }
-  }
-
-  if (keybindingMatchesAction('zoom.reset', input, platform, keybindings, options)) {
-    return { type: 'zoom', direction: 'reset' }
+  const zoom = resolveZoomShortcut(input, platform, keybindings, options)
+  if (zoom) {
+    return zoom
   }
 
   if (keybindingMatchesAction('app.settings', input, platform, keybindings, options)) {
@@ -273,11 +271,7 @@ export function resolveWindowShortcutAction(
 export function getWindowShortcutActionId(action: WindowShortcutAction): KeybindingActionId | null {
   switch (action.type) {
     case 'zoom':
-      return action.direction === 'in'
-        ? 'zoom.in'
-        : action.direction === 'out'
-          ? 'zoom.out'
-          : 'zoom.reset'
+      return zoomShortcutId(action)
     case 'openSettings':
       return 'app.settings'
     case 'forceReload':
