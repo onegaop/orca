@@ -1,27 +1,31 @@
 import { useLayoutEffect, useState, type RefObject } from 'react'
 
-// A row's resting height: a one-line title over its model and age.
-export const WORKER_DOCK_ROW = 40
+// A row's resting height: one line of title and age.
+export const WORKER_DOCK_ROW = 32
 const MAX_ROWS = 6
 // Jump to latest (32px) and its 8px gap ride above the open panel, so the panel leaves them room.
 const JUMP_ROOM = 40
 const CRAMPED = 'data-worker-dock-cramped'
 
 /** The panel list's max height: six rows, or fewer when the chat above the dock is shorter, so the
- *  panel and the Jump to latest above it never run off the pane. Re-read when the pane, the dock
- *  under the panel (a growing message box lifts it) or the panel (a footer that appears) resizes. */
+ *  panel and the Jump to latest above it never run off the pane. Re-read when the pane or the dock
+ *  under the panel (a growing message box lifts it) resizes; the panel's own growth (every frame
+ *  of the morph) moves nothing this reads. */
 export function useWorkerDockCardBudget({
   root,
   pill,
   card,
   open,
-  rows
+  rows,
+  actions
 }: {
   root: RefObject<HTMLElement | null>
   pill: RefObject<HTMLElement | null>
   card: RefObject<HTMLElement | null>
   open: boolean
   rows: number
+  /** Whether the bulk-action row above the rows is drawn; it takes room from the list. */
+  actions: boolean
 }): number {
   const [budget, setBudget] = useState(WORKER_DOCK_ROW * MAX_ROWS)
   useLayoutEffect(() => {
@@ -33,14 +37,13 @@ export function useWorkerDockCardBudget({
       const paneTop = pane.getBoundingClientRect().top
       const bottom = card.current?.getBoundingClientRect().bottom
       const header = pill.current?.offsetHeight ?? 0
-      const footer = card.current?.querySelector<HTMLElement>('[data-worker-dock-footer]')
       if (bottom === undefined) {
         return
       }
-      // Besides the list: the panel's header, padding, gaps and border, then Jump to latest's room and 8px of air.
-      // The footer brings the panel's 4px gap and its own 4px top margin.
-      const room =
-        bottom - paneTop - header - 14 - (footer ? footer.offsetHeight + 8 : 0) - JUMP_ROOM - 8
+      const actions = card.current?.querySelector<HTMLElement>('[data-worker-dock-actions]')
+      // Besides the list: the chip row, the bulk actions above the rows, the list's top padding and
+      // the borders, then Jump to latest's room and 8px of air.
+      const room = bottom - paneTop - header - (actions?.offsetHeight ?? 0) - 7 - JUMP_ROOM - 8
       setBudget(Math.max(WORKER_DOCK_ROW, Math.min(WORKER_DOCK_ROW * MAX_ROWS, room)))
       // Too short for one row and Jump to latest even without the air: Jump steps aside while the card is open
       // (hidden, so nothing half off the pane can be pressed) and returns when it folds.
@@ -51,7 +54,7 @@ export function useWorkerDockCardBudget({
       return () => pane.removeAttribute(CRAMPED)
     }
     const observer = new ResizeObserver(measure)
-    for (const element of [pane, root.current?.closest('[data-native-chat-dock]'), card.current]) {
+    for (const element of [pane, root.current?.closest('[data-native-chat-dock]')]) {
       if (element) {
         observer.observe(element)
       }
@@ -60,6 +63,6 @@ export function useWorkerDockCardBudget({
       observer.disconnect()
       pane.removeAttribute(CRAMPED)
     }
-  }, [root, pill, card, open, rows])
+  }, [root, pill, card, open, rows, actions])
   return budget
 }

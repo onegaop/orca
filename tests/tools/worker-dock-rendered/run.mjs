@@ -3,6 +3,7 @@
 // `node tests/tools/worker-dock-rendered/run.mjs [baseUrl] [shotDir]`. Exits non-zero on a failure.
 import {
   card,
+  chip,
   createFixtureSession,
   events,
   expanded,
@@ -14,6 +15,8 @@ import {
 } from './fixture-session.mjs'
 import { runLoadingAndLayerChecks } from './loading-and-layer-checks.mjs'
 import { runChipNameChecks } from './chip-name-checks.mjs'
+import { runMorphChecks } from './morph-checks.mjs'
+import { runLayerPlacementChecks } from './layer-placement-checks.mjs'
 import { mkdirSync } from 'node:fs'
 import path from 'node:path'
 
@@ -121,6 +124,8 @@ await check('opens and folds after a held gesture that ended outside the card', 
 
 await runChipNameChecks({ check, scene, assert })
 
+await runMorphChecks({ check, scene, assert })
+
 await check('a worker waiting on you leads the pill and the card, then failed, running, done', () =>
   scene('askOpen720', {}, async (page) => {
     const order = (await rows(page)).map((row) => row.state)
@@ -144,14 +149,14 @@ await check('a worker waiting on you leads the pill and the card, then failed, r
 
 await check('updates the pill count live as workers start and finish', () =>
   scene('fourOpen720', {}, async (page) => {
-    const name = async () =>
-      ((await toggle(page).textContent()) ?? '').replace(/^Workers\s*(\d+)$/, '$1 workers')
+    // The count is the chip text's end: "5 workers", or "1 needs you · 5 workers".
+    const name = async () => (await toggle(page).textContent()) ?? ''
     await page.evaluate(() => window.__workerDockHarness.start('Fresh worker'))
     await page.waitForTimeout(150)
-    assert((await name()).startsWith('5 workers'), `after start: ${await name()}`)
+    assert((await name()).endsWith('5 workers'), `after start: ${await name()}`)
     await page.evaluate(() => window.__workerDockHarness.finish('dock:3'))
     await page.waitForTimeout(150)
-    assert((await name()).startsWith('4 workers'), `after finish: ${await name()}`)
+    assert((await name()).endsWith('4 workers'), `after finish: ${await name()}`)
     assert((await rows(page)).length === 4, 'row list did not follow')
   })
 )
@@ -168,7 +173,7 @@ for (const [width, sceneName] of [
       () =>
         scene(sceneName, { width, height }, async (page) => {
           const first = await scrollState(page)
-          assert(first.client <= 6 * 40 + 1, `list is ${first.client}px, more than six rows`)
+          assert(first.client <= 6 * 32 + 1, `list is ${first.client}px, more than six rows`)
           assert(first.height > first.client, `nothing to scroll: ${JSON.stringify(first)}`)
           const box = await region(page).boundingBox()
           await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
@@ -190,8 +195,11 @@ for (const [width, sceneName] of [
             toggle(page).boundingBox(),
             page.locator('[data-fixture-composer]').boundingBox()
           ])
-          // The header is the chip, opened in place: on top of the panel, which ends 8px above the message box.
-          assert(Math.abs(pillBox.y - cardBox.y - 5) <= 1, 'the header is not the panel top')
+          // The chip stays in place as the panel's bottom row; the panel ends 8px above the message box.
+          assert(
+            Math.abs(pillBox.y + pillBox.height - (cardBox.y + cardBox.height - 1)) <= 1,
+            'the chip is not the panel bottom'
+          )
           assert(cardBox.y >= 0, 'card runs off the top of the pane')
           const gap = composer.y - (cardBox.y + cardBox.height)
           assert(gap >= 8, `panel sits ${gap}px above the message box`)
@@ -207,30 +215,32 @@ for (const [width, sceneName] of [
 }
 
 await check(
-  'Up and Down move between rows, End reaches the last, Up past the first lands on the header',
+  'Up from the chip reaches the last row, Home and End jump, Down past the last returns to the chip',
   () =>
     scene('twentyOpen720', {}, async (page) => {
       await toggle(page).focus()
-      await page.keyboard.press('ArrowDown')
+      await page.keyboard.press('ArrowUp')
       const ids = (await rows(page)).map((row) => row.id)
-      assert((await focusedRow(page)) === ids[0], 'Down from the pill did not reach the first row')
+      await page.waitForTimeout(100)
+      assert((await focusedRow(page)) === ids.at(-1), 'Up from the chip did not reach the last row')
+      const end = await scrollState(page)
+      assert(end.top + end.client >= end.height - 1, 'the last row is not scrolled into view')
+      await page.keyboard.press('Home')
+      assert((await focusedRow(page)) === ids[0], 'Home did not reach the first row')
       await page.keyboard.press('ArrowDown')
       assert((await focusedRow(page)) === ids[1], 'Down did not move to the next row')
       await page.keyboard.press('ArrowUp')
       assert((await focusedRow(page)) === ids[0], 'Up did not move back')
+      await page.keyboard.press('ArrowUp')
+      assert((await focusedRow(page)) === ids[0], 'Up past the first row left it')
       await page.keyboard.press('End')
       await page.waitForTimeout(100)
       assert((await focusedRow(page)) === ids.at(-1), 'End did not reach the last row')
-      const end = await scrollState(page)
-      assert(end.top + end.client >= end.height - 1, 'the last row is not scrolled into view')
       await page.keyboard.press('ArrowDown')
-      assert((await focusedRow(page)) === ids.at(-1), 'Down past the last row left it')
-      await page.keyboard.press('Home')
-      await page.keyboard.press('ArrowUp')
-      const onPill = await page.evaluate(() =>
+      const onChip = await page.evaluate(() =>
         document.activeElement?.hasAttribute('data-worker-dock-pill')
       )
-      assert(onPill, 'Up past the first row did not land on the header')
+      assert(onChip, 'Down past the last row did not land on the chip')
     })
 )
 
@@ -293,7 +303,7 @@ await check('hover shows Stop over the row end; it does not show at rest', () =>
   })
 )
 
-await check('the open panel replaces the chip, spans the message box, and titles are not cut', () =>
+await check('the open panel grows from the chip, spans the message box, one line per row', () =>
   scene('threeOpen720', {}, async (page) => {
     const [box, composer] = await Promise.all([
       card(page).boundingBox(),
@@ -302,19 +312,21 @@ await check('the open panel replaces the chip, spans the message box, and titles
     assert(Math.abs(box.width - composer.width) <= 1, `panel is ${box.width}px wide`)
     assert((await page.locator('[data-worker-dock-pill]').count()) === 1, 'a second pill shows')
     const header = await toggle(page).boundingBox()
-    assert(header.y >= box.y && header.y + header.height <= box.y + 40, 'header is not on top')
+    assert(header.y + header.height >= box.y + box.height - 2, 'the chip is not the bottom row')
     await page.mouse.move(1, 1)
-    // Every title shows whole: none is clamped short of its own height or narrower than its row.
-    const cut = await page.evaluate(() =>
-      [...document.querySelectorAll('[data-worker-dock-open] .line-clamp-3')].some((title) => {
-        const row = title.closest('[data-worker-dock-row]').getBoundingClientRect()
+    // Every row is one 32px line, and its title takes the row's room beside the age.
+    const bad = await page.evaluate(() =>
+      [...document.querySelectorAll('[data-worker-dock-row]')].some((row) => {
+        const title = row.querySelector('[data-worker-dock-open] .truncate')
+        const rowBox = row.getBoundingClientRect()
         return (
-          title.scrollHeight > title.clientHeight + 1 ||
-          title.getBoundingClientRect().width < row.width / 2
+          Math.abs(rowBox.height - 32) > 1 ||
+          title.getClientRects().length !== 1 ||
+          title.getBoundingClientRect().width < rowBox.width / 2
         )
       })
     )
-    assert(!cut, 'a title is cut')
+    assert(!bad, 'a row wraps or its title is squeezed')
   })
 )
 
@@ -386,7 +398,7 @@ await check('X clears by keyboard (Enter)', () =>
   })
 )
 
-await check('Clear failed in the footer clears every failure', () =>
+await check('Clear failed above the rows clears every failure', () =>
   scene('twentyOpen720', {}, async (page) => {
     await page.getByRole('button', { name: /Clear all/ }).click()
     await page.waitForTimeout(300)
@@ -396,11 +408,12 @@ await check('Clear failed in the footer clears every failure', () =>
   })
 )
 
-await check('Stop all shows in the panel header only when it applies, and stops', () =>
+await check('Stop all shows above the rows only when it applies, and stops', () =>
   scene('stopAllOpen720', {}, async (page) => {
     const stop = page.getByRole('button', { name: 'Stop all' })
-    const [box, header] = await Promise.all([stop.boundingBox(), toggle(page).boundingBox()])
-    assert(Math.abs(box.y + box.height / 2 - (header.y + header.height / 2)) <= 1, 'not in header')
+    // Off the chip's row, so a press aimed at a chip opening under the pointer never stops anything.
+    const [box, list] = await Promise.all([stop.boundingBox(), region(page).boundingBox()])
+    assert(box.y + box.height <= list.y + 1, 'Stop all is not above the rows')
     await stop.click()
     assert(
       (await events(page)).some((event) => event.action === 'stop-all'),
@@ -409,7 +422,6 @@ await check('Stop all shows in the panel header only when it applies, and stops'
     await shot(page, 'header-stop-all')
     await open('fourOpen720', {})
     assert((await page.getByRole('button', { name: 'Stop all' }).count()) === 0, 'Stop all drawn')
-    assert((await page.locator('[data-worker-dock-footer]').count()) === 0, 'empty footer drawn')
   })
 )
 
@@ -509,10 +521,10 @@ await check('Jump to latest rests in the transcript, clear above the chip row', 
   scene('jumpFolded720', {}, async (page) => {
     const jump = page.getByRole('button', { name: 'Jump to latest' })
     await jump.waitFor()
-    const [a, b] = await Promise.all([jump.boundingBox(), toggle(page).boundingBox()])
+    const [a, b] = await Promise.all([jump.boundingBox(), chip(page).boundingBox()])
     const gap = b.y - (a.y + a.height)
     // Jump keeps its 12px rest in the transcript; the chip's row starts 8px below that.
-    assert(Math.abs(gap - 20) <= 1, `Jump to latest sits ${gap}px above the pill`)
+    assert(Math.abs(gap - 20) <= 1, `Jump to latest sits ${gap}px above the chip`)
     const transcript = await page.locator('[data-fixture-transcript]').boundingBox()
     assert(b.y >= transcript.y + transcript.height, 'the chip is drawn over the transcript')
     await shot(page, 'jump-stacked')
@@ -539,42 +551,20 @@ await check('at the end of the chat the last line clears the pill', () =>
   })
 )
 
-await check('a narrow pane keeps the chip to its count, inside the pane', () =>
+await check('a narrow pane keeps the chip to a short count, inside the pane', () =>
   scene('longFolded300', { width: 340 }, async (page) => {
     const title = await page.locator('[data-worker-dock-pill-title]').textContent()
-    assert(/^\d+ workers?$/.test(title ?? ''), `chip shows "${title}"`)
-    const box = await toggle(page).boundingBox()
+    assert(
+      /^\d+ (running|workers|needs you · \d+ workers)$/.test(title ?? ''),
+      `chip shows "${title}"`
+    )
+    const box = await chip(page).boundingBox()
     assert(box.x >= 0 && box.x + box.width <= 340, 'pill leaves the pane')
     await shot(page, 'narrow-300')
   })
 )
 
-for (const width of [720, 390, 320]) {
-  for (const theme of ['light', 'dark']) {
-    for (const layer of ['question', 'queue', 'both']) {
-      await check(`sits at the start just above the ${layer} (${width}px, ${theme})`, () =>
-        scene(`${layer}${width}`, { width: width + 40, height: 900, theme }, async (page) => {
-          const sibling =
-            layer === 'queue'
-              ? page.locator('[data-native-chat-queue] .rounded-lg').first()
-              : page.locator('[data-native-chat-question-card] [data-native-chat-dock-clip]')
-          const [a, b] = await Promise.all([toggle(page).boundingBox(), sibling.boundingBox()])
-          assert(a && b, 'pill or next card missing')
-          const gap = b.y - a.y - a.height
-          assert(Math.abs(gap - 8) <= 1, `gap is ${gap}px`)
-          assert(Math.abs(a.x - b.x) <= 1, 'pill does not start with the next card')
-          assert(
-            (await page.getByRole('button', { name: /Clear all/ }).count()) === 0,
-            'folded Clear all is visible'
-          )
-          await shot(page, `${layer}-${width}-${theme}`)
-          await toggle(page).click()
-          await page.getByRole('button', { name: /Clear all/ }).waitFor()
-        })
-      )
-    }
-  }
-}
+await runLayerPlacementChecks({ check, scene, assert, shot })
 
 for (const [width, sceneName] of [
   [430, 'twentyOpen390'],
@@ -598,10 +588,10 @@ for (const [width, sceneName] of [
 for (const chat of ['coordinator', 'bot']) {
   await check(`keeps the report without a Finished row in a ${chat} chat`, () =>
     scene(chat, { fixture: 'native-chat/tools/tasks/dock/WorkerDockCompletion' }, async (page) => {
-      await page.getByRole('button', { name: /1 worker/ }).waitFor()
+      await toggle(page).waitFor()
       await page.getByRole('button', { name: 'Complete fixture worker' }).click()
       await page.getByText('The worker verified the release notes.', { exact: true }).waitFor()
-      await page.getByRole('button', { name: /1 worker/ }).waitFor({ state: 'detached' })
+      await toggle(page).waitFor({ state: 'detached' })
       assert(
         (await page.locator('[data-native-chat-worker-result]').count()) === 0,
         'the transcript duplicated the report with a Finished row'

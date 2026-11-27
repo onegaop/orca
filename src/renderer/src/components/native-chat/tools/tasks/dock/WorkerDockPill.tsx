@@ -3,12 +3,11 @@ import {
   useEffect,
   useLayoutEffect,
   type KeyboardEvent,
-  type ReactNode,
+  type MouseEvent,
   type RefObject
 } from 'react'
 import { useLatestHandler } from '@/lib/use-latest-handler'
 import { cn } from '@/lib/class-names'
-import { ChevronUp } from 'lucide-react'
 import { WorkerDockGlyph } from './WorkerDockGlyph'
 import type { WorkerDockGlyph as Glyph } from './worker-dock-card-order'
 
@@ -23,7 +22,30 @@ export const WORKER_DOCK_FLOAT_CLASS =
 export const WORKER_DOCK_SURFACE_CLASS =
   'pointer-events-auto border border-border bg-chat-canvas bg-[linear-gradient(var(--color-chat-composer-surface),var(--color-chat-composer-surface))] text-foreground [[data-native-chat-dock-fit~=dock]_&]:static'
 
-/** The worker chip ("3 workers"); while the panel is open, the same button is the panel's header. */
+/** The chip's one dot: the worst state among the workers. Red needs you, the dot grid while
+ *  work runs, yellow waiting, green done; false (nothing could be read) is a grey ring. */
+function WorkerDockChipDot({ glyph }: { glyph: Glyph | false }) {
+  if (glyph === 'running') {
+    return <WorkerDockGlyph glyph="running" chip />
+  }
+  return (
+    <span aria-hidden="true" className="inline-flex size-3 shrink-0 items-center justify-center">
+      <span
+        className={cn(
+          'block size-2 rounded-full',
+          (glyph === 'ask' || glyph === 'failed') && 'bg-destructive',
+          glyph === 'queued' && 'bg-status-warning',
+          glyph === 'done' && 'bg-status-success',
+          glyph === false && 'border-[1.5px] border-muted-foreground'
+        )}
+      />
+    </span>
+  )
+}
+
+/** The worker chip ("3 running"); while the list is open above it, the same chip, still one button
+ *  with its text centered where it was, is the list's bottom row, so a press aimed at the chip as it
+ *  opens under the pointer lands on it. */
 export function WorkerDockPill({
   pill,
   glyph,
@@ -32,31 +54,28 @@ export function WorkerDockPill({
   total,
   expanded,
   listId,
-  action,
   onToggle,
   onKeyDown
 }: {
   pill: RefObject<HTMLButtonElement | null>
-  glyph: Glyph
-  /** The chip's text: how many workers, or what is known when none are listed. */
+  glyph: Glyph | false
+  /** The chip's text: the one worker's title, how many run or need you, or what is known. */
   label: string
   /** The most relevant worker's title, for assistive technology. */
   latest: string
   total: number
   expanded: boolean
   listId: string
-  /** Drawn at the end of the open panel's header, beside the toggle. */
-  action?: ReactNode
-  onToggle: () => void
+  onToggle: (event: MouseEvent<HTMLButtonElement>) => void
   onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void
 }) {
   const t = useTranslate()
-  // One wrapper either way, so the button keeps its place (and focus) as the chip becomes the header.
   return (
     <div
-      className={
-        expanded ? 'flex h-[30px] shrink-0 items-center gap-1 rounded-md bg-muted pr-1' : 'contents'
-      }
+      className={cn(
+        'flex h-6 shrink-0 items-center rounded-b-[inherit] border-t transition-colors duration-[280ms]',
+        expanded ? 'border-border' : 'border-transparent'
+      )}
     >
       <button
         ref={pill}
@@ -64,45 +83,23 @@ export function WorkerDockPill({
         data-worker-dock-pill=""
         aria-expanded={expanded}
         aria-controls={expanded ? listId : undefined}
-        // Open, the header's own text names it; folded, the name starts with the chip's text.
         aria-label={
-          expanded || total === 0
+          total <= 1
             ? undefined
             : t('components.native-chat.workerDock.chipLabel', '{{label}}, latest: {{title}}', {
                 label,
                 title: latest
               })
         }
-        className={cn(
-          'flex shrink-0 items-center gap-1.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-          expanded
-            ? 'h-full min-w-0 flex-1 rounded-md px-2.5 hover:bg-accent'
-            : cn(
-                WORKER_DOCK_SURFACE_CLASS,
-                'h-[26px] w-fit max-w-full self-start rounded-full px-2.5 shadow-sm hover:bg-accent'
-              )
-        )}
+        className="flex h-full min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[inherit] px-2.5 text-xs whitespace-nowrap hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
         onClick={onToggle}
         onKeyDown={onKeyDown}
       >
-        {expanded ? (
-          <>
-            <span className="font-medium">
-              {t('components.native-chat.workerDock.workersRegion', 'Workers')}
-            </span>
-            {total > 0 ? <span className="tabular-nums text-muted-foreground">{total}</span> : null}
-            <ChevronUp aria-hidden="true" className="size-3 shrink-0 text-muted-foreground" />
-          </>
-        ) : (
-          <>
-            <WorkerDockGlyph glyph={glyph} chip />
-            <span data-worker-dock-pill-title="" className="min-w-0 truncate">
-              {label}
-            </span>
-          </>
-        )}
+        <WorkerDockChipDot glyph={glyph} />
+        <span data-worker-dock-pill-title="" className="min-w-0 truncate">
+          {label}
+        </span>
       </button>
-      {expanded ? action : null}
     </div>
   )
 }
@@ -143,27 +140,57 @@ export function useWorkerDockOutsidePress(
   }, [root, open, fold])
 }
 
-/** While the panel is open, Jump to latest rests 8px above it instead of hiding behind it. */
-export function useWorkerDockJumpLift(card: RefObject<HTMLElement | null>, open: boolean): void {
+/** While the panel is open, and until it has folded, Jump to latest rests 8px above where the
+ *  panel ends up rather than hiding behind it. Read from the settled parts (borders, chip row and
+ *  the list's own height), and again only when a height changes, so the morph's frames, which
+ *  only change widths and the clipped track, cost nothing. */
+export function useWorkerDockJumpLift(
+  card: RefObject<HTMLElement | null>,
+  content: RefObject<HTMLElement | null>,
+  open: boolean
+): void {
   useLayoutEffect(() => {
     const element = card.current
+    const list = content.current
+    const chip = element?.lastElementChild
     const pane = element?.closest<HTMLElement>('[data-native-chat-root]')
     const dock = element?.closest<HTMLElement>('[data-native-chat-dock]')
-    if (!open || !element || !pane || !dock || typeof ResizeObserver === 'undefined') {
+    if (
+      !open ||
+      !element ||
+      !list ||
+      !(chip instanceof HTMLElement) ||
+      !pane ||
+      !dock ||
+      typeof ResizeObserver === 'undefined'
+    ) {
       return
     }
     // The transcript, where Jump rests, ends at the dock's top; the panel rises past it.
-    const lift = () =>
-      pane.style.setProperty(
-        JUMP_LIFT,
-        `${dock.getBoundingClientRect().top - element.getBoundingClientRect().top + 8}px`
-      )
-    const observer = new ResizeObserver(lift)
-    observer.observe(element)
+    const lift = () => {
+      const full =
+        element.offsetHeight - element.clientHeight + chip.offsetHeight + list.offsetHeight
+      const top = element.getBoundingClientRect().bottom - full
+      pane.style.setProperty(JUMP_LIFT, `${dock.getBoundingClientRect().top - top + 8}px`)
+    }
+    const heights = new Map<Element, number>()
+    const observer = new ResizeObserver((entries) => {
+      let changed = false
+      for (const entry of entries) {
+        const height = entry.borderBoxSize[0]?.blockSize ?? entry.contentRect.height
+        changed = changed || heights.get(entry.target) !== height
+        heights.set(entry.target, height)
+      }
+      if (changed) {
+        lift()
+      }
+    })
+    observer.observe(list)
+    observer.observe(dock)
     lift()
     return () => {
       observer.disconnect()
       pane.style.removeProperty(JUMP_LIFT)
     }
-  }, [card, open])
+  }, [card, content, open])
 }
