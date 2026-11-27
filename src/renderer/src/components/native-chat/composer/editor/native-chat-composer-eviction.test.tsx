@@ -32,7 +32,8 @@ it('preserves selection and undo when evicting an open chat and disposes them on
   )
   openNativeChatViewTabs([tab.tabId])
   const first = render(composer)
-  const editor = Reflect.get(first.getByRole('textbox'), 'editor')
+  const textbox = first.getByRole('textbox')
+  const editor = 'editor' in textbox ? textbox.editor : undefined
   if (!(editor instanceof Editor)) {
     throw new Error('Expected a mounted composer editor')
   }
