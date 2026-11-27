@@ -11,7 +11,7 @@ import { isGitRepoKind } from '../../../../../../shared/repository/repo-kind'
 import type { ProjectChatsRow } from '../../../../../../shared/sidebar-list/row-types'
 import type { Worktree } from '../../../../../../shared/worktree/types'
 import { getWorktreeHostIdentity } from '../../../../../../shared/worktree/host-qualified-identity'
-import { getTreeLane } from './project-frame'
+import { getTreeChildLane } from './project-frame'
 import { startGroupChat, startProjectChat } from './start-chat'
 import { getRepoHeaderCreateState } from './repo-header-create-state'
 import type { RepoHeaderProjectActions } from './repo-header-project-actions'
@@ -136,8 +136,7 @@ export const ProjectChatsLine = React.memo(function ProjectChatsLine({
   const t = useTranslate()
   // Memoized: subscribe so a language change still repaints its labels.
   useTranslation()
-  // A folder group's chats are a card one level in from the group.
-  const lane = getTreeLane('card', row.groupDepth + (row.section === 'group-chats' ? 1 : 0))
+  const lane = getTreeChildLane(row.groupDepth)
   return (
     <div
       // The group chats label opens its own card, so it needs a header's room above it.

@@ -40,7 +40,12 @@ import {
   RepoHeaderProjectActionsMenu
 } from './repo-header-project-actions'
 import { HeaderChevron, ProjectChatHeaderButton, ProjectSummary } from './project-header-parts'
-import { getTreeCardInset, ProjectFrameEdge, type ProjectFramePiece } from './project-frame'
+import {
+  getProjectTreeHeaderInset,
+  getTreeCardInset,
+  ProjectFrameEdge,
+  type ProjectFramePiece
+} from './project-frame'
 import {
   handleRepoHeaderCollapseAffordancePointerDown,
   shouldIgnoreRepoHeaderToggle,
@@ -125,8 +130,9 @@ export function renderWorktreeSectionHeaderRow(
   // Experimental project tree: a leading chevron, groups as section labels, a collapsed project's summary.
   const projectTree = ctx.projectTree === true && (isRepoHeader || isProjectGroupHeader)
   const treeGroup = projectTree && !row.repo
-  const headerPaddingLeft =
-    isRepoHeader || isProjectGroupHeader
+  const headerPaddingLeft = projectTree
+    ? getProjectTreeHeaderInset(row.projectGroupDepth ?? 0)
+    : isRepoHeader || isProjectGroupHeader
       ? getProjectGroupHeaderPaddingLeft(row.projectGroupDepth ?? 0)
       : WORKTREE_SECTION_HEADER_PADDING_LEFT
   // Tree: a project header keeps to its card, so hover, reveal and drag highlights match the card.
@@ -211,7 +217,8 @@ export function renderWorktreeSectionHeaderRow(
               ctx.pinDragOver &&
               'rounded-md bg-worktree-sidebar-accent ring-1 ring-worktree-sidebar-ring/40',
             row.repo && 'overflow-hidden',
-            cardInset && 'rounded-lg'
+            cardInset && 'rounded-lg hover:bg-worktree-sidebar-accent/60',
+            cardInset && args.projectFrame?.project?.current && 'bg-worktree-sidebar-accent/70'
           )}
           style={
             cardInset
