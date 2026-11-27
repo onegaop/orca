@@ -132,6 +132,8 @@ export const UiUpdateFields = lazyZodSchema(() =>
       activityBarBotOrder: z.array(z.string()).optional(),
       activityBarHidden: z.array(z.string()).optional(),
       markdownTocPanelWidth: z.number().finite().optional(),
+      verticalTabListWidth: z.number().finite().optional(),
+      verticalTabListCollapsed: z.boolean().optional(),
       combinedDiffFileTreeWidth: z.number().finite().optional(),
       groupBy: z.enum(['none', 'workspace-status', 'repo', 'pr-status']).optional(),
       showWorkspaceLineage: z.boolean().optional(),
