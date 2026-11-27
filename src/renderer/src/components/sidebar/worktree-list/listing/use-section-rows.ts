@@ -167,6 +167,7 @@ export function useSidebarSectionRows(args: SectionRowsArgs) {
         // Tree: a project's card holds all its worktrees, even ones spawned from another project.
         nestAcrossProjects: !projectChats,
         projectGroups: args.visibleProjectGroupsForRows,
+        repos: args.visibleReposForRows,
         placeholderRepoIds,
         importedWorktreesByRepo: args.importedWorktreesByRepo,
         newExternalWorktreesInboxByRepo: args.newExternalWorktreesInboxByRepo,
@@ -196,6 +197,7 @@ export function useSidebarSectionRows(args: SectionRowsArgs) {
       args.worktreeMap,
       args.projectGrouping,
       args.visibleProjectGroupsForRows,
+      args.visibleReposForRows,
       args.visibleFolderWorkspacesForRows,
       placeholderRepoIds,
       args.importedWorktreesByRepo,
