@@ -287,6 +287,7 @@ export default function TabGroupPanel({
       {tabStrip !== 'attached' ? null : (
         <div
           className="h-(--workspace-tab-row-height) shrink-0 border-b border-border bg-tab-bar"
+          data-glass-surface="tab-bar"
           data-tab-group-strip-id={groupId}
           data-terminal-focus-release-surface="true"
           data-worktree-id={worktreeId}

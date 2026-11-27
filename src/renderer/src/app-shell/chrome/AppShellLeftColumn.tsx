@@ -43,6 +43,7 @@ export function AppShellLeftColumn({
     listInColumn && shouldMount ? (
       <div
         key="titlebar-left"
+        data-glass-surface={isFloating ? 'titlebar' : 'worktree-sidebar'}
         // The floating header covers the center border; restore the seam and size to its own controls.
         className={
           railOn

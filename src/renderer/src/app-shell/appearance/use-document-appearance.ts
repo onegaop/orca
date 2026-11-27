@@ -7,6 +7,7 @@ import { useSplitDividerSetting } from '@/hooks/theme/use-split-divider-setting'
 import { rebuildAllTerminalWebglRenderers } from '@/lib/pane-manager/pane-manager-registry'
 import { applyThemeBackground } from './theme-background'
 import { syncThemeBackgroundVideo } from './theme-background-video'
+import { syncThemeGlass } from './theme-glass'
 import { usePrefersReducedMotion } from '../../hooks/theme/usePrefersReducedMotion'
 import { useWindowActive } from '../../lib/window-activity/use-window-active'
 import { tolerantPluginThemeBackgroundRegistration } from '../../../../shared/plugins/artifacts/plugin-theme-background'
@@ -123,6 +124,13 @@ export function useDocumentAppearance(): void {
       applyThemeBackground(paintsBackground ? themeBackground : null, surfaceOpacity)
     }
   }, [pluginThemesLoaded, paintsBackground, surfaceOpacity, themeBackground])
+
+  // Recheck contrast against the painted chrome colors when the theme changes.
+  useEffect(() => {
+    if (pluginThemesLoaded) {
+      syncThemeGlass(paintsBackground ? themeBackground : null)
+    }
+  }, [pluginThemesLoaded, paintsBackground, themeBackground, appTheme, ready, dark, sidebarTint])
 
   const reduceMotion = usePrefersReducedMotion()
   const video =

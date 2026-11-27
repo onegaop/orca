@@ -140,10 +140,6 @@ export const AppRootSurfaces = memo(function AppRootSurfaces(props: {
   const activeContextualTourId = useAppStore((s) => s.activeContextualTourId)
   const hasSshCredentialRequest = useAppStore((s) => s.sshCredentialQueue.length > 0)
 
-  const shouldMountUpdateCard = shouldMountUpdateCardForStatus(updateStatus)
-  const shouldMountDictationController = voiceEnabled || dictationState !== 'idle'
-  const renderPetOverlay = shouldRenderPetOverlay({ persistedUIReady, petEnabled, petVisible })
-
   return (
     <>
       {floatingWorkspace.shouldMountPanel ? (
@@ -168,7 +164,10 @@ export const AppRootSurfaces = memo(function AppRootSurfaces(props: {
       {statusBarVisible ? (
         <Suspense
           fallback={
-            <div className="h-6 min-h-[24px] shrink-0 border-t border-border bg-[var(--bg-titlebar,var(--card))]" />
+            <div
+              data-glass-surface="titlebar"
+              className="h-6 min-h-[24px] shrink-0 border-t border-border bg-[var(--bg-titlebar,var(--card))]"
+            />
           }
         >
           <OverlayBoundary
@@ -288,7 +287,7 @@ export const AppRootSurfaces = memo(function AppRootSurfaces(props: {
         </Suspense>
       ) : null}
       {/* Wait for UI hydration so default visibility cannot flash a saved-hidden pet. */}
-      {renderPetOverlay ? (
+      {shouldRenderPetOverlay({ persistedUIReady, petEnabled, petVisible }) ? (
         <Suspense fallback={null}>
           <OverlayBoundary boundaryId="overlay.pet" resetKey={petVisible}>
             <PetOverlay />
@@ -298,7 +297,7 @@ export const AppRootSurfaces = memo(function AppRootSurfaces(props: {
       <MacosUpdateRequirementHost />
       <AppNotificationCards
         activeView={activeView}
-        shouldMountUpdateCard={shouldMountUpdateCard}
+        shouldMountUpdateCard={shouldMountUpdateCardForStatus(updateStatus)}
         chatUiHereCornerCardOpen={onboardingGate.chatUiHereCornerCardOpen}
         onChatUiHereCornerCardClose={() => onboardingGate.setChatUiHereCornerCardOpen(false)}
       />
@@ -384,7 +383,7 @@ export const AppRootSurfaces = memo(function AppRootSurfaces(props: {
             document.body
           )
         : null}
-      {shouldMountDictationController ? (
+      {voiceEnabled || dictationState !== 'idle' ? (
         <Suspense fallback={null}>
           <OverlayBoundary boundaryId="overlay.dictation" resetKey={activeView}>
             <DictationController />

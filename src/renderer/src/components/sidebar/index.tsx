@@ -307,6 +307,7 @@ function Sidebar({
         <div
           ref={sidebarRef}
           data-sidebar-content-shell=""
+          data-glass-surface="worktree-sidebar"
           id={WORKSPACE_LIST_REGION_ID}
           className="relative min-h-0 flex-shrink-0 bg-worktree-sidebar flex flex-col overflow-hidden"
           style={leftSidebarStyle}
