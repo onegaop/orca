@@ -1,3 +1,4 @@
+import { extractExecError } from '../../git/command-runner/process-capture/exec-error'
 import { fetchAllGitLabPages } from '../requests/gitlab-paginated-list'
 import type { MRComment } from '../../../shared/gitlab/gitlab-types'
 import { viewerAuthorship } from '../../source-control/comment-viewer-authorship'
@@ -66,16 +67,30 @@ export async function fetchDiscussionComments(
   markViewer = true
 ): Promise<MRComment[]> {
   const resource = type === 'mr' ? 'merge_requests' : 'issues'
+  const itemPath = `projects/${encodedProject(projectRef.path)}/${resource}/${iid}`
   const hostArgs = glabHostnameArgs(projectRef, connectionId)
   const options = glabRepoExecOptions(repoPath, connectionId, localGitOptions)
   const [discussions, viewerUsername] = await Promise.all([
     fetchAllGitLabPages<GitLabRawDiscussion>(
       repoPath,
       projectRef,
-      `projects/${encodedProject(projectRef.path)}/${resource}/${iid}/discussions`,
+      `${itemPath}/discussions`,
       connectionId,
       localGitOptions
-    ),
+    ).catch(async (error: unknown): Promise<GitLabRawDiscussion[]> => {
+      if (!/\bHTTP 404\b/i.test(extractExecError(error).stderr)) {
+        throw error
+      }
+      // Older GitLab can expose flat MR notes without the discussions route.
+      const notes = await fetchAllGitLabPages<GitLabRawNote>(
+        repoPath,
+        projectRef,
+        `${itemPath}/notes`,
+        connectionId,
+        localGitOptions
+      )
+      return notes.map((note) => ({ notes: [note] }))
+    }),
     // Notes carry no authorship flag, so ask the reading account who it is.
     markViewer
       ? readGlabViewer(hostArgs, options).then(

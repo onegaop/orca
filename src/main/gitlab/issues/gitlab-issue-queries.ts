@@ -9,6 +9,7 @@ import { mapGitLabIssueInfo } from '../requests/gitlab-response-mapping'
 // prettier-ignore
 import { glabApiWithHeaders, acquire, release } from '../requests/glab-request-admission'
 import { glabExecFileAsync } from '../../git/command-runner/hosted-cli/glab-exec-file'
+import { extractExecError } from '../../git/command-runner/process-capture/exec-error'
 import { getIssueProjectRef, resolveIssueSource } from './gitlab-issue-source-resolution'
 import { classifyGlabError, classifyListFetchError } from '../requests/glab-error-classification'
 import { getGlabKnownHosts, type LocalGitExecOptions } from '../projects/gitlab-known-host-probe'
@@ -102,14 +103,23 @@ export async function listIssues(
   await acquire()
   try {
     const stateParam = state === 'all' ? '' : `&state=${state}`
-    const scopeParam = assignee === '@me' ? '&scope=assigned_to_me' : ''
-    const { body, headers } = await glabApiWithHeaders(
-      [
-        ...glabHostnameArgs(projectRef, connectionId),
-        `projects/${encodedProject(projectRef.path)}/issues?page=${currentPage}&per_page=${perPage}&order_by=updated_at&sort=desc${stateParam}${scopeParam}`
-      ],
-      glabRepoExecOptions(repoPath, connectionId, localGitOptions)
-    )
+    const hostArgs = glabHostnameArgs(projectRef, connectionId)
+    const options = glabRepoExecOptions(repoPath, connectionId, localGitOptions)
+    const path = `projects/${encodedProject(projectRef.path)}/issues?page=${currentPage}&per_page=${perPage}&order_by=updated_at&sort=desc${stateParam}`
+    const read = (scope: string) => glabApiWithHeaders([...hostArgs, path + scope], options)
+    const { body, headers } =
+      assignee === '@me'
+        ? await read('&scope=assigned_to_me').catch((error: unknown) => {
+            const { stdout, stderr } = extractExecError(error)
+            if (
+              !/\bHTTP 400\b/i.test(stderr) ||
+              !/scope does not have a valid value/i.test(stdout)
+            ) {
+              throw error
+            }
+            return read('&scope=assigned-to-me')
+          })
+        : await read('')
     const data = parseGlabJsonList<Record<string, unknown>>(body)
     const headerTotalCount = parseGlabPaginationHeader(headers['x-total'], 0)
     // Missing pagination headers may be proxy-stripped; a full page advertises one more probe.

@@ -36,18 +36,31 @@ function isSignedOutLookupFailure(err: unknown): boolean {
   )
 }
 
-async function involvementFilterParam(
-  involvement: GitLabMRInvolvement,
+async function readInvolvementViewerId(
   hostArgs: string[],
   options: Parameters<typeof glabExecFileAsync>[1]
-): Promise<string> {
+): Promise<number> {
   const { id: viewerId } = await readGlabViewer(hostArgs, options).catch((err: unknown) => {
     throw isSignedOutLookupFailure(err) ? new GitLabSignInRequiredError() : err
   })
   if (typeof viewerId !== 'number' || !Number.isSafeInteger(viewerId) || viewerId <= 0) {
     throw new Error('Could not identify the signed-in GitLab user.')
   }
-  return `&${INVOLVEMENT_PARAM[involvement]}=${viewerId}`
+  return viewerId
+}
+
+async function usesLegacyReviewAssignee(
+  hostArgs: string[],
+  options: Parameters<typeof glabExecFileAsync>[1]
+): Promise<boolean> {
+  try {
+    const { stdout } = await glabExecFileAsync(['api', ...hostArgs, 'version'], options)
+    const { version }: { version?: unknown } = JSON.parse(stdout)
+    const match = /^(\d+)\.(\d+)\./.exec(typeof version === 'string' ? version : '')
+    return !!match && (Number(match[1]) < 13 || (Number(match[1]) === 13 && Number(match[2]) < 7))
+  } catch {
+    return false
+  }
 }
 
 function mrListStateFlags(state: MRListState): string[] {
@@ -176,14 +189,23 @@ export async function listMergeRequests(
 
   await acquire()
   try {
-    const involvementParam = involvement
-      ? await involvementFilterParam(involvement, hostArgs, execOptions)
-      : ''
-    const { body, headers } = await glabApiWithHeaders(
-      [...hostArgs, `${path}${involvementParam}`],
-      execOptions
-    )
-    const data = parseGlabJsonList<Parameters<typeof mapMRToWorkItem>[0]>(body)
+    const viewerId = involvement ? await readInvolvementViewerId(hostArgs, execOptions) : null
+    const read = async (filter: string) => {
+      const { body, headers } = await glabApiWithHeaders([...hostArgs, path + filter], execOptions)
+      type RawMR = Parameters<typeof mapMRToWorkItem>[0] & { reviewers?: unknown }
+      return { data: parseGlabJsonList<RawMR>(body), headers }
+    }
+    let result = await read(involvement ? `&${INVOLVEMENT_PARAM[involvement]}=${viewerId}` : '')
+    // GitLab before 13.7 can silently ignore reviewer_id; use the legacy assignee.
+    if (
+      involvement === 'reviewing' &&
+      result.data.length > 0 &&
+      result.data.every((mr) => mr.reviewers === undefined) &&
+      (await usesLegacyReviewAssignee(hostArgs, execOptions))
+    ) {
+      result = await read(`&assignee_id=${viewerId}`)
+    }
+    const { data, headers } = result
     const headerTotalCount = parseGlabPaginationHeader(headers['x-total'], 0)
     // GitLab omits both totals past 10,000 rows and proxies can strip them; a full page advertises one more probe.
     const probedTotalPages = data.length < perPage ? page : page + 1

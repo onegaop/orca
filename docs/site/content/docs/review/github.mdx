@@ -54,6 +54,8 @@ Failed GitHub Actions checks show up as a red chip on the worktree. Click throug
 
 Orca surfaces a full GitHub Projects view under the **Tasks** sidebar entry — browse project cards across repos, filter by source repo, see draft pull request status, and create a worktree from any card.
 
+On older GitLab instances, Orca reads flat notes when the discussions API is unavailable. GitLab versions before 13.7 use the MR assignee for the **Reviewing** filter because they have no separate reviewer field.
+
 ## Troubleshooting
 
 If PR status, checks, or Tasks fail to refresh — rate limits, `gh` auth, permissions, or network — see **[Troubleshooting GitHub errors](/docs/github-errors)**.
