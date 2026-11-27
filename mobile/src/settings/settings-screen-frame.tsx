@@ -15,10 +15,12 @@ type SettingsNavBarProps = {
   onBack: () => void
   /** At most two NavBarButtons. */
   trailing?: ReactNode
+  /** Replaces the title, e.g. a title button that picks a computer. */
+  center?: ReactNode
 }
 
 /** A settings screen's top bar: Back, the centred title, and up to two buttons. */
-export function SettingsNavBar({ title, onBack, trailing }: SettingsNavBarProps) {
+export function SettingsNavBar({ title, onBack, trailing, center }: SettingsNavBarProps) {
   const t = useMobileTranslation()
   useMobileColorScheme()
   // The bar takes the grouped page's grey, so its buttons need the fill that reads on a grey sheet.
@@ -34,6 +36,7 @@ export function SettingsNavBar({ title, onBack, trailing }: SettingsNavBarProps)
           />
         }
         title={title}
+        center={center}
         trailing={trailing}
       />
     </NavBarButtonOnSheetContext.Provider>
@@ -120,6 +123,8 @@ export function SettingsNote({
   return (
     <Text
       accessibilityRole={alert || error ? 'alert' : undefined}
+      // Android announces newly shown text only through a live region.
+      accessibilityLiveRegion={alert || error ? 'polite' : undefined}
       style={[settingsScreenStyles.note, error && settingsScreenStyles.noteError]}
     >
       {children}
