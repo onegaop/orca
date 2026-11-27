@@ -14,6 +14,7 @@ import { isPathTitle } from './tabs/mobile-session-tab-rows'
 export function MobileSessionTitleBlock({
   title,
   forked = false,
+  sideChat,
   leading,
   subtitle,
   status,
@@ -25,6 +26,7 @@ export function MobileSessionTitleBlock({
   title: string
   /** The title names a forked chat, drawn after the fork mark. */
   forked?: boolean
+  sideChat?: boolean
   /** Before the title: the tab's mark, or a bot's avatar. */
   leading?: ReactNode
   subtitle: string
@@ -67,7 +69,7 @@ export function MobileSessionTitleBlock({
           {leading ? <View style={styles.leading}>{leading}</View> : null}
           {forked ? (
             <Text style={styles.title} numberOfLines={1}>
-              <MobileForkMarkedName name={title} />
+              <MobileForkMarkedName name={title} sideChat={sideChat} />
             </Text>
           ) : isPathTitle(title) ? (
             <View style={styles.pathTitle}>

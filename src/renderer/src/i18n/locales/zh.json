@@ -22091,6 +22091,20 @@
       "htmlView": "HTML 视图",
       "htmlViewCode": "代码",
       "htmlViewPreview": "预览",
+      "reply": {
+        "action": "回复",
+        "showOriginal": "显示原消息",
+        "originalUnavailable": "消息不可用",
+        "cancel": "取消回复",
+        "replyingToLabel": "正在回复 {{name}}",
+        "replyingToName": "正在回复 <name>{{name}}</name>",
+        "repliedTo": "回复了 {{name}}",
+        "repliedToYou": "回复了你的消息",
+        "agentFallback": "智能体",
+        "cancelled": "已取消回复",
+        "replyingToYouLabel": "正在回复你的消息",
+        "replyingToYouName": "正在回复<name>你的消息</name>"
+      },
       "notes": {
         "add": "添加",
         "addFirst": "请先添加或丢弃备注 {{number}}",
@@ -22163,7 +22177,12 @@
         "editedElsewhere": "这张图片正在别处编辑。请先在那里完成；你的备注仍在这里。",
         "removeWhileEditing": "请先在别处完成编辑。"
       },
-      "htmlViewPreviewWaiting": "此代码块完成后即可预览"
+      "htmlViewPreviewWaiting": "此代码块完成后即可预览",
+      "currentSideChat": {
+        "open": "新建侧聊",
+        "pane": "将侧聊集中到独立分栏",
+        "mark": "btw"
+      }
     },
     "tab": {
       "bar": {

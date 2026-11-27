@@ -104,16 +104,20 @@ export function MobileSessionHeader({
       />
     </>
   )
+  const sideChat = active?.tab.type === 'agent-session' && active.tab.sideChat
   // The tab is the title; with none open, the workspace is.
   const title = active ? (
     <MobileSessionTitleBlock
       title={active.title}
       forked={isForkedChatTab(active.tab)}
+      sideChat={sideChat}
       leading={<MobileSessionTabMark row={active} size={16} />}
       subtitle={connectionIssue ? terminalSummary : place}
       status={connectionIssue ? statusDot : null}
       accessibilityLabel={
-        isForkedChatTab(active.tab) ? mobileForkAccessibleName(active.title, t) : active.title
+        isForkedChatTab(active.tab)
+          ? mobileForkAccessibleName(active.title, t, sideChat)
+          : active.title
       }
       onPress={press(() => openSessionTabActionSheetAfterKeyboardDismiss(active.tab))}
       showConnectionRetry={showConnectionRetry}

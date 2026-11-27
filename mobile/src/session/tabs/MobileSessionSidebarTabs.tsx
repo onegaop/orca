@@ -147,13 +147,14 @@ export const MobileSessionSidebarTabs = memo(function MobileSessionSidebarTabs({
   const closeLabel = (title: string) =>
     t('session.tabsSheet.closeTab', 'Close {{title}}', { title })
 
-  const renderTab = (row: MobileSessionTabRow) =>
-    present(
+  const renderTab = (row: MobileSessionTabRow) => {
+    const sideChat = row.tab.type === 'agent-session' && row.tab.sideChat
+    return present(
       row.tab.id,
       row.tab.id,
       <SidebarRow
         accessibilityLabel={[
-          isForkedChatTab(row.tab) ? mobileForkAccessibleName(row.title, t) : row.title,
+          isForkedChatTab(row.tab) ? mobileForkAccessibleName(row.title, t, sideChat) : row.title,
           row.stateWord,
           row.group === 'needs-you' ? row.content : null,
           row.unread ? t('agents.list.unread', 'Unread') : null
@@ -170,7 +171,13 @@ export const MobileSessionSidebarTabs = memo(function MobileSessionSidebarTabs({
           mark={<MobileSessionTabMark row={row} size={SIDEBAR_MARK_SIZE - 2} />}
         />
         <SidebarRowText
-          title={isForkedChatTab(row.tab) ? <MobileForkMarkedName name={row.title} /> : row.title}
+          title={
+            isForkedChatTab(row.tab) ? (
+              <MobileForkMarkedName name={row.title} sideChat={sideChat} />
+            ) : (
+              row.title
+            )
+          }
           unread={row.unread}
         >
           {/* Only a waiting agent gets a second line: what it asks. */}
@@ -178,6 +185,7 @@ export const MobileSessionSidebarTabs = memo(function MobileSessionSidebarTabs({
         </SidebarRowText>
       </SidebarRow>
     )
+  }
 
   const renderSplit = (entry: Extract<Entry, { kind: 'split' }>) => {
     const { panes } = entry

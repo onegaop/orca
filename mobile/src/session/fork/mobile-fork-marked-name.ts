@@ -27,7 +27,10 @@ export function mobileForkMark(t: Translate): string {
 }
 
 /** What a screen reader hears for a forked chat's title. */
-export function mobileForkAccessibleName(name: string, t: Translate): string {
+export function mobileForkAccessibleName(name: string, t: Translate, sideChat?: boolean): string {
+  if (sideChat) {
+    return `${t('session.currentSideChat.mark', 'btw')} ${name}`
+  }
   return t('chat.fork.accessibleName', 'Fork: {{name}}', {
     name,
     interpolation: { escapeValue: false }

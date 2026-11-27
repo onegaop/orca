@@ -4,6 +4,13 @@ import {
   withNativeChatAttachmentNotes
 } from '../../media/notes/native-chat-attachment-notes'
 import {
+  readNativeChatReplyTarget,
+  nativeChatReplyCustody,
+  restoreNativeChatReplyTarget,
+  settleNativeChatReplySend
+} from '../reply/native-chat-reply-target'
+import { withNativeChatReplyContext } from '../reply/native-chat-reply-quote'
+import {
   hasNativeChatStagedFiles,
   captureNativeChatStagedInput
 } from '../../drafts/native-chat-draft-attachment-staging'
@@ -17,7 +24,6 @@ import {
   promptHasInteractionModeSkill,
   promptSkillRefs
 } from '../editor/native-chat-prompt-document'
-import type { StructuredAgentSessionAttachmentPreparation } from '../../session/structured/delivery/structured-agent-session-send-slot'
 import { useCallback } from 'react'
 import { completeNativeChatStructuredUserAction } from './native-chat-structured-user-action'
 import {
@@ -27,6 +33,7 @@ import {
 } from '../../../../../../shared/agent-session/view/structured-agent-session-composer'
 import type { AgentType } from '../../../../../../shared/agent-status/contracts/agent-status-types'
 import { dispatchNativeChatStructuredComposerText } from './native-chat-structured-composer-dispatch'
+import { trackNativeChatStructuredStoredText } from './native-chat-structured-stored-text'
 import type { NativeChatComposerSendIntent } from './native-chat-composer-send-intent'
 import type { NativeChatStructuredComposerTransport } from './native-chat-structured-composer-transport'
 import type { NativeChatComposerImageAttachment } from '../../attachments/chips/native-chat-image-attachment'
@@ -143,8 +150,14 @@ export function useNativeChatStructuredComposerSend({
       // A marked image's notes go with it, once; a command carries no attachments to note.
       const notedIds = hostCommand ? [] : attachments.map((attachment) => attachment.id)
       text = withNativeChatAttachmentNotes(text, draftScopeKey, notedIds)
+      // A reply is part of the message, quoted once here; commands never carry one.
+      const reply = hostCommand ? null : readNativeChatReplyTarget(draftScopeKey)
+      if (reply) {
+        text = withNativeChatReplyContext(text, reply, formatAgentTypeLabel(agent))
+      }
       const submission = captureNativeChatComposerSubmission(draftScopeKey)
       let consumed = false
+      let replyTakenAt: number | undefined
       let completeAddition = false
       submission.stopObserving = subscribeToNativeChatComposerDraftAppend(
         draftScopeKey,
@@ -168,6 +181,10 @@ export function useNativeChatStructuredComposerSend({
           return
         }
         consumed = true
+        // Custody only if this send really took its reply; one picked meanwhile stays the user's.
+        if (settleNativeChatReplySend(draftScopeKey, reply?.id) && reply) {
+          replyTakenAt = nativeChatReplyCustody(draftScopeKey)
+        }
         const left = nativeChatComposerDraftLeftAfterSend(
           readNativeChatComposerDraft(draftScopeKey),
           submitted
@@ -207,8 +224,14 @@ export function useNativeChatStructuredComposerSend({
           (!hostCommand || (current.text.trim() === '' && (current.images?.length ?? 0) === 0))
         )
       }
-      const prepareAttachments: StructuredAgentSessionAttachmentPreparation | undefined =
-        stagedInput ? (input) => stagedInput.prepare(input, structuredTransport) : undefined
+      // A refusal after the pending hand-off restores the draft; the reply it carried comes back with it.
+      const returnReply = () => {
+        if (reply && replyTakenAt !== undefined) {
+          restoreNativeChatReplyTarget(draftScopeKey, reply, replyTakenAt)
+        }
+      }
+      const stored = trackNativeChatStructuredStoredText(stagedInput, structuredTransport)
+      const prepareAttachments = stored.prepareAttachments
       return dispatchNativeChatStructuredComposerText(
         structuredTransport,
         text,
@@ -228,6 +251,7 @@ export function useNativeChatStructuredComposerSend({
           }
           if (!accepted) {
             finishNativeChatComposerSubmission(draftScopeKey, submission, recoversDraft())
+            returnReply()
             return false
           }
           transferred = true
@@ -239,10 +263,14 @@ export function useNativeChatStructuredComposerSend({
           consume()
           // Notes leave with their images only once the send is accepted; a refusal returns both.
           clearNativeChatAttachmentNotes(draftScopeKey, notedIds)
+          if (reply) {
+            stored.rememberReply(draftScopeKey, text, attachments, reply.messageId)
+          }
           return true
         })
         .catch((error) => {
           finishNativeChatComposerSubmission(draftScopeKey, submission, recoversDraft())
+          returnReply()
           if (hostCommand && !isCurrent()) {
             return false
           }

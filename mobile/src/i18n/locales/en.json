@@ -3272,6 +3272,10 @@
       "needsYou": "Needs you",
       "files": "Files",
       "otherWorkspaces": "Other workspaces"
+    },
+    "currentSideChat": {
+      "open": "New side chat",
+      "mark": "btw"
     }
   },
   "chat": {

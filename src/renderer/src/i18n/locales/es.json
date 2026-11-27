@@ -22302,6 +22302,20 @@
           "session": "Sesión"
         }
       },
+      "reply": {
+        "action": "Responder",
+        "showOriginal": "Mostrar el mensaje original",
+        "originalUnavailable": "Mensaje no disponible",
+        "cancel": "Cancelar respuesta",
+        "replyingToLabel": "Respondiendo a {{name}}",
+        "replyingToName": "Respondiendo a <name>{{name}}</name>",
+        "repliedTo": "Respuesta a {{name}}",
+        "repliedToYou": "Respuesta a tu mensaje",
+        "agentFallback": "Agente",
+        "cancelled": "Respuesta cancelada",
+        "replyingToYouLabel": "Respondiendo a tu mensaje",
+        "replyingToYouName": "Respondiendo a <name>tu mensaje</name>"
+      },
       "notes": {
         "add": "Añadir",
         "addFirst": "Añade o descarta primero la nota {{number}}",
@@ -22385,6 +22399,11 @@
         "alreadyAdded": "Estas notas ya se añadieron a tu mensaje desde otra ventana.",
         "editedElsewhere": "Esta imagen se está editando en otro lugar. Termina allí primero; tus notas siguen aquí.",
         "removeWhileEditing": "Termina primero la edición en otro lugar."
+      },
+      "currentSideChat": {
+        "open": "Nuevo chat paralelo",
+        "pane": "Agrupar chats paralelos en un panel separado",
+        "mark": "btw"
       }
     },
     "tab": {

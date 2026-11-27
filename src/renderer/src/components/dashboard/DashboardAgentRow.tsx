@@ -261,11 +261,12 @@ const DashboardAgentRow = React.memo(function DashboardAgentRow({
       onClick={handleActivate}
       className={cn(
         // Why: named group scopes the X-reveal to this row, not every row in the card.
-        'agent-disclosure-row group/agent-row relative -ml-2 flex flex-col py-1',
-        isLineageChild ? 'pl-5 pr-2' : 'px-2',
+        'agent-disclosure-row group/agent-row relative flex flex-col py-1',
+        isLineageChild && hideLineageConnectors
+          ? 'px-1.5'
+          : cn('-ml-2', isLineageChild ? 'pl-5 pr-2' : 'px-2'),
         // Why: hover wash stays softer than the enclosing card's highlight.
         'cursor-pointer rounded-sm worktree-agent-row-hover',
-        hasChildDisclosure && 'worktree-agent-lineage-parent-row',
         isLineageChild && 'worktree-agent-lineage-child-row',
         sendTargetStatus === 'sending' && 'cursor-progress opacity-75',
         sendTargetStatus === 'disabled' && 'cursor-default opacity-60'
@@ -386,7 +387,8 @@ const DashboardAgentRow = React.memo(function DashboardAgentRow({
       <DashboardAgentRowToolStep
         expanded={expanded}
         showsTool={showsTool}
-        reservesHeight={isWorking}
+        reservesHeight={isWorking && !(isLineageChild && hideLineageConnectors)}
+        indentClassName={isLineageChild && hideLineageConnectors ? 'pl-3.5' : undefined}
         toolName={toolName}
         toolInput={toolInput}
         statusLabel={
@@ -406,6 +408,8 @@ const DashboardAgentRow = React.memo(function DashboardAgentRow({
         isInterrupted={isInterrupted}
         stoppedByUser={agentMainAgentVerdict(agent.entry) === 'cancellation'}
         lastAssistantMessage={lastAssistantMessage}
+        indentClassName={isLineageChild && hideLineageConnectors ? 'pl-3.5' : undefined}
+        reserveEmptySlot={!(isLineageChild && hideLineageConnectors)}
       />
     </div>
   )

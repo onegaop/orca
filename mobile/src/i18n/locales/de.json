@@ -3686,6 +3686,10 @@
       "terminalTitle": "Terminal-Text",
       "pointsAndColumns": "{{points}} · {{count}} Spalten",
       "moreTerminal": "Weitere Terminal-Einstellungen"
+    },
+    "currentSideChat": {
+      "open": "Neuer Nebenchat",
+      "mark": "btw"
     }
   },
   "settings": {

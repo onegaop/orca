@@ -6,6 +6,7 @@ type DashboardAgentRowToolStepProps = {
   showsTool: boolean
   /** Hold the slot open while tool metadata is still in flight — see the empty branch below. */
   reservesHeight: boolean
+  indentClassName?: string
   toolName: string
   toolInput: string
   /** Said in the step's place: a person's Stop (`agentRowStoppingLabel`) or a program's block. */
@@ -16,6 +17,7 @@ export function DashboardAgentRowToolStep({
   expanded,
   showsTool,
   reservesHeight,
+  indentClassName = 'pl-5',
   toolName,
   toolInput,
   statusLabel = null
@@ -24,7 +26,10 @@ export function DashboardAgentRowToolStep({
     return (
       <div
         data-agent-row-tool-slot=""
-        className="mt-0.5 min-w-0 truncate pl-5 text-[10px] leading-snug text-muted-foreground/70"
+        className={cn(
+          'mt-0.5 min-w-0 truncate text-[10px] leading-snug text-muted-foreground/70',
+          indentClassName
+        )}
       >
         {statusLabel}
       </div>
@@ -37,7 +42,10 @@ export function DashboardAgentRowToolStep({
   return (
     <div
       data-agent-row-tool-slot=""
-      className="mt-0.5 min-w-0 pl-5 text-[10px] leading-snug text-muted-foreground/70"
+      className={cn(
+        'mt-0.5 min-w-0 text-[10px] leading-snug text-muted-foreground/70',
+        indentClassName
+      )}
     >
       {toolName ? (
         <>

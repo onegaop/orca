@@ -338,7 +338,6 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
           ? 'flex h-6 items-center gap-1.5 rounded-lg pl-1.5 pr-[7px] text-xs leading-4'
           : 'flex h-6 items-center gap-1 rounded-sm px-1 text-[11px] leading-none',
         'text-muted-foreground worktree-agent-row-hover',
-        hasChildDisclosure && 'worktree-agent-lineage-parent-row',
         isLineageChild && 'worktree-agent-lineage-child-row',
         showStateAccent && 'relative',
         highlighted && 'bg-worktree-sidebar-accent',

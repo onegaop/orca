@@ -20,6 +20,7 @@ import type { TabStripSegment } from './tab-strip-window'
 import ClientHostedBrowserTabRows from '../browser-tabs/ClientHostedBrowserTabRows'
 import type { Bot } from '../../../../../shared/bot-types'
 import type { BotGroup } from '../../../../../shared/bots/bot-group'
+import { SideChatPaneMark } from './SideChatPaneMark'
 import { PinnedHomeTabSlot } from './PinnedHomeTabSlot'
 import { TabBarNewTabMenu } from '../create-menu/TabBarNewTabMenu'
 import {
@@ -96,8 +97,14 @@ export function renderTabBarSurface(
       itemOffset
     })
 
+  const sideChatOnly = itemProjection.sideChatOnly && clientHostedBrowserRows.length === 0
   return (
-    <div ref={surfaceRef} className="flex items-stretch h-full overflow-hidden flex-1 min-w-0">
+    <div
+      ref={surfaceRef}
+      data-side-chat-only={sideChatOnly || undefined}
+      className="group/side-chat-pane flex items-stretch h-full overflow-hidden flex-1 min-w-0"
+    >
+      {sideChatOnly ? <SideChatPaneMark t={t} /> : null}
       {pinnedCount > 0 ? (
         <PinnedHomeTabSlot
           sortableIds={strip.pinnedSortableIds}

@@ -73,6 +73,7 @@ export type MobileSessionTab =
       | 'agent'
       | 'isActive'
       | 'forked'
+      | 'sideChat'
       | 'unread'
       | 'isPinned'
     > & {

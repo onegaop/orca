@@ -28,6 +28,7 @@ import { nativeChatRailJumpStep, useNativeChatHistoryJump } from './use-native-c
 import { useNativeChatRailJumpLanding } from './use-native-chat-rail-jump-landing'
 import { useNativeChatReadingPosition } from './use-native-chat-reading-position'
 import type { NativeChatTranscriptScroll } from '../scroll/native-chat-transcript-scroll-types'
+import { useNativeChatReplyNavigation } from './use-native-chat-reply-navigation'
 
 type NavigationRequest =
   | { kind: 'diff'; target: NativeChatDiffReveal }
@@ -280,6 +281,20 @@ export function useNativeChatNavigation({
     beginNavigation()
     scrollToBottom()
   }, [beginNavigation, scrollToBottom])
+  const revealReplyMessage = useCallback(
+    (messageId: string) => {
+      beginNavigation()
+      readerLeavesEnd()
+      issue({ kind: 'rail', messageId, requestId: nextRequestId() })
+    },
+    [beginNavigation, issue, nextRequestId, readerLeavesEnd]
+  )
+  useNativeChatReplyNavigation({
+    scrollRef,
+    slots,
+    subagent: subagentId !== null,
+    onReveal: revealReplyMessage
+  })
   useNativeChatRailJumpLanding({
     railJump: request.railJump,
     slots,

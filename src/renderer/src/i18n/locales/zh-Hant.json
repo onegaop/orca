@@ -22471,6 +22471,20 @@
           "session": "工作階段"
         }
       },
+      "reply": {
+        "action": "回覆",
+        "showOriginal": "顯示原始訊息",
+        "originalUnavailable": "訊息無法使用",
+        "cancel": "取消回覆",
+        "replyingToLabel": "正在回覆 {{name}}",
+        "replyingToName": "正在回覆 <name>{{name}}</name>",
+        "repliedTo": "已回覆 {{name}}",
+        "repliedToYou": "已回覆你的訊息",
+        "agentFallback": "代理程式",
+        "cancelled": "已取消回覆",
+        "replyingToYouLabel": "正在回覆你的訊息",
+        "replyingToYouName": "正在回覆<name>你的訊息</name>"
+      },
       "notes": {
         "add": "新增",
         "addFirst": "請先新增或捨棄備註 {{number}}",
@@ -22542,6 +22556,11 @@
         "alreadyAdded": "這些備註已從另一個視窗加入你的訊息。",
         "editedElsewhere": "這張圖片正在別處編輯。請先在那裡完成；你的備註仍在這裡。",
         "removeWhileEditing": "請先在別處完成編輯。"
+      },
+      "currentSideChat": {
+        "open": "新增側聊",
+        "pane": "將側聊集中到獨立分欄",
+        "mark": "btw"
       }
     },
     "tab": {

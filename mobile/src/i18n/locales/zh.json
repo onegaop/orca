@@ -3848,6 +3848,10 @@
       "needsYou": "需要你处理",
       "files": "文件",
       "otherWorkspaces": "其他工作区"
+    },
+    "currentSideChat": {
+      "open": "新建侧聊",
+      "mark": "btw"
     }
   },
   "settings": {

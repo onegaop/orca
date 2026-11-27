@@ -5,7 +5,10 @@ import {
 import { prepareCodexAdoption } from '../../../native-chat/conversation-adoption/codex-adoption-preparation'
 import { isAiVaultTitleAgent } from '../../../../shared/ai-vault/contracts/ai-vault-session-title'
 import { resolveLocalAiVaultSessionTitles } from '../../../ai-vault/session-titles/session-title-resolver'
-import type { StructuredAgentSessionResumeSource } from '../../../../shared/agent-session/lifecycle/operations/structured-agent-session-create'
+import type {
+  StructuredAgentSessionForkSource,
+  StructuredAgentSessionResumeSource
+} from '../../../../shared/agent-session/lifecycle/operations/structured-agent-session-create'
 import type { StructuredAgentCliSourceEvidence } from '../../../native-chat/conversation-adoption/structured-agent-cli-source'
 import type {
   AgentSessionProviderHandle,
@@ -35,7 +38,7 @@ export type StructuredAgentSessionCreateIntentInput = {
   worktree: string
   agent: StructuredAgentId
   callerKey?: string
-  forkFrom?: { sessionId: string; throughItemId: string }
+  forkFrom?: StructuredAgentSessionForkSource
   resumeFrom?: StructuredAgentSessionResumeSource
   structuredAgentCliSourceEvidence?: StructuredAgentCliSourceEvidence
 }
@@ -45,7 +48,7 @@ export function resolveCommittedStructuredAgentSessionAdoptionIntent(input: {
   envelope: { sessionId: string; clientOperationId: string }
   agent: StructuredAgentId
   callerKey?: string
-  forkFrom?: { sessionId: string; throughItemId: string }
+  forkFrom?: StructuredAgentSessionForkSource
   resumeFrom?: { providerSessionId: string }
   location: AgentSessionExecutionLocation
   options?: Readonly<Record<string, string>>
@@ -92,6 +95,7 @@ export function resolveCommittedStructuredAgentSessionAdoptionIntent(input: {
         ? { options: input.options }
         : {}),
     ...(replay.providerHandle ? { adopt: { providerHandle: replay.providerHandle } } : {}),
+    ...(replay.record.sideChat ? { sideChat: replay.record.sideChat } : {}),
     runtimeKind: 'native'
   }
 }

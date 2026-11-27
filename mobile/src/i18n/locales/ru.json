@@ -3980,6 +3980,10 @@
     },
     "tabMenu": {
       "closeTab": "Закрыть вкладку"
+    },
+    "currentSideChat": {
+      "open": "Новый параллельный чат",
+      "mark": "btw"
     }
   },
   "settings": {

@@ -107,8 +107,8 @@ export function IdleChildAgentGroupRow({
       draggable={false}
       className={cn(
         'worktree-agent-row-hover',
-        'flex h-6 min-w-0 items-center gap-1 rounded-sm text-left text-[11px] leading-none',
-        layout === 'full' ? '-ml-1 w-[calc(100%+0.25rem)] pl-1 pr-2' : 'w-full px-1',
+        'flex h-6 min-w-0 items-center gap-1.5 rounded-sm text-left text-[11px] leading-none',
+        layout === 'full' ? 'w-full px-1.5' : 'w-full px-1',
         // Group header is meta, not an agent: use the trail tone so it doesn't read as a row name.
         'text-muted-foreground/65 tabular-nums focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-worktree-sidebar-ring'
       )}

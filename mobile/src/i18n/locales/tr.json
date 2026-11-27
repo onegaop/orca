@@ -3951,6 +3951,10 @@
       "needsYou": "Sizi bekliyor",
       "files": "Dosyalar",
       "otherWorkspaces": "Diğer çalışma alanları"
+    },
+    "currentSideChat": {
+      "open": "Yeni yan sohbet",
+      "mark": "btw"
     }
   },
   "settings": {

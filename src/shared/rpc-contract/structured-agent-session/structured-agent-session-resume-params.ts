@@ -20,7 +20,12 @@ export const ResumeSource = lazyZodSchema(() =>
 
 /** Native-history fork: the host resolves the provider cut from the source chat's own transcript. */
 export const ForkSource = lazyZodSchema(() =>
-  z.object({ sessionId: SessionId, throughItemId: Identifier('Invalid fork item id') }).strict()
+  z.union([
+    z.object({ sessionId: SessionId, throughItemId: Identifier('Invalid fork item id') }).strict(),
+    z
+      .object({ sessionId: SessionId, current: z.literal(true), permission: z.literal('inherit') })
+      .strict()
+  ])
 )
 
 /** A chat starts fresh, resumes a provider conversation, or forks a native chat. */

@@ -336,7 +336,7 @@ const AgentBranch = React.memo(function AgentBranch({
             <div className="worktree-agent-lineage-children flex flex-col gap-0.5">{childList}</div>
           </CompactAgentExpansion>
         ) : expanded ? (
-          <div className="worktree-agent-lineage-children">{childList}</div>
+          <div className="worktree-agent-lineage-children flex flex-col gap-0.5">{childList}</div>
         ) : null
       ) : null}
     </div>

@@ -3679,6 +3679,10 @@
       "terminalTitle": "ターミナルのテキスト",
       "pointsAndColumns": "{{points}} · {{count}} 列",
       "moreTerminal": "その他のターミナル設定"
+    },
+    "currentSideChat": {
+      "open": "新しいサイドチャット",
+      "mark": "btw"
     }
   },
   "settings": {

@@ -40,7 +40,7 @@ import { useTerminalTabActivity } from './use-terminal-tab-activity'
 import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from '@/lib/overlay-interaction/close-all-context-menus'
 
 import { useNativeChatNamingFailure } from '../session-actions/use-native-chat-naming-failure'
-import { ForkMarkedName } from '../../native-chat/fork/ForkMarkedName'
+import { ChatTabMarkedName } from './ChatTabMarkedName'
 import { BOT_HOME_TAB_LABEL_CLASSES, BotHomeTabAccent } from '../../bots/home-chat/BotHomeTabAccent'
 
 import {
@@ -77,6 +77,7 @@ export default function SortableTab(props: SortableTabProps): React.JSX.Element 
     canPin = true,
     isBotHome = false,
     canContinueInTerminal = true,
+    sideChat,
     identityIcon,
     identityDetail,
     unread = false,
@@ -187,7 +188,8 @@ export default function SortableTab(props: SortableTabProps): React.JSX.Element 
   const slotProps = useTabStripSlotProps(tab.id, isActive, sizing)
   const orientation = useTabStripOrientation()
   const tabTitle = tab.customTitle ?? tab.title
-  const titleNode = fork ? <ForkMarkedName name={displayTitle} narrowIcon /> : displayTitle
+  const titleNode =
+    fork || sideChat ? <ChatTabMarkedName name={displayTitle} sideChat={sideChat} /> : displayTitle
   const tabRoot = (
     <div
       ref={setNodeRef}
@@ -204,7 +206,7 @@ export default function SortableTab(props: SortableTabProps): React.JSX.Element 
       {...attributes}
       aria-selected={orientation === 'vertical' ? isActive : undefined}
       {...dragListeners}
-      className={`${fork ? '@container/tab ' : ''}w-full group relative flex items-center h-full px-1.5 text-xs cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none ${getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder, orientation })} ${getDropIndicatorClasses(dropIndicator ?? null, orientation)} ${getTabRootStateClasses(isActive, orientation)}`}
+      className={`${fork || sideChat ? '@container/tab ' : ''}w-full group relative flex items-center h-full px-1.5 text-xs cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none ${getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder, orientation })} ${getDropIndicatorClasses(dropIndicator ?? null, orientation)} ${getTabRootStateClasses(isActive, orientation)}`}
       onDoubleClick={(e) => {
         if (isEditing) {
           return

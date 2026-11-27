@@ -22616,6 +22616,20 @@
           "session": "Session"
         }
       },
+      "reply": {
+        "action": "Répondre",
+        "showOriginal": "Afficher le message d’origine",
+        "originalUnavailable": "Message indisponible",
+        "cancel": "Annuler la réponse",
+        "replyingToLabel": "Réponse à {{name}}",
+        "replyingToName": "Réponse à <name>{{name}}</name>",
+        "repliedTo": "Réponse à {{name}}",
+        "repliedToYou": "Réponse à votre message",
+        "agentFallback": "Agent",
+        "cancelled": "Réponse annulée",
+        "replyingToYouLabel": "Réponse à votre message",
+        "replyingToYouName": "Réponse à <name>votre message</name>"
+      },
       "notes": {
         "add": "Ajouter",
         "addFirst": "Ajoutez ou supprimez d’abord la note {{number}}",
@@ -22699,6 +22713,11 @@
         "alreadyAdded": "Ces notes ont déjà été ajoutées à votre message depuis une autre fenêtre.",
         "editedElsewhere": "Cette image est en cours de modification ailleurs. Terminez d’abord là-bas ; vos notes sont toujours ici.",
         "removeWhileEditing": "Terminez d’abord la modification ailleurs."
+      },
+      "currentSideChat": {
+        "open": "Nouveau chat parallèle",
+        "pane": "Regrouper les chats parallèles dans un volet séparé",
+        "mark": "btw"
       }
     },
     "tab": {

@@ -24191,6 +24191,20 @@
           "session": "Sessão"
         }
       },
+      "reply": {
+        "action": "Responder",
+        "showOriginal": "Mostrar a mensagem original",
+        "originalUnavailable": "Mensagem indisponível",
+        "cancel": "Cancelar resposta",
+        "replyingToLabel": "Respondendo a {{name}}",
+        "replyingToName": "Respondendo a <name>{{name}}</name>",
+        "repliedTo": "Resposta a {{name}}",
+        "repliedToYou": "Resposta à sua mensagem",
+        "agentFallback": "Agente",
+        "cancelled": "Resposta cancelada",
+        "replyingToYouLabel": "Respondendo à sua mensagem",
+        "replyingToYouName": "Respondendo à <name>sua mensagem</name>"
+      },
       "notes": {
         "add": "Adicionar",
         "addFirst": "Adicione ou descarte a nota {{number}} primeiro",
@@ -24300,7 +24314,12 @@
         "reviewChanges_other": "Revisar {{count}} mudanças",
         "reviewChanges_many": "Revisar {{count}} mudanças"
       },
-      "tookOver": "Assumiu {{workspace}}"
+      "tookOver": "Assumiu {{workspace}}",
+      "currentSideChat": {
+        "open": "Novo chat paralelo",
+        "pane": "Agrupar chats paralelos em um painel separado",
+        "mark": "btw"
+      }
     },
     "tab": {
       "bar": {

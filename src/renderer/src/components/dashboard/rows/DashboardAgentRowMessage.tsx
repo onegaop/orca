@@ -13,26 +13,34 @@ type DashboardAgentRowMessageProps = {
   /** Whether that request was the user's Stop; a newer send replacing the turn names no one. */
   stoppedByUser: boolean
   lastAssistantMessage: string
+  indentClassName?: string
+  reserveEmptySlot?: boolean
 }
 
 export function DashboardAgentRowMessage({
   expanded,
   isInterrupted,
   stoppedByUser,
-  lastAssistantMessage
+  lastAssistantMessage,
+  indentClassName = 'pl-5',
+  reserveEmptySlot = true
 }: DashboardAgentRowMessageProps): React.JSX.Element | null {
   const t = useTranslate()
   // Warm the sidebar’s only boot-visible markdown chunk on mount rather than waiting for text.
   useEffect(preloadCommentMarkdown, [])
   // Reserve the collapsed message slot so incoming/cleared assistant text cannot shift row height.
   if (!isInterrupted && !lastAssistantMessage) {
-    return expanded ? null : (
-      <div className="mt-0.5 pl-5 text-[10px] leading-snug text-muted-foreground/70"> </div>
+    return expanded || !reserveEmptySlot ? null : (
+      <div
+        className={cn('mt-0.5 text-[10px] leading-snug text-muted-foreground/70', indentClassName)}
+      >
+        {' '}
+      </div>
     )
   }
 
   return (
-    <div className="mt-0.5 flex min-w-0 items-start gap-1.5 pl-5">
+    <div className={cn('mt-0.5 flex min-w-0 items-start gap-1.5', indentClassName)}>
       {isInterrupted ? (
         <span
           className="shrink-0 text-[10px] leading-snug text-muted-foreground/80"

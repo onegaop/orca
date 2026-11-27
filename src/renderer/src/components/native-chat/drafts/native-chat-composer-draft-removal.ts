@@ -13,6 +13,7 @@ import {
 import { releaseNativeChatStagedFiles } from './native-chat-draft-attachment-staging'
 import { clearNativeChatAttachmentNotesWhere } from '../media/notes/native-chat-attachment-notes'
 import { clearNativeChatHeldNotesWhere } from '../media/notes/native-chat-held-notes'
+import { clearNativeChatReplyTargetsWhere } from '../composer/reply/native-chat-reply-target'
 import type {
   StoredNativeChatComposerDraft,
   NativeChatComposerDraftOwner
@@ -29,6 +30,14 @@ export function deleteNativeChatComposerDraftsWhere(
     !keepsMovedNativeChatDraftNotes(scope) && matches(scope, records.get(scope))
   clearNativeChatAttachmentNotesWhere(notesGo)
   clearNativeChatHeldNotesWhere(notesGo)
+  // A reply belongs to its workspace through its own owner too, whether or not its draft names one.
+  clearNativeChatReplyTargetsWhere((scope, owner) => {
+    const record = records.get(scope)
+    return matches(
+      scope,
+      owner && !record?.owner ? { text: '', images: [], savedAt: 0, ...record, owner } : record
+    )
+  })
   for (const scope of new Set([...records.keys(), ...scopeListeners.keys()])) {
     const draft = records.get(scope)
     if (matches(scope, draft)) {

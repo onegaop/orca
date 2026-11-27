@@ -3679,6 +3679,10 @@
       "terminalTitle": "終端機文字",
       "pointsAndColumns": "{{points}} · {{count}} 欄",
       "moreTerminal": "更多終端機設定"
+    },
+    "currentSideChat": {
+      "open": "新增側聊",
+      "mark": "btw"
     }
   },
   "settings": {

@@ -3796,6 +3796,10 @@
       "terminalTitle": "Texte du terminal",
       "pointsAndColumns": "{{points}} · {{count}} colonnes",
       "moreTerminal": "Autres paramètres du terminal"
+    },
+    "currentSideChat": {
+      "open": "Nouveau chat parallèle",
+      "mark": "btw"
     }
   },
   "settings": {

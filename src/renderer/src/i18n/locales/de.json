@@ -22773,6 +22773,20 @@
           "session": "Sitzung"
         }
       },
+      "reply": {
+        "action": "Antworten",
+        "showOriginal": "Ursprüngliche Nachricht anzeigen",
+        "originalUnavailable": "Nachricht nicht verfügbar",
+        "cancel": "Antwort abbrechen",
+        "replyingToLabel": "Antwort an {{name}}",
+        "replyingToName": "Antwort an <name>{{name}}</name>",
+        "repliedTo": "Antwort an {{name}}",
+        "repliedToYou": "Antwort auf deine Nachricht",
+        "agentFallback": "Agent",
+        "cancelled": "Antwort abgebrochen",
+        "replyingToYouLabel": "Antwort auf deine Nachricht",
+        "replyingToYouName": "Antwort auf <name>deine Nachricht</name>"
+      },
       "notes": {
         "add": "Hinzufügen",
         "addFirst": "Notiz {{number}} erst hinzufügen oder verwerfen",
@@ -22850,6 +22864,11 @@
         "alreadyAdded": "Diese Notizen wurden bereits aus einem anderen Fenster zu deiner Nachricht hinzugefügt.",
         "editedElsewhere": "Dieses Bild wird an anderer Stelle bearbeitet. Schließe es dort zuerst ab; deine Notizen sind noch hier.",
         "removeWhileEditing": "Bearbeite es zuerst anderswo fertig."
+      },
+      "currentSideChat": {
+        "open": "Neuer Nebenchat",
+        "pane": "Nebenchats in einem separaten Bereich gruppieren",
+        "mark": "btw"
       }
     },
     "tab": {

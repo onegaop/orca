@@ -1,6 +1,8 @@
 import { ChevronLeft, ChevronRight, Copy, Download, MessageSquare, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { hasMacTrafficLights } from '@/app-shell/chrome/app-window-chrome'
 import { cn } from '@/lib/class-names'
+import { useAppStore } from '@/store/index'
 import { Button } from '@/components/ui/button'
 import { ShortcutKeyCombo } from '@/components/ui/ShortcutKeyCombo'
 import { isMacPlatform } from '@/components/native-chat/pane/routing/native-chat-shortcut'
@@ -52,6 +54,8 @@ export function NativeChatMediaViewerChrome({
   onClose: () => void
 }): React.JSX.Element {
   const t = useTranslate()
+  const isFullScreen = useAppStore((s) => s.isFullScreen)
+  const showTrafficLightPad = hasMacTrafficLights && !isFullScreen
   const copy = async (): Promise<void> => {
     if (!src) {
       return
@@ -75,7 +79,14 @@ export function NativeChatMediaViewerChrome({
     }
   }
   return (
-    <div className="absolute inset-x-0 top-0 z-20 flex h-13 items-center gap-2 pr-3 pl-4">
+    <div
+      className={cn(
+        'absolute inset-x-0 top-0 z-20 flex h-13 items-center gap-2 pr-[calc(0.75rem+var(--window-controls-width,0px))]',
+        showTrafficLightPad ? 'pl-0' : 'pl-4'
+      )}
+    >
+      {/* Keep the title clear of native macOS traffic lights when not in full screen. */}
+      {showTrafficLightPad ? <div className="titlebar-traffic-light-pad" aria-hidden /> : null}
       <div
         className="min-w-0 flex-1 truncate text-xs text-media-canvas-foreground/80"
         title={title}

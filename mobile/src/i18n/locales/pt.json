@@ -3802,6 +3802,10 @@
       "terminalTitle": "Texto do terminal",
       "pointsAndColumns": "{{points}} · {{count}} colunas",
       "moreTerminal": "Mais configurações do terminal"
+    },
+    "currentSideChat": {
+      "open": "Novo chat paralelo",
+      "mark": "btw"
     }
   },
   "settings": {

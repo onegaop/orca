@@ -3688,6 +3688,10 @@
       "terminalTitle": "터미널 텍스트",
       "pointsAndColumns": "{{points}} · {{count}}열",
       "moreTerminal": "터미널 설정 더 보기"
+    },
+    "currentSideChat": {
+      "open": "새 사이드 채팅",
+      "mark": "btw"
     }
   },
   "settings": {
