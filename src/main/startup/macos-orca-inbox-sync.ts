@@ -45,12 +45,35 @@ function isMacOs26OrNewer(release: string = os.release()): boolean {
   return Number.isFinite(major) && major >= MIN_DARWIN_MAJOR
 }
 
+async function isCompanionRunning(): Promise<boolean> {
+  return runProcess({
+    program: '/usr/bin/pgrep',
+    args: ['-x', COMPANION_EXECUTABLE],
+    stdio: 'ignore',
+    timeoutMs: 2_000
+  }).then(
+    (result) => result.code === 0,
+    () => false
+  )
+}
+
+async function launchCompanionInBackground(targetApp: string): Promise<void> {
+  // Launch in the background (-g) so the menu bar companion never steals focus from Orca.
+  await runProcess({
+    program: '/usr/bin/open',
+    args: ['-g', '-a', targetApp],
+    stdio: 'ignore',
+    timeoutMs: 5_000
+  }).catch(() => {})
+}
+
 export async function syncBundledOrcaInboxCompanion(options: {
   homeDir: string
   resourcesPath: string
   isPackaged: boolean
   platform?: NodeJS.Platform
   darwinRelease?: string
+  autoLaunch?: boolean
 }): Promise<'skipped' | 'unchanged' | 'synced'> {
   if ((options.platform ?? process.platform) !== 'darwin' || !options.isPackaged) {
     return 'skipped'
@@ -64,6 +87,7 @@ export async function syncBundledOrcaInboxCompanion(options: {
     return 'skipped'
   }
 
+  const autoLaunch = options.autoLaunch ?? process.env.ORCA_BACKGROUND_LAUNCH !== '1'
   const applicationsDir = path.join(options.homeDir, 'Applications')
   const targetApp = path.join(applicationsDir, COMPANION_APP_NAME)
   const targetExists = await pathExists(targetApp)
@@ -74,20 +98,15 @@ export async function syncBundledOrcaInboxCompanion(options: {
     }
     const targetHash = await bundleFingerprint(targetApp)
     if (targetHash === sourceHash) {
+      if (autoLaunch && !(await isCompanionRunning())) {
+        await launchCompanionInBackground(targetApp)
+      }
       return 'unchanged'
     }
   }
 
   await mkdir(applicationsDir, { recursive: true })
-  const wasRunning = await runProcess({
-    program: '/usr/bin/pgrep',
-    args: ['-x', COMPANION_EXECUTABLE],
-    stdio: 'ignore',
-    timeoutMs: 2_000
-  }).then(
-    (result) => result.code === 0,
-    () => false
-  )
+  const wasRunning = await isCompanionRunning()
 
   if (wasRunning) {
     await runProcess({
@@ -111,14 +130,8 @@ export async function syncBundledOrcaInboxCompanion(options: {
     )
   }
 
-  if (wasRunning) {
-    // Relaunch in the background so updating the companion never steals focus from Orca.
-    await runProcess({
-      program: '/usr/bin/open',
-      args: ['-g', '-a', targetApp],
-      stdio: 'ignore',
-      timeoutMs: 5_000
-    }).catch(() => {})
+  if (autoLaunch || wasRunning) {
+    await launchCompanionInBackground(targetApp)
   }
 
   return 'synced'
