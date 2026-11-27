@@ -48,6 +48,7 @@ export type NativeChatQuestionCardProps = {
   /** Another surface's own look for the card (an item page's open question). */
   look?: NativeChatQuestionCardLook
   draft?: NativeChatQuestionCardDraft
+  memoryKey?: string
 }
 
 /** Reports the card's picks and words to its draft as they change. */

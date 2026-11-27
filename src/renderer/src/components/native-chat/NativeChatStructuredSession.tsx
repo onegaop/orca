@@ -281,11 +281,7 @@ export function NativeChatStructuredSession(props: Omit<NativeChatStructuredView
                       {...(readFailure?.named ? { headline: readFailure.text } : {})}
                     />
                   ) : viewState.kind === 'empty' ? (
-                    <NativeChatEmptyPane
-                      slot={install.slot}
-                      agent={props.agent}
-                      tabId={props.tabId}
-                    />
+                    <NativeChatEmptyPane {...props} slot={install.slot} />
                   ) : (
                     <NativeChatRowActionsProvider pane={props} chat={submits.rows} forks={forks}>
                       <NativeChatUsageLimitActionsProvider
@@ -305,6 +301,7 @@ export function NativeChatStructuredSession(props: Omit<NativeChatStructuredView
                                 find={surface.find}
                                 // A rewind or a /clear replaces the conversation; nothing the old one held carries over.
                                 key={`${controller.epoch}:${controller.contextClear.clears}`}
+                                conversationKey={controller.contextClear.conversationKey}
                                 paneKey={paneKey}
                                 ref={submits.messageListRef}
                                 session={session}

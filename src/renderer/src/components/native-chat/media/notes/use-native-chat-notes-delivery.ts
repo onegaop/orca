@@ -1,4 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react'
+import { useNativeChatAnnotationViewHold } from '../../pane/routing/native-chat-view-retention'
 import { readNativeChatComposerDraft } from '../../drafts/native-chat-composer-draft-store'
 import { nativeChatNotesRetryingUndo, showNativeChatNotesNotice } from './native-chat-notes-notice'
 import { useNativeChatNotesKeptOnUnmount } from './use-native-chat-notes-kept-on-unmount'
@@ -86,6 +87,7 @@ export function useNativeChatNotesDelivery({
   const { notes } = editor
   const mediaKey = nativeChatNotesMediaKey(source, title)
   const [busy, setBusy] = useState(false)
+  useNativeChatAnnotationViewHold(editor.hasUnadded || editor.canUndo || editor.canRedo || busy)
   // One hand-off at a time: Esc or × while Send is still preparing must not start a second one.
   const busyRef = useRef(false)
   // The message box lives outside the viewer: looked up once the viewer and its image are on screen.
