@@ -254,11 +254,11 @@ export function sanitizeAvatarPackAnimation(value: unknown): AvatarKeyframedAnim
   if (!nodes.some((node) => node.tag === 'svg')) {
     return null
   }
-  const vb =
+  const vb: AvatarKeyframedAnimation['vb'] =
     Array.isArray(value.vb) &&
     value.vb.length === 4 &&
     value.vb.every((n) => typeof n === 'number' && Number.isFinite(n))
-      ? value.vb
+      ? [value.vb[0], value.vb[1], value.vb[2], value.vb[3]]
       : [0, 0, 100, 100]
   return {
     version: 1,
@@ -273,6 +273,6 @@ export function sanitizeAvatarPackAnimation(value: unknown): AvatarKeyframedAnim
         ? value.duration
         : 1,
     once: value.once === true,
-    vb: vb as [number, number, number, number]
+    vb
   }
 }
