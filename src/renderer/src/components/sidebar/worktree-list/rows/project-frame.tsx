@@ -4,7 +4,7 @@ import { useAppStore } from '@/store/index'
 import type { HostSectionRow } from '../../../../../../shared/sidebar-list/hosts/host-section-rows'
 import { isProjectTreeOn } from '../../../../../../shared/sidebar-list/project-tree-settings'
 import { getRepoIdFromWorktreeId } from '../../../../../../shared/worktree/id'
-import { PROJECT_GROUP_HEADER_INDENT } from './indentation'
+import { getProjectGroupHeaderPaddingLeft, PROJECT_GROUP_HEADER_INDENT } from './indentation'
 import { shouldUseHeaderTopSpacing } from '../viewport/virtual-rows'
 
 type Edge = 'top' | 'middle' | 'bottom' | 'single'
@@ -15,6 +15,10 @@ export type ProjectFramePiece = {
   card?: { edge: Edge; depth: number; current: boolean }
   /** Depths of the open project groups this row sits in. */
   guides: readonly number[]
+  /** The open project header above this row, if it has its own child lane. */
+  projectGuideDepth?: number
+  /** Begin the group's rail below its own (possibly sticky) header. */
+  startsGroupGuide?: number
   /** The open groups whose panel this row carries a slice of. */
   panels?: readonly { depth: number; edge: Exclude<Edge, 'single'> }[]
   /** A top-level group or project after another: extra room above it. */
@@ -79,6 +83,9 @@ export function computeProjectFrames(
         card = { start: index, depth, current: row.repo.id === activeRepoId }
       } else if (row.projectGroup) {
         openGroups = [...openGroups, depth]
+        if (rows[index + 1] && !closesGroup(rows[index + 1], depth)) {
+          pieces.set(index, { ...pieces.get(index)!, startsGroupGuide: depth })
+        }
       }
     } else {
       pieces.set(index, { guides: openGroups })
@@ -90,7 +97,9 @@ export function computeProjectFrames(
       cardRows.push({ index, start: card.start })
       pieces.set(index, {
         ...pieces.get(index)!,
-        card: { edge: 'middle', depth: card.depth, current: card.current }
+        card: { edge: 'middle', depth: card.depth, current: card.current },
+        projectGuideDepth:
+          index > card.start && rows[card.start]?.type === 'header' ? card.depth : undefined
       })
     }
   })
@@ -151,7 +160,8 @@ export function getTreeLane(
   depth: number
 ): { surface: number; right: number; glyph: number } {
   const cardDepth = kind === 'card' ? depth : depth + 1
-  const inset = kind === 'card' ? 4 : 0
+  // A project's rows leave a dedicated lane for the project-to-workspace guide.
+  const inset = kind === 'card' ? 12 : 0
   const surface = cardLeft(cardDepth) + inset
   return { surface, right: cardRight(cardDepth) + inset, glyph: surface + 10 }
 }
@@ -214,6 +224,43 @@ export function ProjectFrameEdge({
           style={getTreeCardInset(card.depth)}
         />
       ) : null}
+      {piece.guides.map((depth) => (
+        <TreeIndentGuide key={depth} depth={depth} bridge={bridge} />
+      ))}
+      {piece.startsGroupGuide !== undefined ? (
+        <TreeIndentGuide depth={piece.startsGroupGuide} bridge={bridge} startsHere />
+      ) : null}
+      {piece.projectGuideDepth !== undefined || card?.edge === 'top' ? (
+        <TreeIndentGuide
+          depth={piece.projectGuideDepth ?? card!.depth}
+          bridge={bridge}
+          startsHere={piece.projectGuideDepth === undefined}
+        />
+      ) : null}
     </>
+  )
+}
+
+function TreeIndentGuide({
+  depth,
+  bridge,
+  startsHere = false
+}: {
+  depth: number
+  bridge: string
+  startsHere?: boolean
+}): React.JSX.Element {
+  // The leading project/group chevron is 12px wide and starts on the header's padding.
+  return (
+    <span
+      aria-hidden="true"
+      data-project-tree-indent-guide=""
+      className={cn(
+        'pointer-events-none absolute w-px bg-worktree-sidebar-foreground/20',
+        startsHere ? 'top-full' : 'top-0',
+        bridge
+      )}
+      style={{ insetInlineStart: getProjectGroupHeaderPaddingLeft(depth) + 6 }}
+    />
   )
 }

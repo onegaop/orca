@@ -246,6 +246,7 @@ export function renderWorktreeVirtualRow(
     <LineageGuides
       guides={frame.guides}
       before={frame.before}
+      xOffset={shift}
       hidden={guidesInDraggedRange || familyHidden}
     />
   ) : null

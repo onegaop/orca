@@ -18,11 +18,13 @@ function railXs(rail: LineageRail | null): number[] {
 export function LineageGuides({
   guides,
   before,
-  hidden
+  hidden,
+  xOffset = 0
 }: {
   guides: LineageRowGuides
   before: number
   hidden: boolean
+  xOffset?: number
 }): React.JSX.Element | null {
   if (hidden) {
     return null
@@ -41,7 +43,7 @@ export function LineageGuides({
           key={x}
           data-worktree-lineage-guide="rail"
           className="absolute top-0 bottom-0 w-px"
-          style={{ left: x }}
+          style={{ left: x + xOffset }}
         />
       ))}
       {branch && !branch.last && (
@@ -49,14 +51,14 @@ export function LineageGuides({
           <span
             data-worktree-lineage-guide="rail"
             className="absolute top-0 bottom-0 w-px"
-            style={{ left: branch.x }}
+            style={{ left: branch.x + xOffset }}
           />
           {/* Why: a tee, not an elbow, so translucent strokes never overlap and double up. */}
           <span
             data-worktree-lineage-guide="rail"
             className="absolute h-px"
             style={{
-              left: branch.x + 1,
+              left: branch.x + xOffset + 1,
               width: Math.max(0, branch.to - branch.x - 1),
               top: titleCenter
             }}
@@ -68,7 +70,7 @@ export function LineageGuides({
           data-worktree-lineage-guide="branch"
           className="absolute top-0 rounded-bl-[6px] border-b border-l"
           style={{
-            left: branch.x,
+            left: branch.x + xOffset,
             width: Math.max(0, branch.to - branch.x),
             height: `calc(${titleCenter} + 1px)`
           }}
@@ -79,7 +81,7 @@ export function LineageGuides({
           data-worktree-lineage-guide="stem"
           className="absolute bottom-0 w-px"
           style={{
-            left: guides.stem,
+            left: guides.stem + xOffset,
             top: `calc(${titleCenter} + ${STEM_TOP_BELOW_TITLE}px)`
           }}
         />

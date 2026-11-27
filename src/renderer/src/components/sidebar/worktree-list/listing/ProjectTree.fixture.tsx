@@ -215,7 +215,18 @@ function sidebar(tree: boolean, locale: SupportedUiLocale = 'en') {
       seed(tree)
     },
     render: () => <Sidebar />,
-    interact: settle
+    interact: async () => {
+      await settle()
+      const guides = [...document.querySelectorAll<HTMLElement>('[data-project-tree-indent-guide]')]
+      if (tree ? guides.length === 0 : guides.length > 0) {
+        throw new Error(
+          `Unexpected project-tree indent guides: ${guides.length} (Tree style: ${tree})`
+        )
+      }
+      if (tree && !guides.some((guide) => guide.getBoundingClientRect().height > 10)) {
+        throw new Error('Indent guides rendered but do not span their rows')
+      }
+    }
   }
 }
 
