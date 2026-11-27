@@ -169,7 +169,6 @@ export function ExternalFileChangeCompareDialog({
                   originalContent={diskState.content}
                   modifiedContent={currentContent}
                   language={language}
-                  filePath={file.filePath}
                   relativePath={file.relativePath}
                   sideBySide
                 />
