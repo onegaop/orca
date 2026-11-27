@@ -92,6 +92,8 @@ function publishDeepLink(link: DeepLink): void {
   }
   if (link.kind === 'skill-share') {
     window.webContents.send('ui:openSkillShare', link.shareId)
+  } else if (link.kind === 'inbox-session') {
+    window.webContents.send('ui:inboxSessionPending')
   } else {
     // Only a doorbell: the renderer pulls the link, so it is delivered exactly once.
     window.webContents.send('ui:botLinkPending')

@@ -85,6 +85,11 @@ export function registerMainProcessIpcHandlers(): void {
     state.pendingOpenSettings.matches(event.sender.id, { consume: true })
   )
   ipcMain.handle('ui:consumePendingSkillShare', () => state.deepLinks.consumeSkillShare())
+  ipcMain.handle('ui:consumePendingInboxSession', (event) =>
+    event.sender.id === state.mainWindow?.webContents.id
+      ? state.deepLinks.consumeInboxSession()
+      : null
+  )
   ipcMain.handle('ui:consumePendingBotLink', () => {
     // Bots off: the link only brings Orca forward.
     if (!areHostBotsEnabled(state.store?.getSettings())) {

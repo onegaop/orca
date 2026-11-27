@@ -4,6 +4,8 @@ import { noopUnsubscribe } from '../web-storage'
 export const WEB_PENDING_LINK_API = {
   onOpenSkillShare: () => noopUnsubscribe,
   consumePendingSkillShare: () => Promise.resolve(null),
+  onInboxSessionPending: () => noopUnsubscribe,
+  consumePendingInboxSession: () => Promise.resolve(null),
   onBotLinkPending: () => noopUnsubscribe,
   consumePendingBotLink: () => Promise.resolve(null),
   onOpenPluginInstallLink: () => noopUnsubscribe,

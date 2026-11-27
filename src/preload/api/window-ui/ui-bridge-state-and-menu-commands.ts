@@ -47,6 +47,13 @@ export const uiStateAndMenuCommandsApi = {
   },
   consumePendingSkillShare: (): Promise<string | null> =>
     ipcRenderer.invoke('ui:consumePendingSkillShare'),
+  onInboxSessionPending: (callback: () => void): (() => void) => {
+    const listener = (): void => callback()
+    ipcRenderer.on('ui:inboxSessionPending', listener)
+    return () => ipcRenderer.removeListener('ui:inboxSessionPending', listener)
+  },
+  consumePendingInboxSession: (): Promise<string | null> =>
+    ipcRenderer.invoke('ui:consumePendingInboxSession'),
   onBotLinkPending: (callback: () => void): (() => void) => {
     const listener = (): void => callback()
     ipcRenderer.on('ui:botLinkPending', listener)

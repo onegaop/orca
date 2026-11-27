@@ -134,6 +134,7 @@ export function structuredSessionOpenOutcome(
 type DesktopInteractionOptions = {
   target?: RuntimeClientTarget
   deps?: StructuredSessionOpenAdapterDeps
+  signal?: AbortSignal
   locate?: StructuredSessionOpenDeps['locate']
   initialize?: () => boolean
   present: (result: StructuredSessionOpenResult, owner: RuntimeClientTarget) => void
@@ -164,15 +165,26 @@ export async function openDesktopStructuredSessionInteraction(
     options.onError?.()
     throw error
   }
+  const signal = options.signal
+  const deps =
+    options.deps ??
+    (signal
+      ? {
+          ...defaultDeps,
+          current: () => !signal.aborted,
+          signal,
+          reveal: (target: Parameters<typeof revealStructuredSession>[0]) =>
+            revealStructuredSession({ ...target, signal })
+        }
+      : defaultDeps)
   const key =
-    source.kind === 'history' && !options.deps?.signal
+    source.kind === 'history' && !deps.signal
       ? `${executionHostIdForStructuredTarget(owner)}\0${source.structuredSession.workspaceId}\0${source.structuredSession.sessionId}`
       : undefined
   const pending = key === undefined ? undefined : activationsInFlight.get(key)
   if (pending) {
     return pending
   }
-  const deps = options.deps ?? defaultDeps
   let initialized = true
   const execute = async (): Promise<StructuredSessionOpenResult> => {
     initialized = options.initialize?.() !== false

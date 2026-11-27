@@ -14,6 +14,7 @@ import {
 } from '../../shared/skills/sharing/skill-share-link'
 import { formatConnectorLinkDeepLink, parseConnectorLinkDeepLink } from './connector-link-deep-link'
 import { PendingDeepLinkState } from './open-routing/skill-share-deep-link-state'
+import { parseInboxSessionLink } from '../../shared/agent-conversations/inbox-session-link'
 
 export type DeepLink =
   | { kind: 'skill-share'; shareId: string }
@@ -21,8 +22,9 @@ export type DeepLink =
   | { kind: 'bot'; link: BotDeepLink }
   | { kind: 'connector-link'; link: ConnectorLinkDeepLink }
   | { kind: 'access-request'; link: BotAccessRequestDeepLink }
+  | { kind: 'inbox-session' }
 
-function deepLinkOf(value: string): DeepLink | null {
+function deepLinkOf(value: string): Exclude<DeepLink, { kind: 'inbox-session' }> | null {
   const accessRequest = parseBotAccessRequestDeepLink(value)
   if (accessRequest) {
     return { kind: 'access-request', link: accessRequest }
@@ -48,6 +50,7 @@ export class DeepLinkState {
   // Skill and bot shares keep the shared repeat-click and burst guard.
   private readonly skillShares: PendingDeepLinkState
   private readonly botShares: PendingDeepLinkState
+  private readonly inboxSessions: PendingDeepLinkState
   private pendingBotLink: BotDeepLink | null = null
   // The latest link of each service, so a GitHub link never replaces a Linear one.
   private readonly pendingConnectorLinks = new Map<ConnectorLinkSource, ConnectorLinkDeepLink>()
@@ -56,15 +59,20 @@ export class DeepLinkState {
   constructor(now?: () => number) {
     this.skillShares = new PendingDeepLinkState(([shareId]) => shareId ?? null, now)
     this.botShares = new PendingDeepLinkState(([shareId]) => shareId ?? null, now)
+    this.inboxSessions = new PendingDeepLinkState(
+      (argv) => argv.find((value) => parseInboxSessionLink(value) !== null) ?? null,
+      now
+    )
   }
 
   /** Whether macOS `open-url` should claim this URL. */
   accepts(url: string): boolean {
-    return deepLinkOf(url) !== null
+    return parseInboxSessionLink(url) !== null || deepLinkOf(url) !== null
   }
 
   /** True when argv held a link; a handoff can carry one of each kind. */
   capture(argv: readonly string[], publish?: (link: DeepLink) => void): boolean {
+    const inbox = this.inboxSessions.capture(argv, () => publish?.({ kind: 'inbox-session' }))
     const links = argv.flatMap((value) => deepLinkOf(value) ?? [])
     for (const link of links) {
       if (link.kind === 'skill-share') {
@@ -84,7 +92,11 @@ export class DeepLinkState {
       }
       publish?.(link)
     }
-    return links.length > 0
+    return inbox || links.length > 0
+  }
+
+  consumeInboxSession(): string | null {
+    return this.inboxSessions.consume()
   }
 
   consumeSkillShare(): string | null {
@@ -132,7 +144,9 @@ export class DeepLinkState {
     this.pendingConnectorLinks.clear()
     const accessRequest = this.consumeAccessRequest()
     const botShareId = this.consumeBotShare()
+    const inboxSession = this.consumeInboxSession()
     return [
+      ...(inboxSession ? [inboxSession] : []),
       ...(shareId ? [`orca://skills/share/${shareId}`] : []),
       ...(bot ? [formatBotDeepLink(bot)] : []),
       ...connectorLinks.map(formatConnectorLinkDeepLink),

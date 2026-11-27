@@ -34,6 +34,7 @@ import { registerOrcaProfileAuthIpcBridge } from '../../components/orca-profiles
 import { registerPluginViewIpcBridge } from '../../components/plugins/view/plugin-view-ipc-bridge'
 import { registerPreflightWslRetryIpcBridge } from '../../runtime/hosts/wsl/preflight-wsl-retry-ipc-bridge'
 import { registerOsMarkdownFileOpenBridge } from './native-app/os-markdown-file-open-bridge'
+import { registerInboxSessionIpcBridge } from './native-app/inbox-session-ipc-bridge'
 import { registerBotDeepLinkIpcBridge } from './bot-deep-link-ipc-bridge'
 import { registerProjectCatalogIpcBridge } from './workspace-catalog/project-catalog-ipc-bridge'
 import { registerRateLimitIpcBridge } from './native-app/rate-limit-ipc-bridge'
@@ -163,6 +164,7 @@ export function installAppLifetimeIpcEvents(): () => void {
   registerPreflightWslRetryIpcBridge(unsubs)
   registerWorkspaceShortcutIpcBridge(unsubs)
   registerOsMarkdownFileOpenBridge(unsubs)
+  registerInboxSessionIpcBridge(unsubs)
   registerBotDeepLinkIpcBridge(unsubs)
   registerWslAccountNoticeIpcBridge(unsubs)
   unsubs.push(
