@@ -874,8 +874,8 @@ module.exports = {
   npmRebuild: true,
   publish: {
     provider: 'github',
-    owner: 'stablyai',
-    repo: devChannelRepo ?? 'orca',
+    owner: process.env.ORCA_WEEKLY_RELEASE === '1' ? 'onegaop' : 'stablyai',
+    repo: process.env.ORCA_WEEKLY_RELEASE === '1' ? 'orca' : (devChannelRepo ?? 'orca'),
     // Keep main-repo releases draft until release-cut verifies all assets; early --publish always would expose missing Windows installers.
     releaseType: devChannelRepo ? 'prerelease' : 'draft'
   }

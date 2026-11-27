@@ -1,5 +1,7 @@
 import { compareAppVersions, isValidAppVersion } from '../app-lifecycle/identity/app-version'
 
+declare const ORCA_WEEKLY_RELEASE: boolean
+
 export type ReleaseChannel = 'stable' | 'rc' | 'hourly' | 'daily' | 'adhoc'
 
 export const RELEASE_CHANNELS: readonly ReleaseChannel[] = [
@@ -22,7 +24,9 @@ export const RELEASE_CHANNEL_LABELS: Readonly<Record<ReleaseChannel, string>> = 
 export const HOURLY_RELEASE_REPO = 'stablyai/orca-hourly'
 export const DAILY_RELEASE_REPO = 'stablyai/orca-daily'
 export const ADHOC_RELEASE_REPO = 'stablyai/orca-adhoc'
-export const MAIN_RELEASE_REPO = 'stablyai/orca'
+export const WEEKLY_RELEASE_BUILD = typeof ORCA_WEEKLY_RELEASE === 'boolean' && ORCA_WEEKLY_RELEASE
+export const MAIN_RELEASE_REPO = WEEKLY_RELEASE_BUILD ? 'onegaop/orca' : 'stablyai/orca'
+export const MAIN_RELEASES_URL = `https://github.com/${MAIN_RELEASE_REPO}/releases`
 
 /** The dev channels, each published to its own repo rather than the main one. */
 const DEDICATED_REPO_CHANNELS = ['hourly', 'daily', 'adhoc'] as const
@@ -84,7 +88,7 @@ export function requiresManualDevChannelInstall(options: {
 }
 
 export function getReleaseRepoForChannel(channel: ReleaseChannel): string {
-  return CHANNEL_RELEASE_REPOS[channel]
+  return WEEKLY_RELEASE_BUILD ? MAIN_RELEASE_REPO : CHANNEL_RELEASE_REPOS[channel]
 }
 
 export function normalizeTagToVersion(tag: string): string {

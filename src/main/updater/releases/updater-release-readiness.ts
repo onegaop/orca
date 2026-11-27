@@ -1,8 +1,14 @@
 import { net } from 'electron'
 import { parse } from 'yaml'
 
-const RELEASES_DOWNLOAD_BASE = 'https://github.com/stablyai/orca/releases/download'
+import { MAIN_RELEASES_URL, WEEKLY_RELEASE_BUILD } from '../../../shared/updater/release-channel'
+
+const RELEASES_DOWNLOAD_BASE = `${MAIN_RELEASES_URL}/download`
 export const FETCH_TIMEOUT_MS = 5000
+export const defaultReleaseFeed = {
+  provider: 'generic',
+  url: `${MAIN_RELEASES_URL}/latest/download`
+} as const
 
 export function getReleaseDownloadUrl(tag: string): string {
   return `${RELEASES_DOWNLOAD_BASE}/${encodeURIComponent(tag)}`
@@ -138,7 +144,10 @@ export async function getPlatformManifestReadiness(tag: string): Promise<Release
     } catch {
       return 'not-ready'
     }
-    if (assetNames.length === 0) {
+    if (
+      assetNames.length === 0 ||
+      (WEEKLY_RELEASE_BUILD && assetNames.some((name) => !/^[\w][\w.-]*$/.test(name)))
+    ) {
       return 'not-ready'
     }
     const assetResults = await Promise.all(

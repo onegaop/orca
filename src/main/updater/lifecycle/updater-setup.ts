@@ -1,6 +1,7 @@
 import { app, powerMonitor } from 'electron'
 import type { BrowserWindow } from 'electron'
 import type { ReleaseBuild, ReleaseChannel } from '../../../shared/updater/release-channel'
+import { defaultReleaseFeed } from '../releases/updater-release-readiness'
 import type { ReleaseBuildListOptions } from '../releases/updater-release-build-cache'
 import {
   managesUpdates,
@@ -202,10 +203,7 @@ export class UpdaterSetup extends UpdaterDownloadInstall {
 
     // Security: never re-add a verifyUpdateCodeSignature override — a no-op disables electron-updater's built-in Authenticode check and accepts any installer.
     if (this.activeUpdateSource === 'release') {
-      autoUpdater.setFeedURL({
-        provider: 'generic',
-        url: 'https://github.com/stablyai/orca/releases/latest/download'
-      })
+      autoUpdater.setFeedURL(defaultReleaseFeed)
     }
     if (this.autoUpdaterInitialized) {
       return

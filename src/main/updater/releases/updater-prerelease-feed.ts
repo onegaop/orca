@@ -13,9 +13,13 @@ import {
   type ReleaseDelayResult
 } from './updater-release-delay'
 import { listMainRepoReleaseBuildsUntil } from './updater-release-builds'
-import type { ReleaseBuild } from '../../../shared/updater/release-channel'
+import {
+  MAIN_RELEASE_REPO,
+  MAIN_RELEASES_URL,
+  type ReleaseBuild
+} from '../../../shared/updater/release-channel'
 
-const ATOM_FEED_URL = 'https://github.com/stablyai/orca/releases.atom'
+const ATOM_FEED_URL = `${MAIN_RELEASES_URL}.atom`
 const MAX_MANIFEST_PROBE_CANDIDATES = 6
 // Releases past the feed don't change and newer ones come from Atom, so a list that settled the delay stays accurate.
 const OLDER_RELEASES_TTL_MS = 6 * 60 * 60 * 1000
@@ -27,7 +31,7 @@ let olderReleasesCache: {
 
 // Atom includes stable and prerelease tags without channel filtering.
 const ENTRY_RE = /<entry>([\s\S]*?)<\/entry>/g
-const TAG_HREF_RE = /href="https:\/\/github\.com\/stablyai\/orca\/releases\/tag\/([^"]+)"/
+const RELEASE_TAG_LINK = `href="${MAIN_RELEASES_URL}/tag/`
 const ENTRY_UPDATED_RE = /<updated>([^<]+)<\/updated>/
 
 export function normalizeTagToVersion(tag: string): string {
@@ -58,7 +62,7 @@ async function fetchReleaseFeedTags(): Promise<ReleaseFeedTag[] | null> {
     const tags: ReleaseFeedTag[] = []
 
     for (const entry of body.matchAll(ENTRY_RE)) {
-      const tag = entry[1].match(TAG_HREF_RE)?.[1]
+      const tag = entry[1].split(RELEASE_TAG_LINK)[1]?.split('"')[0]
       if (!tag) {
         continue
       }
@@ -79,17 +83,20 @@ async function fetchReleaseFeedTags(): Promise<ReleaseFeedTag[] | null> {
 export async function fetchLatestStableReleaseTag(): Promise<string | null> {
   try {
     // Resolve only the release-page redirect; installer redirects continue on to signed storage URLs.
-    const latestUrl = 'https://github.com/stablyai/orca/releases/latest'
+    const latestUrl = `${MAIN_RELEASES_URL}/latest`
     const response = await requestReleaseHead(latestUrl)
     if (!response?.redirectUrl || response.statusCode < 300 || response.statusCode >= 400) {
       return null
     }
     const target = new URL(response.redirectUrl, latestUrl)
-    const match = target.pathname.match(/^\/stablyai\/orca\/releases\/tag\/([^/]+)$/)
-    if (target.origin !== 'https://github.com' || !match) {
+    const prefix = `/${MAIN_RELEASE_REPO}/releases/tag/`
+    const escapedTag = target.pathname.startsWith(prefix)
+      ? target.pathname.slice(prefix.length)
+      : ''
+    if (target.origin !== 'https://github.com' || !escapedTag || escapedTag.includes('/')) {
       return null
     }
-    const tag = decodeURIComponent(match[1])
+    const tag = decodeURIComponent(escapedTag)
     const version = normalizeTagToVersion(tag)
     if (!isValidVersion(version) || isPrereleaseVersion(version)) {
       return null

@@ -6,6 +6,7 @@ import {
   hasInstallableArtifactForPlatform,
   normalizeTagToVersion,
   sortReleaseBuildsNewestFirst,
+  WEEKLY_RELEASE_BUILD,
   type ReleaseBuild,
   type ReleaseChannel
 } from '../../../shared/updater/release-channel'
@@ -175,7 +176,7 @@ async function fetchReleaseBuildsPage(
 ): Promise<{ builds: ReleaseBuild[]; isLastPage: boolean }> {
   const repo = getReleaseRepoForChannel(channel)
   // Skip a known-exhausted token bucket and try the separate per-IP quota.
-  const credential = await resolveReleaseApiToken()
+  const credential = WEEKLY_RELEASE_BUILD ? null : await resolveReleaseApiToken()
   const tokenBucketBlocked =
     credential !== null &&
     getGhRateLimitBlockedUntilMs('core', Date.now(), credential.rateLimitScope) !== null
