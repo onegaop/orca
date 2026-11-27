@@ -6,6 +6,7 @@ import {
 } from './bot-controller-store'
 // The bots on this computer, each homed in a folder workspace of the hidden Bots project group.
 import { BOT_IMPORT_REPLY_FILE } from '../../shared/bots/bot-import'
+import { BOT_STICKERS_DIRECTORY } from '../../shared/bots/bot-stickers'
 import { join } from 'node:path'
 import { BOT_AVATAR_FILE, type BotPictureRevision, isUploadAvatar } from '../../shared/bot-avatar'
 import { type Bot, botFolderName } from '../../shared/bot-types'
@@ -185,13 +186,15 @@ export class BotController {
         templateBotFolderName(name, botTemplate(origin.templateId), input.templateNameShown),
         name,
         draft.agent,
-        (path, folder) =>
-          writeBotHome(
+        async (path, folder) => {
+          await this.deps.filesystem.makeDirectory(join(path, BOT_STICKERS_DIRECTORY))
+          await writeBotHome(
             this.deps.filesystem,
             path,
             { ...draft, folder, folderWorkspaceId: '' },
             input.seed ? proposalSoul(name, input.seed) : undefined
           )
+        }
       ))
     }
     const reply = input.importFrom?.reply?.trim()

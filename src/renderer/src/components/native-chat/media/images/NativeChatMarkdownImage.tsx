@@ -14,6 +14,7 @@ import { basename } from '@/lib/path'
 import { useTranslate } from '@/i18n/use-translate'
 import type { LinkAction } from '@/components/link-actions/link-action-request'
 import { jiraImageReference } from '../../../../../../shared/jira/jira-attachment-image'
+import { isBotStickerPath } from '../../../../../../shared/bots/bot-stickers'
 import { filesystemPathToFileUri } from '../../../../../../shared/file-links/file-uri-path'
 import {
   createNativeChatFileHref,
@@ -36,6 +37,7 @@ import { useNativeChatFileLinkClick } from '../../links/actions/use-native-chat-
 import { observeTranscriptVisibility } from './native-chat-image-visibility'
 import { useNativeChatMediaHref } from './use-native-chat-media-href'
 import { useNativeChatLinkClick } from '../../links/actions/native-chat-link-click-context'
+import { NativeChatBotKickoffContext } from '../../native-chat-bot-kickoff-view'
 
 export const NativeChatMarkdownImageLinkContext = createContext<string | undefined>(undefined)
 const IMAGE_ACCESS = chatImageAccess()
@@ -80,6 +82,7 @@ function NativeChatMarkdownImagePreview({ src, alt }: MarkdownImageProps): React
   const t = useTranslate()
   const onLinkClick = useNativeChatLinkClick()
   const owner = useContext(NativeChatMarkdownImageOwnerContext)
+  const bot = useContext(NativeChatBotKickoffContext)?.bot
   const linkedHref = useContext(NativeChatMarkdownImageLinkContext)
   const [open, setOpen] = useState(false)
   const [near, setNear] = useState(false)
@@ -119,6 +122,10 @@ function NativeChatMarkdownImagePreview({ src, alt }: MarkdownImageProps): React
   const target = resolveNativeChatFileLink(imageHref, fileLinkContext)
   const localSrc =
     !external && !attachment && target ? filesystemPathToFileUri(target.absolutePath) : undefined
+  const isBotSticker =
+    localSrc &&
+    target &&
+    isBotStickerPath(target.absolutePath, bot ? runtimeContext?.worktreePath : undefined)
   const loadedSrc = useLocalImageSrc(
     leaseActive ? localSrc : undefined,
     target?.absolutePath ?? '',
@@ -217,7 +224,11 @@ function NativeChatMarkdownImagePreview({ src, alt }: MarkdownImageProps): React
         }
       }}
       triggerLabel={`${t('components.native-chat.composer.viewAttachment', 'View image')}: ${title}`}
-      className="max-h-96 max-w-full rounded-md object-contain outline outline-1 outline-border/70"
+      className={
+        isBotSticker
+          ? 'max-h-28 max-w-[min(100%,calc(var(--spacing)*28))] rounded-md object-contain'
+          : 'max-h-96 max-w-full rounded-md object-contain outline outline-1 outline-border/70'
+      }
       onError={() => setFailedSrc(imageSrc)}
       onLoad={() => {
         const bounds = triggerRef.current?.getBoundingClientRect()
