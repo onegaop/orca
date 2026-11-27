@@ -14,7 +14,7 @@ import { parsePluginImageUrl } from '../images/plugin-image-url'
 
 const NEXT = PLUGIN_MANIFEST_V2_SINCE
 
-const backgroundStyleFields = {
+const createBackgroundStyleFields = () => ({
   opacity: z
     .number()
     .min(0)
@@ -35,7 +35,7 @@ const backgroundStyleFields = {
     .enum(['center', 'top', 'bottom', 'left', 'right'])
     .optional()
     .meta(pluginFieldDoc('Which edge the image anchors to. Defaults to `center`.', NEXT))
-}
+})
 
 /** Default share of the chrome color over the blurred image. */
 export const PLUGIN_THEME_GLASS_DEFAULT_TINT = 0.75
@@ -57,7 +57,7 @@ const glassTintSchema = lazyZodSchema(() =>
 
 const glassDescription = `Paints the sidebars, tab bars, title bar and status bar with \`path\` blurred once, under each surface's own color. Terminals, editors and chats are unchanged. Off when the theme has a \`videoPath\`, when Background Opacity is 1, under Reduce Visual Effects or reduced transparency, and in releases before ${PLUGIN_THEME_GLASS_SINCE}.`
 
-const backgroundFields = {
+const createBackgroundFields = () => ({
   path: pluginRelativePathSchema.meta(
     pluginPathFieldDoc(`Image file in the plugin. ${PLUGIN_THEME_BACKGROUND_RULE_TEXT}`, NEXT, [
       'images/dusk.webp'
@@ -72,14 +72,14 @@ const backgroundFields = {
         ['images/dusk.mp4']
       )
     ),
-  ...backgroundStyleFields,
+  ...createBackgroundStyleFields(),
   glass: lazyZodSchema(() =>
     z
       .strictObject({ tint: glassTintSchema })
       .optional()
       .meta(pluginFieldDoc(glassDescription, PLUGIN_THEME_GLASS_SINCE, [{ tint: 0.8 }]))
   )
-}
+})
 
 // Why per-field catch: a glass option added later must not turn glass off.
 const tolerantGlassSchema = lazyZodSchema(() =>
@@ -92,7 +92,7 @@ const tolerantGlassSchema = lazyZodSchema(() =>
 /** `validate:plugin` shape: unknown keys fail authoring. */
 export const pluginThemeBackgroundSchema = lazyZodSchema(() =>
   z
-    .strictObject(backgroundFields)
+    .strictObject(createBackgroundFields())
     .meta(
       pluginFieldDoc(
         'One image painted under translucent terminals and chats (Background Opacity below 1). Glass paints a copy blurred once on the window chrome.',
@@ -104,16 +104,18 @@ export const pluginThemeBackgroundSchema = lazyZodSchema(() =>
 export type PluginThemeBackgroundArtifact = z.infer<typeof pluginThemeBackgroundSchema>
 
 // Why per-field catch: a style value added later falls back to its default instead of dropping the image.
-const tolerantBackgroundSchema = lazyZodSchema(() =>
-  z.object({
-    path: backgroundFields.path,
-    videoPath: backgroundFields.videoPath.catch(undefined),
-    opacity: backgroundStyleFields.opacity.catch(undefined),
-    size: backgroundStyleFields.size.catch(undefined),
-    position: backgroundStyleFields.position.catch(undefined),
+const tolerantBackgroundSchema = lazyZodSchema(() => {
+  const styleFields = createBackgroundStyleFields()
+  const fields = createBackgroundFields()
+  return z.object({
+    path: fields.path,
+    videoPath: fields.videoPath.catch(undefined),
+    opacity: styleFields.opacity.catch(undefined),
+    size: styleFields.size.catch(undefined),
+    position: styleFields.position.catch(undefined),
     glass: tolerantGlassSchema
   })
-)
+})
 
 /** Runtime keeps a theme whose background is malformed or newer; at worst it paints no image. */
 export function tolerantPluginThemeBackground(
@@ -133,7 +135,7 @@ export const pluginThemeBackgroundRegistrationSchema = lazyZodSchema(() =>
   z.object({
     url: installedImageUrlSchema,
     videoUrl: installedImageUrlSchema.optional().catch(undefined),
-    ...backgroundStyleFields,
+    ...createBackgroundStyleFields(),
     glass: tolerantGlassSchema
   })
 )
