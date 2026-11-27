@@ -33,19 +33,23 @@ function fakeHost(
 ) {
   const pageEvents = new Set<(event: BrowserPageEvent) => void>()
   const tabs = new Map<string, string>([['page-1', guest.url]])
+  let baseline = hasDeltaBaseline
   const host: ActionEffectsHost = {
     // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the effects layer reads only the guest members faked here.
     guest: () => guest as unknown as WebContents,
     tabUrls: () => new Map(tabs),
     loadError: () => null,
     withholdsPageText: () => false,
-    hasDeltaBaseline: () => hasDeltaBaseline,
-    forgetDeltaBaseline: vi.fn(),
+    hasDeltaBaseline: () => baseline,
+    forgetDeltaBaseline: () => {
+      baseline = false
+    },
     snapshotDelta: vi.fn(async () => {
       const next = snapshots.shift()
       if (next instanceof Error) {
         throw next
       }
+      baseline = true
       return next
     }),
     observePageEvents: (listener) => {
@@ -58,6 +62,20 @@ function fakeHost(
 }
 
 describe('runWithActionEffects', () => {
+  it('starts a fresh effects baseline after an observation-free action', async () => {
+    const snapshots = [UNCHANGED, UNCHANGED, UNCHANGED]
+    const { host } = fakeHost(fakeGuest(), snapshots, true)
+    const fastResult = await runWithActionEffects(host, async () => ({ clicked: 'fast' }), {
+      skip: true
+    })
+    expect(fastResult).toEqual({ clicked: 'fast' })
+    expect(snapshots).toHaveLength(3)
+
+    const observedResult = await runWithActionEffects(host, async () => ({ clicked: 'observed' }))
+    expect(observedResult).toMatchObject({ clicked: 'observed', effects: { page: 'unchanged' } })
+    expect(snapshots).toHaveLength(1)
+  })
+
   it('redacts URL effects before clipping can truncate a long bearer', async () => {
     const guest = fakeGuest()
     const { host } = fakeHost(guest, [UNCHANGED, UNCHANGED])

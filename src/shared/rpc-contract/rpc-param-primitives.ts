@@ -82,7 +82,8 @@ export const ExpectUrlBrowserTarget = lazyZodSchema(() =>
       .custom<string>((v) => typeof v === 'string' && isAbsoluteBrowserUrl(v), {
         message: '--expect-url must be an absolute URL, like https://example.com/chat/a'
       })
-      .optional()
+      .optional(),
+    noEffects: z.boolean().optional()
   })
 )
 
