@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+import './monaco-unicode-tables'
 
 import type { PaneManager } from '@/lib/pane-manager/pane-manager'
 import type { OnboardingFeatureSetupDeps } from '@/components/onboarding/onboarding-feature-setup'
@@ -178,3 +179,73 @@ interface ImportMetaEnv {
 }
 
 export {}
+
+type MonacoDiffRange = { start: number; endExclusive: number }
+type MonacoSequenceDiff = { seq1Range: MonacoDiffRange; seq2Range: MonacoDiffRange }
+type MonacoDiffResult = { hitTimeout: boolean; diffs: MonacoSequenceDiff[] }
+type MonacoTimeout = { isValid(): boolean }
+type MonacoLineSequence = { readonly length: number; getElement(offset: number): number }
+
+declare module 'monaco-editor/esm/vs/editor/common/diff/defaultLinesDiffComputer/algorithms/diffAlgorithm.js' {
+  export class DateTimeout {
+    constructor(timeoutMs: number)
+    isValid(): boolean
+  }
+}
+declare module 'monaco-editor/esm/vs/editor/common/diff/defaultLinesDiffComputer/algorithms/myersDiffAlgorithm.js' {
+  export class MyersDiffAlgorithm {
+    compute(
+      left: MonacoLineSequence,
+      right: MonacoLineSequence,
+      timeout: MonacoTimeout
+    ): MonacoDiffResult
+  }
+}
+declare module 'monaco-editor/esm/vs/editor/common/diff/defaultLinesDiffComputer/algorithms/dynamicProgrammingDiffing.js' {
+  export class DynamicProgrammingDiffing {
+    compute(
+      left: MonacoLineSequence,
+      right: MonacoLineSequence,
+      timeout: MonacoTimeout,
+      equalityScore: (offset1: number, offset2: number) => number
+    ): MonacoDiffResult
+  }
+}
+declare module 'monaco-editor/esm/vs/editor/common/diff/defaultLinesDiffComputer/heuristicSequenceOptimizations.js' {
+  export function optimizeSequenceDiffs(
+    left: MonacoLineSequence,
+    right: MonacoLineSequence,
+    diffs: MonacoSequenceDiff[]
+  ): MonacoSequenceDiff[]
+  export function removeVeryShortMatchingLinesBetweenDiffs(
+    left: MonacoLineSequence,
+    right: MonacoLineSequence,
+    diffs: MonacoSequenceDiff[]
+  ): MonacoSequenceDiff[]
+}
+declare module 'monaco-editor/esm/vs/editor/common/diff/defaultLinesDiffComputer/lineSequence.js' {
+  export class LineSequence {
+    constructor(trimmedHash: number[], lines: string[])
+    readonly length: number
+    getElement(offset: number): number
+  }
+}
+
+declare module 'monaco-editor/esm/vs/basic-languages/redis/redis.js' {
+  export const language: {
+    keywords: string[]
+    typeKeywords?: string[]
+    constants?: string[]
+    builtin?: string[]
+    invalidKeywords?: string[]
+  }
+}
+declare module 'monaco-editor/esm/vs/basic-languages/qsharp/qsharp.js' {
+  export const language: {
+    keywords: string[]
+    typeKeywords?: string[]
+    constants?: string[]
+    builtin?: string[]
+    invalidKeywords?: string[]
+  }
+}

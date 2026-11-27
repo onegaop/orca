@@ -4,7 +4,6 @@ import type { OpenFile } from '@/store/slices/editor/types/open-file'
 import type { GitDiffResult } from '../../../../../shared/git/diff/git-diff-compare-types'
 import type { GitStatusEntry } from '../../../../../shared/git/status/git-status-types'
 import { ConflictBanner } from '../conflict-review/ConflictComponents'
-import { getDiffContentSignature } from '../diff/sections/diff-content-signature'
 import { useTranslate } from '@/i18n/use-translate'
 
 const DiffViewer = lazy(() => import('../diff/monaco-view/DiffViewer'))
@@ -58,12 +57,9 @@ export function ChangesModeView({
       </div>
     )
   }
-  // Matching sides render blank in Monaco; explain that Changes mode has no changes to show.
+  // Explain why there are no changes when both sides match.
   const isDiffBodyPruned = dc.largeDiffRenderLimit?.limited === true
   const isIdentical = !isDiffBodyPruned && dc.originalContent === modifiedContent
-  // Rotate only the HEAD model after commit/pull/rebase to refresh Monaco’s retained snapshot while preserving modified-side undo.
-  const headContentSignature = getDiffContentSignature(dc.originalContent)
-  const originalModelKey = `${diffViewStateKey}:original:${headContentSignature}`
   return (
     <div className="flex flex-1 min-h-0 flex-col">
       {activeFile.conflict && <ConflictBanner file={activeFile} entry={activeConflictEntry} />}
@@ -76,13 +72,10 @@ export function ChangesModeView({
         <DiffViewer
           key={viewStateScopeId}
           modelKey={diffViewStateKey}
-          modelOwnerKey={activeFile.id}
-          originalModelKey={originalModelKey}
           originalContent={dc.originalContent}
           modifiedContent={modifiedContent}
           largeDiffRenderLimit={dc.largeDiffRenderLimit}
           language={resolvedLanguage}
-          filePath={activeFile.filePath}
           relativePath={activeFile.relativePath}
           sideBySide={sideBySide}
           editable={true}

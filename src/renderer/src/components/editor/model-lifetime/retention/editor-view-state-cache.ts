@@ -40,8 +40,7 @@ export const mediaPlaybackStateCache = new Map<
 // One volume/mute choice shared by every media preview so new previews open at the user's last level.
 export const mediaVolumePreference = { volume: 1, muted: false }
 
-// Monaco diff view state includes both cursors/selections and model state; preserve that context beyond numeric scrolling, as VS Code does.
-export const diffViewStateCache = new Map<string, editor.IDiffEditorViewState>()
-
 // Full Monaco view state carries folds and horizontal scroll that scrollTop/selection caches miss.
 export const editorViewStateCache = new Map<string, editor.ICodeEditorViewState>()
+
+export const diffScrollTopCache = new Map<string, number>()

@@ -1,29 +1,24 @@
-import type { editor as monacoEditor } from 'monaco-editor'
 import type { DiffSection } from './diff-section-types'
 import {
   getLargeDiffRenderLimitFromCounts,
+  countLinesEmptyAsZero,
   type LargeDiffRenderLimit
 } from '../../../../../../shared/source-control/diff/large-diff-render-limit'
 
 export function getLiveDiffSectionRenderLimit({
   section,
-  modifiedEditor,
-  modifiedContent
+  modifiedContent,
+  modifiedLineCount
 }: {
   section: DiffSection
-  modifiedEditor: monacoEditor.ICodeEditor
   modifiedContent: string
+  modifiedLineCount?: number
 }): LargeDiffRenderLimit {
-  const modifiedLineCount =
-    modifiedContent.length === 0
-      ? 0
-      : (modifiedEditor.getModel()?.getLineCount() ??
-        section.largeDiffRenderLimit?.lineCounts?.modified ??
-        0)
-
   return getLargeDiffRenderLimitFromCounts({
-    originalLineCount: section.largeDiffRenderLimit?.lineCounts?.original ?? 0,
-    modifiedLineCount,
+    originalLineCount:
+      section.largeDiffRenderLimit?.lineCounts?.original ??
+      countLinesEmptyAsZero(section.originalContent),
+    modifiedLineCount: modifiedLineCount ?? countLinesEmptyAsZero(modifiedContent),
     originalCharacterCount: section.originalContent.length,
     modifiedCharacterCount: modifiedContent.length
   })
