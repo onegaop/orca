@@ -25,13 +25,16 @@ export type ResolvedAvatarPack = {
   state: AvatarAnimationState
 }
 
-export function useResolvedAvatarPack(bot: {
-  id: string
-  avatar?: string | null
-  hostId?: ExecutionHostId
-  paused?: boolean
-  folderWorkspaceId?: string | null
-}): ResolvedAvatarPack | null {
+export function useResolvedAvatarPack(
+  bot: {
+    id: string
+    avatar?: string | null
+    hostId?: ExecutionHostId
+    paused?: boolean
+    folderWorkspaceId?: string | null
+  },
+  animationState?: AvatarAnimationState
+): ResolvedAvatarPack | null {
   const settings = useAppStore((s) => s.settings)
   const packsEnabled = settings?.avatarPacksEnabled ?? false
   const defaultPack = settings?.avatarDefaultPack
@@ -39,7 +42,8 @@ export function useResolvedAvatarPack(bot: {
   const parsed = parseBotAvatar(bot.avatar ?? null)
   const wantsPack = parsed?.kind === 'avatar-pack' || (packsEnabled && parsed?.kind !== 'upload')
   const { catalog } = useAvatarPackCatalog(wantsPack)
-  const state = useBotAnimationState(bot, wantsPack)
+  const liveState = useBotAnimationState(bot, wantsPack && animationState === undefined)
+  const state = animationState ?? liveState
 
   if (parsed?.kind === 'avatar-pack') {
     if (!catalog || !catalog[parsed.pack]) {

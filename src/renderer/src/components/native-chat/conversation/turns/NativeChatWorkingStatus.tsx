@@ -1,5 +1,6 @@
 import type { BotChatIdentity } from '../../../bots/use-bot-chat-identity'
-import { BotAvatarTile } from '../../../bots/BotAvatar'
+import { BotAvatar } from '../../../bots/BotAvatar'
+import type { AvatarAnimationState } from '../../../bots/avatar-packs/avatar-pack-types'
 import type { ReactNode } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
@@ -44,6 +45,28 @@ function turnStatusLabel(
   }
 }
 
+function turnAvatarState(
+  bot: BotChatIdentity,
+  active: boolean,
+  verdict: AgentTurnOutcome | undefined
+): AvatarAnimationState | undefined {
+  if (active) {
+    return bot.folderWorkspaceId ? undefined : 'think'
+  }
+  switch (verdict) {
+    case 'success':
+      return 'done'
+    case 'failure':
+    case 'cancellation':
+    case 'superseded':
+    case 'interruption':
+      return 'dizzy'
+    case 'unconfirmed':
+    case undefined:
+      return 'idle'
+  }
+}
+
 /** Run the clock beneath the prompt; after settlement its duration toggles turn details. */
 export function NativeChatWorkingStatus({
   bot,
@@ -81,12 +104,12 @@ export function NativeChatWorkingStatus({
     'components.native-chat.status.toggleDetails',
     NATIVE_CHAT_TURN_STATUS_COPY.toggleDetails
   )
+  const active = workedSeconds == null && !pendingLabel
   const identity = bot ? (
     <span role="img" aria-label={bot.name} className="mr-1 shrink-0">
-      <BotAvatarTile
-        src={bot.src}
-        outfit={bot.outfit}
-        fallback={bot.fallback}
+      <BotAvatar
+        bot={bot}
+        animationState={pendingLabel ? 'idle' : turnAvatarState(bot, active, verdict)}
         className="size-6 text-xs"
       />
     </span>
@@ -106,7 +129,6 @@ export function NativeChatWorkingStatus({
         aria-hidden="true"
       />
     ) : null
-  const active = workedSeconds == null && !pendingLabel
   const content = (
     <>
       {identity}

@@ -1,10 +1,7 @@
-import { useMemo } from 'react'
+import { useMemo, type ComponentProps } from 'react'
 import { isListedBotHost } from '@/lib/bot-hosts'
 import { getRuntimeTargetHostId } from '@/runtime/rpc/targets/runtime-client-target'
-import { LOCAL_EXECUTION_HOST_ID } from '../../../../shared/execution-host/execution-host'
-import { useBotAvatarLook } from './bot-avatar-image'
-import type { BotOutfitArt } from './bot-mascot-look'
-import { botFallback } from '../../../../shared/bots/bot-avatar-fallback'
+import type { BotAvatar } from './BotAvatar'
 import { useNativeChatTabOwnerWorktreeId } from '../native-chat/pane/ownership/use-native-chat-tab-owner'
 import type { NativeChatStructuredViewProps } from '../native-chat/native-chat-view-types'
 import { useBots, useBotsEnabled } from '@/lib/bot-catalog'
@@ -14,20 +11,8 @@ import { parseWorkspaceKey } from '../../../../shared/workspace/identity/workspa
 import { botOwnsChatSession } from '../../../../shared/bots/bot-chat-identity'
 import { selectFolderWorkspaceOnHost } from '../../store/folder-workspaces/folder-workspace-record-index'
 
-export type BotChatIdentity = {
+export type BotChatIdentity = ComponentProps<typeof BotAvatar>['bot'] & {
   showName?: boolean
-  name: string
-  src: string | null
-  /** The outfit's art, drawn over `src`. */
-  outfit?: BotOutfitArt | null
-  fallback: string
-}
-
-// Reads nothing: no upload to load.
-const NO_BOT_AVATAR: Parameters<typeof useBotAvatarLook>[0] = {
-  id: '',
-  hostId: LOCAL_EXECUTION_HOST_ID,
-  avatar: null
 }
 
 /** The bot whose chat this is, from the catalog of the host that owns the session. */
@@ -60,14 +45,23 @@ export function useBotChatOwner(
 ) {
   const ownerWorktreeId = useNativeChatTabOwnerWorktreeId(props.tabId)
   const turnBot = useBotChatIdentity(ownerWorktreeId, props.sessionId, props.target)
-  const { src, outfit } = useBotAvatarLook(turnBot ?? NO_BOT_AVATAR)
-  // Keyed on what it shows, not the Bot object: a re-read bot is a new object, and a new identity here
-  // would re-render every mounted row of the chat.
-  const name = turnBot?.name ?? null
-  const fallback = turnBot ? botFallback(turnBot) : null
+  const {
+    id,
+    hostId,
+    name,
+    avatar = null,
+    avatarColor,
+    avatarOutfit,
+    folderWorkspaceId,
+    paused
+  } = turnBot ?? {}
+  // Catalog refreshes can replace the Bot object without changing anything shown in the rows.
   const identity = useMemo<BotChatIdentity | null>(
-    () => (name !== null && fallback !== null ? { name, src, outfit, fallback } : null),
-    [name, src, outfit, fallback]
+    () =>
+      id && hostId && name !== undefined
+        ? { id, hostId, name, avatar, avatarColor, avatarOutfit, folderWorkspaceId, paused }
+        : null,
+    [id, hostId, name, avatar, avatarColor, avatarOutfit, folderWorkspaceId, paused]
   )
   return { ownerWorktreeId, turnBot: identity, bot: turnBot }
 }

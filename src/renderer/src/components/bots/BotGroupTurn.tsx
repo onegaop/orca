@@ -18,8 +18,6 @@ import {
   useNativeChatOpenSubagent,
   type NativeChatSubagentView
 } from '../native-chat/subagents/native-chat-open-subagent'
-import { useBotAvatarLook } from './bot-avatar-image'
-import { botFallback } from '../../../../shared/bots/bot-avatar-fallback'
 import {
   type BotGroupTurn as Turn,
   withBotGroupTurnAnswer
@@ -76,11 +74,11 @@ export const BotGroupTurn = memo(function BotGroupTurn({
       name: turn.botName,
       avatar: turn.avatar,
       avatarColor: turn.avatarColor,
-      avatarOutfit: turn.avatarOutfit
+      avatarOutfit: turn.avatarOutfit,
+      showName: true
     }),
     [hostId, turn.botId, turn.botName, turn.avatar, turn.avatarColor, turn.avatarOutfit]
   )
-  const { src, outfit } = useBotAvatarLook(bot)
   const submissions = session?.submissions ?? noItems
   const readTurn = session?.groupTurnItems
   const items = useMemo(
@@ -250,7 +248,7 @@ export const BotGroupTurn = memo(function BotGroupTurn({
           onKeyDown={(event) => closeNativeChatSubagentOnEscape(event, subagentKey)}
         >
           <NativeChatWorkingStatus
-            bot={{ name: turn.botName, src, outfit, fallback: botFallback(bot), showName: true }}
+            bot={bot}
             {...status}
             pendingLabel={pendingLabel}
             workedSeconds={membershipEnded || waiting || rejection ? 0 : status.workedSeconds}

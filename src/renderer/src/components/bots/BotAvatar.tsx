@@ -9,6 +9,7 @@ import { BOT_MASCOT_URLS } from './bot-mascots'
 import type { BotOutfitArt, BotPictureSize } from './bot-mascot-look'
 import { useBotPictureGenerating } from './avatar-generation-requests'
 import { AnimatedBotAvatar } from './avatar-packs/AnimatedBotAvatar'
+import type { AvatarAnimationState } from './avatar-packs/avatar-pack-types'
 import { useResolvedAvatarPack } from './avatar-packs/use-resolved-avatar-pack'
 
 /** The bot's picture, else its emoji, else its initial; veiled with a spinner while a new one is being
@@ -17,7 +18,8 @@ export function BotAvatar({
   bot,
   size,
   className,
-  style
+  style,
+  animationState
 }: {
   bot: Pick<Bot, 'id' | 'name' | 'avatar' | 'avatarColor' | 'avatarOutfit'> &
     BotOnHost & { paused?: boolean; folderWorkspaceId?: string | null }
@@ -25,10 +27,11 @@ export function BotAvatar({
   size?: BotPictureSize
   className?: string
   style?: React.CSSProperties
+  animationState?: AvatarAnimationState
 }): React.JSX.Element {
   const look = useBotAvatarLook(bot, size)
   const generating = useBotPictureGenerating(bot)
-  const animatedPack = useResolvedAvatarPack(bot)
+  const animatedPack = useResolvedAvatarPack(bot, animationState)
   const fallbackText = botFallback(bot)
 
   if (animatedPack?.active) {
