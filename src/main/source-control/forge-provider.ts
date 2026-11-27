@@ -9,12 +9,12 @@ import { createGitHubPullRequest } from '../github/client/create/create-github-p
 import { getGitHubPRLookupRateLimitBlock } from '../github/client/lookup/pr-lookup-rate-limit'
 import { getPRForBranchOutcome } from '../github/client/lookup/pr-for-branch-outcome'
 import { getRepoSlug } from '../github/client/fetch/repo-slug-upstream'
+import { withGitLabMergeMethodSettings } from './gitlab-review-merge-settings'
 import {
   mapAzureDevOpsReview,
   mapBitbucketReview,
   mapGiteaReview,
-  mapGitHubReview,
-  mapGitLabReview
+  mapGitHubReview
 } from './forge-review-mappers'
 import { hostedReviewSshConnectionId } from './hosted-review-execution-host'
 import {
@@ -93,7 +93,7 @@ const gitLabForgeProvider = {
       forgeConnectionId(input),
       { ...input, currentHeadOid: input.currentHeadOid }
     )
-    return mr ? mapGitLabReview(mr) : null
+    return mr ? withGitLabMergeMethodSettings(mr, input) : null
   },
   async getReviewByNumber(input) {
     const { getMergeRequest } = await import('../gitlab/merge-requests/merge-request-lookup')
@@ -103,7 +103,7 @@ const gitLabForgeProvider = {
       forgeConnectionId(input),
       ...hostedReviewExecutionArgs(input)
     )
-    return mr ? mapGitLabReview(mr) : null
+    return mr ? withGitLabMergeMethodSettings(mr, input) : null
   },
   createReview: async (...args) =>
     (await import('../gitlab/merge-requests/merge-request-creation')).createGitLabMergeRequest(
