@@ -27,6 +27,7 @@ import { settleNativeChatQueuedEdit } from './native-chat-queued-edit-outcome'
 import { readNativeChatComposerDraft } from '../../drafts/native-chat-composer-draft-store'
 import { structuredSessionOperationId } from '../../session/structured/writes/structured-agent-session-operation-id'
 import { startQueuedEditLease } from './structured-agent-session-queued-edit-lease'
+import { useNativeChatQueuedEditViewHold } from '../../pane/routing/native-chat-view-retention'
 import {
   useNativeChatQueuedEditLifetime,
   nativeChatQueuedEditSaving,
@@ -52,10 +53,15 @@ export function useStructuredAgentSessionQueuedEdit(args: StructuredQueuedEditAr
     }
   }, [messages, cards, submissions, promptOpen, scope])
 
-  const render = useCallback((edit: Edit | null) => {
-    active.current = edit
-    setShown(edit ? { ...edit } : null)
-  }, [])
+  const holdView = useNativeChatQueuedEditViewHold()
+  const render = useCallback(
+    (edit: Edit | null) => {
+      active.current = edit
+      holdView(edit !== null)
+      setShown(edit ? { ...edit } : null)
+    },
+    [holdView]
+  )
   const close = useCallback(
     (edit = active.current) => {
       if (!edit || edit.closed) {

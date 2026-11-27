@@ -1,6 +1,10 @@
 // Keep disclosures outside windowed rows so scrolling cannot erase reader choices; standalone rows fall back to local state.
 
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import {
+  KEPT_TRANSCRIPTS_PER_TAB,
+  useNativeChatViewState
+} from '../../pane/ownership/native-chat-view-memory'
 import type { VirtualItem } from '@tanstack/react-virtual'
 
 export type NativeChatDisclosureStore = {
@@ -15,32 +19,43 @@ export const NativeChatDisclosureContext = createContext<NativeChatDisclosureSto
 /** Bound disclosure memory across long-lived sessions. */
 export const MAX_NATIVE_CHAT_DISCLOSURES = 512
 
-export function useNativeChatDisclosures(): NativeChatDisclosureStore {
-  const [open, setOpen] = useState<ReadonlyMap<string, boolean>>(() => new Map())
+const NO_DISCLOSURES: ReadonlyMap<string, boolean> = new Map()
+
+export function useNativeChatDisclosures(memoryKey?: string): NativeChatDisclosureStore {
+  const [open, setOpen] = useNativeChatViewState(
+    memoryKey === undefined ? undefined : `disclosures:${memoryKey}`,
+    NO_DISCLOSURES,
+    KEPT_TRANSCRIPTS_PER_TAB
+  )
   const [toolRunMeasurements] = useState(() => new Map<string, VirtualItem[]>())
-  const write = useCallback((key: string, next: boolean, group?: string) => {
-    setOpen((current) => {
-      const others =
-        next && group !== undefined
-          ? [...current].filter(([other, open]) => open && other !== key && other.startsWith(group))
-          : []
-      if (current.get(key) === next && others.length === 0) {
-        return current
-      }
-      const updated = new Map(current)
-      for (const [other] of others) {
-        updated.set(other, false)
-      }
-      updated.set(key, next)
-      if (updated.size > MAX_NATIVE_CHAT_DISCLOSURES) {
-        const oldest = updated.keys().next().value
-        if (oldest !== undefined && oldest !== key) {
-          updated.delete(oldest)
+  const write = useCallback(
+    (key: string, next: boolean, group?: string) => {
+      setOpen((current) => {
+        const others =
+          next && group !== undefined
+            ? [...current].filter(
+                ([other, open]) => open && other !== key && other.startsWith(group)
+              )
+            : []
+        if (current.get(key) === next && others.length === 0) {
+          return current
         }
-      }
-      return updated
-    })
-  }, [])
+        const updated = new Map(current)
+        for (const [other] of others) {
+          updated.set(other, false)
+        }
+        updated.set(key, next)
+        if (updated.size > MAX_NATIVE_CHAT_DISCLOSURES) {
+          const oldest = updated.keys().next().value
+          if (oldest !== undefined && oldest !== key) {
+            updated.delete(oldest)
+          }
+        }
+        return updated
+      })
+    },
+    [setOpen]
+  )
   return useMemo(
     () => ({ read: (key: string) => open.get(key), write, toolRunMeasurements }),
     [open, write, toolRunMeasurements]

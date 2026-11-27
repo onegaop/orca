@@ -29,6 +29,8 @@ import { NativeChatUrlTarget, openUrlRequestPage } from './NativeChatUrlRequest'
 
 export type NativeChatApprovalCardProps = {
   approval: ChatApproval
+  /** Names this prompt within its chat tab, so a released chat returns with its detail as the reader left it. */
+  memoryKey?: string
   /** Deliver the option's transport-specific response token. */
   onChoose: (option: string) => void
   /** Cancel the active provider turn while this card owns the composer region. */
@@ -59,6 +61,7 @@ export type NativeChatApprovalCardProps = {
 /** PTY options are literal replies; structured options are journal ids. The first option is primary unless the options are neutral. */
 export function NativeChatApprovalCard({
   approval,
+  memoryKey,
   onChoose,
   onCancel,
   onCollapse,
@@ -110,26 +113,20 @@ export function NativeChatApprovalCard({
   } = useNativeChatApprovalQuietDetail(
     quiet ? (approval.detail ?? null) : null,
     approval.toolName,
-    approval.description
+    approval.description,
+    memoryKey
   )
-  const hasContext = Boolean(
-    countdown ||
-    approval.description ||
-    approval.decisionReason ||
-    neededPath ||
-    approval.subject ||
-    approval.detail
-  )
-  useNativeChatPromptCardFocus(cardRef, shouldFocus && !stacked)
-  // The dock observes no box that grows with this capped content: a new countdown or detail asks it to re-fit.
-  useNativeChatDockRefit(cardRef, !stacked, [
+  const contextParts = [
     countdown,
     approval.description,
     approval.decisionReason,
     neededPath,
     approval.subject,
     approval.detail
-  ])
+  ]
+  const hasContext = contextParts.some(Boolean)
+  useNativeChatPromptCardFocus(cardRef, shouldFocus && !stacked)
+  useNativeChatDockRefit(cardRef, !stacked, contextParts)
   const escape = onCancel ?? (isSubmitting ? undefined : onCollapse)
   const frame = useApprovalCardFrameClasses({ stacked, joined, quiet })
 

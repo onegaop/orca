@@ -108,6 +108,8 @@ export function FindBar() {
         rootRef,
         barRef,
         inputRef,
+        takeOpenFocus: () => false,
+        isOpenedHere: () => false,
         revealMatch: () => {}
       }}
     />

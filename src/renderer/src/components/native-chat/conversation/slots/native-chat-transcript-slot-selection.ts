@@ -42,13 +42,21 @@ export function nativeChatSlotIndexOf(
   if (index === undefined) {
     index = laidOut.findIndex(
       (slot) =>
-        slot.kind === 'message' &&
-        (slot.message.id === messageId ||
+        nativeChatSlotKey(slot) === messageId ||
+        (slot.kind === 'message' &&
           (slot.workRun ?? slot.itemNotes)?.some((member) => member.id === messageId) === true)
     )
     indexes.set(messageId, index)
   }
   return index
+}
+
+export function nativeChatSlotKeyAt(
+  slots: readonly NativeChatTranscriptSlot[],
+  index: number
+): string | null {
+  const slot = slots[index]
+  return slot ? nativeChatSlotKey(slot) : null
 }
 
 type WaitingInputs = readonly unknown[]
