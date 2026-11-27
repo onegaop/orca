@@ -25,8 +25,9 @@ export const HOURLY_RELEASE_REPO = 'stablyai/orca-hourly'
 export const DAILY_RELEASE_REPO = 'stablyai/orca-daily'
 export const ADHOC_RELEASE_REPO = 'stablyai/orca-adhoc'
 export const WEEKLY_RELEASE_BUILD = typeof ORCA_WEEKLY_RELEASE === 'boolean' && ORCA_WEEKLY_RELEASE
-export const MAIN_RELEASE_REPO = WEEKLY_RELEASE_BUILD ? 'onegaop/orca' : 'stablyai/orca'
-export const MAIN_RELEASES_URL = `https://github.com/${MAIN_RELEASE_REPO}/releases`
+export const MAIN_RELEASE_REPO = 'stablyai/orca'
+export const UPDATE_RELEASE_REPO = WEEKLY_RELEASE_BUILD ? 'onegaop/orca' : MAIN_RELEASE_REPO
+export const MAIN_RELEASES_URL = `https://github.com/${UPDATE_RELEASE_REPO}/releases`
 
 /** The dev channels, each published to its own repo rather than the main one. */
 const DEDICATED_REPO_CHANNELS = ['hourly', 'daily', 'adhoc'] as const
@@ -88,7 +89,7 @@ export function requiresManualDevChannelInstall(options: {
 }
 
 export function getReleaseRepoForChannel(channel: ReleaseChannel): string {
-  return WEEKLY_RELEASE_BUILD ? MAIN_RELEASE_REPO : CHANNEL_RELEASE_REPOS[channel]
+  return WEEKLY_RELEASE_BUILD ? UPDATE_RELEASE_REPO : CHANNEL_RELEASE_REPOS[channel]
 }
 
 export function normalizeTagToVersion(tag: string): string {
@@ -181,7 +182,7 @@ export function getVersionChannel(version: string): ReleaseChannel | null {
 /** Dev tags need their publishing repo or links 404. Missing versions use the releases list; latest can fail during GitHub API degradation. */
 export function getReleaseNotesUrlForVersion(version: string | null): string {
   const channel = version ? getVersionChannel(version) : null
-  const repo = channel ? getReleaseRepoForChannel(channel) : MAIN_RELEASE_REPO
+  const repo = channel ? getReleaseRepoForChannel(channel) : UPDATE_RELEASE_REPO
   return version
     ? `https://github.com/${repo}/releases/tag/v${normalizeTagToVersion(version)}`
     : `https://github.com/${repo}/releases`

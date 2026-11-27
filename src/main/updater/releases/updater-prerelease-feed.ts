@@ -1,5 +1,5 @@
 import { net } from 'electron'
-import { confirmEmptyWeeklyFeed } from './weekly-empty-feed'
+import { acceptEmptyReleaseAtom, confirmEmptyWeeklyFeed } from './weekly-empty-feed'
 import { compareVersions, isPrereleaseVersion, isValidVersion } from './updater-fallback'
 import {
   FETCH_TIMEOUT_MS,
@@ -15,7 +15,7 @@ import {
 } from './updater-release-delay'
 import { listMainRepoReleaseBuildsUntil } from './updater-release-builds'
 import {
-  MAIN_RELEASE_REPO,
+  UPDATE_RELEASE_REPO,
   MAIN_RELEASES_URL,
   type ReleaseBuild
 } from '../../../shared/updater/release-channel'
@@ -75,7 +75,7 @@ async function fetchReleaseFeedTags(): Promise<ReleaseFeedTag[] | null> {
     }
 
     tags.sort((left, right) => compareVersions(right.version, left.version))
-    return tags
+    return tags.length || acceptEmptyReleaseAtom(res, body) ? tags : null
   } catch {
     return null
   }
@@ -90,7 +90,7 @@ export async function fetchLatestStableReleaseTag(): Promise<string | null> {
       return null
     }
     const target = new URL(response.redirectUrl, latestUrl)
-    const prefix = `/${MAIN_RELEASE_REPO}/releases/tag/`
+    const prefix = `/${UPDATE_RELEASE_REPO}/releases/tag/`
     const escapedTag = target.pathname.startsWith(prefix)
       ? target.pathname.slice(prefix.length)
       : ''
