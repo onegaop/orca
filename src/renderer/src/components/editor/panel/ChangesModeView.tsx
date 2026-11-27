@@ -5,8 +5,11 @@ import type { GitDiffResult } from '../../../../../shared/git/diff/git-diff-comp
 import type { GitStatusEntry } from '../../../../../shared/git/status/git-status-types'
 import { ConflictBanner } from '../conflict-review/ConflictComponents'
 import { useTranslate } from '@/i18n/use-translate'
+import { loadAfterMonacoUiLocale } from '@/lib/editor/monaco/monaco-ui-locale'
 
-const DiffViewer = lazy(() => import('../diff/monaco-view/DiffViewer'))
+const DiffViewer = lazy(() =>
+  loadAfterMonacoUiLocale(() => import('../diff/monaco-view/DiffViewer'))
+)
 
 // Render HEAD against the live edit draft so existing dirty tracking, autosave and close prompts keep working without a separate diff tab.
 export function ChangesModeView({

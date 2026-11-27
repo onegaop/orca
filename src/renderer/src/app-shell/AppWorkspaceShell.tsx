@@ -1,5 +1,6 @@
 import { memo, Suspense, useCallback, useRef } from 'react'
 import { lazyWithRetry as lazy } from '@/app-shell/startup/lazy-with-retry'
+import { loadAfterMonacoUiLocale } from '@/lib/editor/monaco/monaco-ui-locale'
 import { useTranslate } from '@/i18n/use-translate'
 import { useAppStore } from '@/store/index'
 import { usePluginViewCaptureStore } from '@/store/plugins/capture/plugin-view-capture'
@@ -35,7 +36,9 @@ const WorktreeCreationPanel = lazy(
 const PendingNativeChatCreation = lazy(
   () => import('../components/worktree-creation/PendingNativeChatCreation')
 )
-const AutomationsPage = lazy(() => import('../components/automations/AutomationsPage'))
+const AutomationsPage = lazy(() =>
+  loadAfterMonacoUiLocale(() => import('../components/automations/AutomationsPage'))
+)
 const ActivityPrototypePage = lazy(() => import('../components/activity/ActivityPrototypePage'))
 const Settings = lazy(() => import('../components/settings/Settings'))
 const SkillsPage = lazy(() => import('../components/skills/SkillsPage'))

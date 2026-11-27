@@ -1,3 +1,4 @@
+import { loadAfterMonacoUiLocale } from '@/lib/editor/monaco/monaco-ui-locale'
 import { Activity, Suspense, useCallback, useState } from 'react'
 import { lazyWithRetry as lazy } from '@/app-shell/startup/lazy-with-retry'
 import { usePreloadAfterInputQuiet } from '@/app-shell/startup/use-preload-after-input-quiet'
@@ -5,7 +6,9 @@ import { useTranslate } from '@/i18n/use-translate'
 import { useAppStore } from '@/store/index'
 import { RecoverableRenderErrorBoundary } from '../components/error-boundaries/RecoverableRenderErrorBoundary'
 
-const TaskPage = lazy(() => import('../components/task-page/TaskPage'))
+const TaskPage = lazy(() =>
+  loadAfterMonacoUiLocale(() => import('../components/task-page/TaskPage'))
+)
 
 /** With preloading on, Tasks is built after startup and kept while hidden; Activity pauses its effects (Esc, polling, fetches) off-screen. */
 export function TaskPageMount({ active }: { active: boolean }): React.JSX.Element | null {
