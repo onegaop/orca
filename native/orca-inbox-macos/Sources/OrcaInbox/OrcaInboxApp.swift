@@ -45,11 +45,19 @@ private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, N
     private var menuUpdates: Task<Void, Never>?
     private var clockUpdates: Task<Void, Never>?
 
+    private static let panelSize = NSSize(
+        width: InboxMetrics.panelWidth,
+        height: InboxMetrics.panelHeight
+    )
+
     private lazy var popover: NSPopover = {
         let popover = NSPopover()
         popover.behavior = .transient
         popover.delegate = self
-        popover.contentViewController = NSHostingController(rootView: InboxWindow(store: store))
+        popover.contentSize = Self.panelSize
+        let controller = NSHostingController(rootView: InboxWindow(store: store))
+        controller.preferredContentSize = Self.panelSize
+        popover.contentViewController = controller
         return popover
     }()
 
@@ -105,7 +113,11 @@ private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, N
         if popover.isShown {
             popover.performClose(button)
         } else {
+            // Set the exact size before show so AppKit anchors the popover below the menu bar instead of resizing upward over it.
+            popover.contentSize = Self.panelSize
+            popover.contentViewController?.preferredContentSize = Self.panelSize
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            popover.contentViewController?.view.window?.makeKey()
         }
     }
 
