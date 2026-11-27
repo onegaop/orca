@@ -19071,7 +19071,7 @@
           "account": {
             "fallback": "Passkey",
             "title": "Passkey auswählen",
-            "description": "Das Konto auswählen, das mit diesem Sicherheitsschlüssel verwendet werden soll.",
+            "description": "Das Konto für die Anmeldung auswählen.",
             "site": "Website",
             "cancel": "Abbrechen"
           }

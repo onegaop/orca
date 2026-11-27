@@ -24,7 +24,11 @@ Import cookies from Chrome or Edge (or from a cookie file) into a profile from S
 
 **Clear cookies…** in Settings › Browser removes every cookie in the active profile of the selected host after you confirm, signing you out of every site in that profile. For a paired Orca server it clears both of that profile's stores: the one this computer uses for its pages and the server's own, which streamed pages use. For an SSH host it clears the store this computer keeps for that host's pages. Other profiles and hosts keep their cookies.
 
-When a site requests a discoverable passkey from a USB security key and the key offers multiple accounts, Orca opens an account picker instead of silently canceling the sign-in. Choose the account you want or cancel the request. Platform passkeys stored by the operating system are not available in Orca yet; this flow is for external FIDO security keys.
+## Passkeys and security keys
+
+On a Mac with Touch ID, sites can save a passkey in the Orca browser, and you sign in with it by touching the sensor. This needs Orca's signed macOS release: builds you compile yourself can't save Touch ID passkeys, because macOS only grants that keychain access to Orca's own signature. These passkeys stay on that Mac, in the profile that created them. They don't sync through iCloud Keychain, don't appear in the Passwords app or your password manager, and stop working if you delete the profile. Keep another way to sign in on each account. Passkeys you saved in Safari, Chrome, iCloud Keychain or on your phone aren't available in Orca.
+
+USB FIDO security keys work on every platform. When a passkey or security key offers more than one account for a site, Orca asks which one to use. Choose the account, or cancel the request.
 
 ## Use a profile
 
