@@ -1,116 +1,14 @@
-import { readdir } from 'node:fs/promises'
-import { join } from 'node:path'
-import { forEachWithConcurrency } from '../../../../shared/concurrency/map-with-concurrency'
-import { PRIMARY_CHECKOUT_METADATA_FILES } from './worktree-git-common-metadata-files'
 import { createOnDemandScanGate } from './worktree-git-common-on-demand-scan-gate'
-import {
-  diffGitCommon,
-  gitCommonDirectoryIdentity,
-  type GitCommonSnapshot
-} from './worktree-git-common-snapshot-diff'
+import { snapshotGitCommon } from './worktree-git-common-snapshot'
+import { diffGitCommon } from './worktree-git-common-snapshot-diff'
 import type {
   WorktreeBasePollEvent,
   WorktreeBaseSubscription,
   WorktreePollerWindowVisibility
 } from '../creation/worktree-base-directory-poller'
-import {
-  gitCommonDirectorySignature,
-  gitCommonFileSignature,
-  snapshotGitCommonEntry,
-  type GitCommonEntrySnapshot
-} from './worktree-git-common-entry-snapshot'
 
-// Ungated backstops bound missed same-granule index writes on coarse-timestamp filesystems.
+// Fallback reads settled entries only on the backstop, including same-granule index writes.
 const INDEX_BACKSTOP_TICKS = 15
-
-// Match existing probe pools to bound fleet stat fanout without flooding libuv (#17828).
-const GIT_COMMON_SNAPSHOT_CONCURRENCY = 8
-
-async function snapshotStatusRefSignatures(
-  paths: ReadonlySet<string>
-): Promise<Map<string, string>> {
-  const signatures = new Map<string, string>()
-  await forEachWithConcurrency([...paths], GIT_COMMON_SNAPSHOT_CONCURRENCY, async (path) => {
-    const signature = await gitCommonFileSignature(path)
-    if (signature !== null) {
-      signatures.set(path, signature)
-    }
-  })
-  return signatures
-}
-
-async function snapshotPrimaryCheckoutSignatures(
-  commonDirPath: string
-): Promise<Map<string, string>> {
-  const signatures = new Map<string, string>()
-  await Promise.all(
-    PRIMARY_CHECKOUT_METADATA_FILES.map(async (name) => {
-      const signature = await gitCommonFileSignature(join(commonDirPath, name))
-      if (signature !== null) {
-        signatures.set(name, signature)
-      }
-    })
-  )
-  return signatures
-}
-
-async function snapshotGitCommon(
-  commonDirPath: string,
-  previous?: GitCommonSnapshot,
-  includePrimary = true,
-  forceFullScan = false,
-  statusRefPaths = new Set<string>(),
-  statInPlaceLeaves = false,
-  onDirGateMiss?: () => void,
-  onRootMissing?: () => void
-): Promise<GitCommonSnapshot> {
-  const worktreesDir = join(commonDirPath, 'worktrees')
-  const [worktreesDirSignature, primarySignatures, statusRefSignatures] = await Promise.all([
-    gitCommonDirectorySignature(worktreesDir, previous?.worktreesDirSignature, onRootMissing),
-    includePrimary ? snapshotPrimaryCheckoutSignatures(commonDirPath) : new Map<string, string>(),
-    snapshotStatusRefSignatures(statusRefPaths)
-  ])
-  // List every tick: coarse directory signatures can miss add/remove changes before the slow backstop.
-  let entryPaths: string[]
-  try {
-    const entries = await readdir(worktreesDir, { withFileTypes: true })
-    entryPaths = entries
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => join(worktreesDir, entry.name))
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      entryPaths = []
-    } else {
-      // Transient readdir failures are not deletion proof; retain entries and let their own stats detect removals.
-      entryPaths = previous ? [...previous.entries.keys()] : []
-    }
-  }
-
-  const entries = new Map<string, GitCommonEntrySnapshot>()
-  await forEachWithConcurrency(entryPaths, GIT_COMMON_SNAPSHOT_CONCURRENCY, async (entryPath) => {
-    const previousEntry = previous?.entries.get(entryPath)
-    entries.set(
-      entryPath,
-      await snapshotGitCommonEntry(
-        entryPath,
-        previousEntry,
-        forceFullScan,
-        statInPlaceLeaves,
-        onDirGateMiss
-      )
-    )
-  })
-  // Full-scan metrics count ungated metadata sweeps, not the cheap per-tick directory listing.
-  return {
-    worktreesDirSignature,
-    worktreesDirIdentity: gitCommonDirectoryIdentity(worktreesDirSignature),
-    entries,
-    primarySignatures,
-    statusRefPaths,
-    statusRefSignatures,
-    didFullScan: forceFullScan
-  }
-}
 
 export type GitCommonPollingSubscription = WorktreeBaseSubscription & {
   /** Run a gated check now without moving the timed sweep; false when skipped (busy, hidden or scanned recently). */
@@ -144,22 +42,20 @@ export async function startGitCommonPolling(
   let tickCount = 0
   const reconciliationFullScanEveryTicks = options.reconciliationFullScanEveryTicks
   const isReconciliation = reconciliationFullScanEveryTicks !== undefined
+  const fallbackRegistration = isReconciliation
+    ? undefined
+    : { quietTicksByPath: new Map<string, number>(), maxQuietTicks: INDEX_BACKSTOP_TICKS }
   // Filesystems can ignore child renames in directory metadata; detected misses force ungated sweeps.
   let entryDirGateTrusted = true
   let dirGateMissTicks = 0
   const onDemand = createOnDemandScanGate(options.minOnDemandScanIntervalMs, visibility)
   let pokeAfterScan = false
   let timerDueAt = 0
-  let snapshot = await snapshotGitCommon(
-    commonDirPath,
-    undefined,
+  let snapshot = await snapshotGitCommon(commonDirPath, {
     includePrimary,
-    false,
-    new Set(getStatusRefPaths()),
-    false,
-    undefined,
-    () => options.onRootMissing?.(true)
-  )
+    statusRefPaths: new Set(getStatusRefPaths()),
+    onRootMissing: () => options.onRootMissing?.(true)
+  })
   let timer: ReturnType<typeof setTimeout> | null = null
   let parkedWhileHidden = false
 
@@ -200,23 +96,24 @@ export async function startGitCommonPolling(
       (!poked && tickCount % (reconciliationFullScanEveryTicks ?? INDEX_BACKSTOP_TICKS) === 0)
     let dirGateMissed = false
     try {
-      const next = await snapshotGitCommon(
-        commonDirPath,
-        snapshot,
+      const next = await snapshotGitCommon(commonDirPath, {
+        previous: snapshot,
         includePrimary,
-        shouldForceFullScan,
-        new Set(getStatusRefPaths()),
-        isReconciliation,
-        isReconciliation
+        forceFullScan: shouldForceFullScan,
+        statusRefPaths: new Set(getStatusRefPaths()),
+        statInPlaceLeaves: isReconciliation,
+        onDirGateMiss: isReconciliation
           ? () => {
               dirGateMissed = true
             }
           : undefined,
         // A present-to-missing edge already retires through the normal diff.
-        snapshot.worktreesDirSignature === 'missing'
-          ? () => options.onRootMissing?.(false)
-          : undefined
-      )
+        onRootMissing:
+          snapshot.worktreesDirSignature === 'missing'
+            ? () => options.onRootMissing?.(false)
+            : undefined,
+        fallbackRegistration
+      })
       if (disposed) {
         return
       }

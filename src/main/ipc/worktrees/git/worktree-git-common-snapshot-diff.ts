@@ -81,6 +81,9 @@ export function diffGitCommon(
   }
   for (const [entryPath, entry] of next.entries) {
     const prevEntry = prev.entries.get(entryPath)
+    if (prevEntry === entry) {
+      continue
+    }
     if (!prevEntry) {
       events.push({ type: 'create', path: entryPath })
       continue

@@ -48,6 +48,15 @@ export type GitCommonEntrySnapshot = {
   headLogSignature: string | null
 }
 
+export function isGitCommonEntrySettled(entry: GitCommonEntrySnapshot): boolean {
+  return (
+    entry.structuralSignatures.has('HEAD') &&
+    entry.structuralSignatures.has(GITDIR_FILE) &&
+    !entry.structuralSignatures.has('locked') &&
+    entry.indexSignature !== null
+  )
+}
+
 // In-place gitdir/reflog writes do not alter entry signatures; slow-cadence callers must stat these leaves.
 async function inPlaceLeavesChanged(
   entryPath: string,
