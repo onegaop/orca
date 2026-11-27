@@ -36,6 +36,7 @@ import type { UiLanguageSettings } from '../i18n/ui-language-settings'
 import type { ChatDeleteSettings } from '../agent-session/chat-deletion/orca-chat-delete'
 import type { CustomAcpAgentSettings } from '../agent-launch/custom-acp/custom-acp-agent'
 import type { ProjectBadgeAppearanceSettings } from '../repository/appearance/repo-mark-appearance'
+import type { ProjectTreeSettings } from '../sidebar-list/project-tree-settings'
 
 type DesktopWindowSettings = {
   /** Windows-only: close (X) hides to tray instead of quitting; the tray icon is always present regardless. */
@@ -91,4 +92,5 @@ export type GlobalSettingsBase = AntigravityChatAuthSettings &
   ChatDeleteSettings &
   CustomAcpAgentSettings &
   TaskPageSettings &
-  ProjectBadgeAppearanceSettings
+  ProjectBadgeAppearanceSettings &
+  ProjectTreeSettings

@@ -41,12 +41,15 @@ type Props = {
   /** The card's host; local and remote copies can share a workspace ID, so activation must name it. */
   executionHostId?: ExecutionHostId
   className?: string
+  /** List every root agent instead of folding several into the compact summary. */
+  expandAll?: boolean
 }
 
 export default React.memo(function WorktreeCardAgents({
   worktreeId,
   executionHostId,
-  className
+  className,
+  expandAll
 }: Props) {
   const projectedRoots = useAgentPresentation(
     `roots\0${worktreeId}`,
@@ -61,6 +64,7 @@ export default React.memo(function WorktreeCardAgents({
       roots={roots}
       hostFiltered={roots !== allRoots}
       className={className}
+      expandAll={expandAll}
     />
   ) : null
 })
@@ -70,7 +74,8 @@ function WorktreeCardAgentsBody({
   executionHostId,
   roots,
   hostFiltered,
-  className
+  className,
+  expandAll
 }: Props & { roots: readonly string[]; hostFiltered: boolean }) {
   const t = useTranslate(),
     languageRevision = useUiLanguageRevision()
@@ -153,7 +158,7 @@ function WorktreeCardAgentsBody({
     ]
   )
   const compact = display.agentActivityDisplayMode === 'compact',
-    summary = compact && roots.length > 1 && !targets
+    summary = compact && roots.length > 1 && !targets && !expandAll
   const rootRef = useRef<HTMLDivElement | null>(null),
     previousExpanded = useRef(expansion.compactRootListExpanded)
   const drag = useAgentRowTabDrag(worktreeId, rootRef)
@@ -221,19 +226,9 @@ const AgentBranches = React.memo(function AgentBranches({
   timerActive: boolean
   root?: boolean
 }) {
-  return (
-    <>
-      {keysToRender.map((key) => (
-        <AgentBranch
-          key={key}
-          paneKey={key}
-          context={context}
-          timerActive={timerActive}
-          root={root}
-        />
-      ))}
-    </>
-  )
+  return keysToRender.map((key) => (
+    <AgentBranch key={key} paneKey={key} context={context} timerActive={timerActive} root={root} />
+  ))
 })
 const AgentBranch = React.memo(function AgentBranch({
   paneKey,
