@@ -116,6 +116,8 @@ type CompactAgentRowProps = {
   hideIdentityIcon?: boolean
   cacheTimerActive?: boolean
   isUnvisited?: boolean
+  /** Tree mode project Chats row: aligns columns with worktree rows and omits redundant provider suffixes. */
+  treeChat?: boolean
 }
 
 export const CompactAgentRow = React.memo(function CompactAgentRow({
@@ -135,7 +137,8 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
   isFocusedPane = false,
   hideIdentityIcon = false,
   cacheTimerActive = true,
-  isUnvisited = false
+  isUnvisited = false,
+  treeChat = false
 }: CompactAgentRowProps) {
   const t = useTranslate()
   const view = useClaudeAgentRowView(agent)
@@ -167,13 +170,19 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
   }
   const stableMessage =
     turnHoldable && !currentMessage && held?.turn === turn ? held.message : undefined
-  const secondary = getCompactAgentSecondary(agent, now, stableMessage, presentation, t)
+  const statusText = getCompactAgentStatus(agent, now, stableMessage, presentation, t)
+  // Tree chat rows already show the provider icon beside the title, so skip repeating its name in narrow sidebars.
+  const secondary =
+    treeChat && !hideIcon
+      ? (statusText ?? '')
+      : getCompactAgentSecondary(agent, now, stableMessage, presentation, t)
   const { leadingText, trailingText } = getCompactAgentLineOrder(agent, primary, secondary, t)
   const shownText = (text: string): string =>
     forkNamed && text === primary ? forkMarkedNameText(t, text) : text
   const shownNode = (text: string): React.ReactNode =>
     forkNamed && text === primary ? <ForkMarkedName name={text} /> : text
-  const rowTitle = `${shownText(leadingText)}${trailingText ? ` - ${shownText(trailingText)}` : ''}`
+  const tooltipSecondary = trailingText || (treeChat ? formatAgentTypeLabel(agent.agentType) : '')
+  const rowTitle = `${shownText(leadingText)}${tooltipSecondary ? ` - ${shownText(tooltipSecondary)}` : ''}`
   const model = agent.entry.model?.trim() ?? ''
   const shortTime = getCompactAgentTime(agent, now)
   const cacheTimer = usePromptCacheCountdownForPane(agent.paneKey, cacheTimerActive)
@@ -201,7 +210,11 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
 
   // Focused fills wash out muted text; brighten the lead while preserving unread emphasis.
   const leadClassName = cn(
-    isUnvisited ? 'font-semibold text-foreground' : 'font-normal text-muted-foreground/90',
+    isUnvisited
+      ? 'font-semibold text-foreground'
+      : treeChat
+        ? 'font-normal text-worktree-sidebar-foreground/85'
+        : 'font-normal text-muted-foreground/90',
     highlighted && !isUnvisited && 'text-foreground'
   )
 
@@ -253,17 +266,30 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
       ) : (
         <>
           {/* Show the actionable disabled reason over every hit area. */}
-          <AgentStateDot
-            state={dotState}
-            size="sm"
-            title={sendTargetDisabledReason ? null : undefined}
-            tooltipSide="right"
-            progress={presentation.progress}
-            unread={isUnvisited}
-          />
+          {treeChat ? (
+            <span className="inline-flex size-4 shrink-0 items-center justify-center">
+              <AgentStateDot
+                state={dotState}
+                size="md"
+                title={sendTargetDisabledReason ? null : undefined}
+                tooltipSide="right"
+                progress={presentation.progress}
+                unread={isUnvisited}
+              />
+            </span>
+          ) : (
+            <AgentStateDot
+              state={dotState}
+              size="sm"
+              title={sendTargetDisabledReason ? null : undefined}
+              tooltipSide="right"
+              progress={presentation.progress}
+              unread={isUnvisited}
+            />
+          )}
           {!hideIcon && (
             <span className="inline-flex shrink-0" title={formatAgentTypeLabel(agent.agentType)}>
-              <AgentTypeIcon agentType={agent.agentType} size={13} />
+              <AgentTypeIcon agentType={agent.agentType} size={treeChat ? 12 : 13} />
             </span>
           )}
           {modelChip ? (
@@ -307,11 +333,13 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
     <div
       draggable={false}
       className={cn(
-        'compact-agent-row agent-disclosure-row group/compact-agent-row min-w-0 cursor-pointer rounded-sm px-1 text-[11px] leading-none',
+        'compact-agent-row agent-disclosure-row group/compact-agent-row min-w-0 cursor-pointer',
+        treeChat
+          ? 'flex h-6 items-center gap-1.5 rounded-lg pl-1.5 pr-[7px] text-xs leading-4'
+          : 'flex h-6 items-center gap-1 rounded-sm px-1 text-[11px] leading-none',
         'text-muted-foreground worktree-agent-row-hover',
         hasChildDisclosure && 'worktree-agent-lineage-parent-row',
         isLineageChild && 'worktree-agent-lineage-child-row',
-        'flex h-6 items-center gap-1',
         showStateAccent && 'relative',
         highlighted && 'bg-worktree-sidebar-accent',
         sendTargetStatus === 'sending' && 'cursor-progress opacity-75',

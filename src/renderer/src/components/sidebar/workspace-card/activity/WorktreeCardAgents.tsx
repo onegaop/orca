@@ -43,14 +43,12 @@ type Props = {
   className?: string
   /** List every root agent instead of folding several into the compact summary. */
   expandAll?: boolean
+  /** Align with Tree mode worktree rows and drop redundant provider-name suffixes. */
+  treeChat?: boolean
 }
 
-export default React.memo(function WorktreeCardAgents({
-  worktreeId,
-  executionHostId,
-  className,
-  expandAll
-}: Props) {
+export default React.memo(function WorktreeCardAgents(props: Props) {
+  const { worktreeId, executionHostId } = props
   const projectedRoots = useAgentPresentation(
     `roots\0${worktreeId}`,
     useCallback((p) => p.display.roots(worktreeId), [worktreeId])
@@ -58,14 +56,7 @@ export default React.memo(function WorktreeCardAgents({
   const allRoots = useTabOrderedAgentRoots(worktreeId, projectedRoots)
   const roots = useHostRootKeys(worktreeId, executionHostId, allRoots)
   return roots.length ? (
-    <WorktreeCardAgentsBody
-      worktreeId={worktreeId}
-      executionHostId={executionHostId}
-      roots={roots}
-      hostFiltered={roots !== allRoots}
-      className={className}
-      expandAll={expandAll}
-    />
+    <WorktreeCardAgentsBody {...props} roots={roots} hostFiltered={roots !== allRoots} />
   ) : null
 })
 
@@ -75,7 +66,8 @@ function WorktreeCardAgentsBody({
   roots,
   hostFiltered,
   className,
-  expandAll
+  expandAll,
+  treeChat
 }: Props & { roots: readonly string[]; hostFiltered: boolean }) {
   const t = useTranslate(),
     languageRevision = useUiLanguageRevision()
@@ -140,7 +132,8 @@ function WorktreeCardAgentsBody({
       onSend,
       toggleLineage,
       toggleIdle,
-      now
+      now,
+      treeChat
     }),
     [
       worktreeId,
@@ -154,7 +147,8 @@ function WorktreeCardAgentsBody({
       onSend,
       toggleLineage,
       toggleIdle,
-      now
+      now,
+      treeChat
     ]
   )
   const compact = display.agentActivityDisplayMode === 'compact',
@@ -319,6 +313,7 @@ const AgentBranch = React.memo(function AgentBranch({
       {compact ? (
         <CompactAgentRow
           {...common}
+          treeChat={context.treeChat}
           parentConversationDescription={
             opensClaudeParentConversation(row)
               ? t('auto.lib.claudeAgentRowView.openParentConversation', 'Open parent conversation')

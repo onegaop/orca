@@ -100,12 +100,13 @@ function SourceChats({ mainWorktree }: { mainWorktree: Worktree }): React.JSX.El
   )
   const roots = useHostRootKeys(mainWorktree.id, mainWorktree.hostId, allRoots)
   return roots.length > 0 ? (
-    // Agent rows inset their glyph 4px; pulling back keeps it on the lane.
-    <div className="-ms-1 pe-0.75 [&_[data-agent-spinner]]:size-2">
+    // Pull back to the card surface edge so Tree chat rows share the worktree icon and timestamp columns.
+    <div className="-ms-2.5">
       <WorktreeCardAgents
         worktreeId={mainWorktree.id}
         executionHostId={mainWorktree.hostId}
         expandAll
+        treeChat
       />
     </div>
   ) : null

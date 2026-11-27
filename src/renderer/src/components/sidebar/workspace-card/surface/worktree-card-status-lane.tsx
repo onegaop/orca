@@ -27,7 +27,11 @@ export function WorktreeCardStatusLane({
     <div
       className={cn(
         'flex shrink-0 justify-center',
-        card.newCardStyle ? 'mr-1 w-5 items-center' : 'items-start pt-[2px]',
+        card.newCardStyle
+          ? 'mr-1 w-5 items-center'
+          : card.compactLine
+            ? 'items-center'
+            : 'items-start pt-[2px]',
         card.affiliateListMode && 'px-1'
       )}
       data-worktree-card-status-slot=""

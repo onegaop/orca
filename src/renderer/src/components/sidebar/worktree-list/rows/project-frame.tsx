@@ -10,7 +10,7 @@ import { shouldUseHeaderTopSpacing } from '../viewport/virtual-rows'
 /** Tree style only. Headers, workspace rows and guides share one 16px grid. */
 const TREE_STEP = 16
 const TREE_GLYPH_INSET = 10
-const TREE_RIGHT_INSET = 8
+const TREE_RIGHT_INSET = 2
 
 export type ProjectFramePiece = {
   project?: { depth: number; current: boolean }
@@ -161,7 +161,7 @@ function TreeIndentGuide({
   bridge: string
   startsHere?: boolean
 }): React.JSX.Element {
-  // The 12px disclosure chevron is centered on the rail.
+  // The 12px disclosure chevron is centered on the rail; guides begin on the first child row to clear the header pill.
   return (
     <span
       aria-hidden="true"

@@ -17,4 +17,5 @@ export type BranchContext = {
   toggleLineage: (paneKey: string) => void
   toggleIdle: (paneKey: string) => void
   now: number
+  treeChat?: boolean
 }

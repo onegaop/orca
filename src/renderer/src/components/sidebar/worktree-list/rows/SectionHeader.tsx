@@ -203,6 +203,8 @@ export function renderWorktreeSectionHeaderRow(
           data-workspace-status-drop-target={headerWorkspaceStatus ? '' : undefined}
           data-workspace-status={headerWorkspaceStatus ?? undefined}
           data-workspace-pin-drop-target={isPinnedHeader ? '' : undefined}
+          data-project-tree-header={cardInset ? '' : undefined}
+          data-current={cardInset && args.projectFrame?.project?.current ? 'true' : undefined}
           className={cn(
             'group relative flex h-7 w-full items-center gap-1.5 pr-2 text-left transition-all',
             !(isDraggableRepoHeader || isDraggableProjectGroupHeader) && 'cursor-pointer',
@@ -217,10 +219,7 @@ export function renderWorktreeSectionHeaderRow(
               ctx.pinDragOver &&
               'rounded-md bg-worktree-sidebar-accent ring-1 ring-worktree-sidebar-ring/40',
             row.repo && 'overflow-hidden',
-            cardInset && 'rounded-lg hover:bg-worktree-sidebar-accent/60',
-            cardInset &&
-              args.projectFrame?.project?.current &&
-              'bg-worktree-sidebar-accent ring-1 ring-inset ring-worktree-sidebar-foreground/12'
+            cardInset && 'rounded-lg hover:bg-worktree-sidebar-accent/60'
           )}
           style={
             cardInset
