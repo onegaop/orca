@@ -1,5 +1,9 @@
 import { useIntlLocale, useTranslate } from '@/i18n/use-translate'
-import { workerDockKindLabel, workerDockStateLabel } from './worker-dock-labels'
+import {
+  workerDockKindLabel,
+  workerDockSpokenTitle,
+  workerDockStateLabel
+} from './worker-dock-labels'
 import { memo } from 'react'
 import { cn } from '@/lib/class-names'
 import { WorkerDockRowAction } from './WorkerDockRowAction'
@@ -81,9 +85,10 @@ export const WorkerDockRow = memo(function WorkerDockRow({
     row.progressNote
       ? row.progressNote
       : ''
+  const command = row?.kind === 'command'
   const label = [
     mixed && row ? workerDockKindLabel(t, row.kind) : '',
-    title,
+    row ? workerDockSpokenTitle(row.kind, title) : title,
     state,
     progress,
     remote
@@ -115,7 +120,9 @@ export const WorkerDockRow = memo(function WorkerDockRow({
         }}
       >
         <WorkerDockGlyph glyph={row ? workerDockGlyph(row) : 'queued'} />
-        <span className="min-w-0 flex-1 truncate">{title}</span>
+        <span className={cn('min-w-0 flex-1 truncate', command && 'font-mono text-xs')}>
+          {title}
+        </span>
         {row && row.changedAt !== null ? (
           <span className="shrink-0 text-xs text-muted-foreground">
             <Age at={row.changedAt} visible={visible} />
@@ -128,7 +135,8 @@ export const WorkerDockRow = memo(function WorkerDockRow({
       <div
         data-worker-dock-hover=""
         className={cn(
-          'pointer-events-none absolute inset-y-0 right-0 flex items-center gap-1 rounded-r-md bg-accent pr-2 pl-1.5',
+          // Inset by the focus ring's width, so a focused row's ring closes on all four sides.
+          'pointer-events-none absolute inset-y-[2px] right-[2px] flex items-center gap-1 rounded-r-[4px] bg-accent pr-1.5 pl-1.5',
           pending
             ? 'opacity-100 [&>*]:pointer-events-auto'
             : 'opacity-0 group-hover/worker:opacity-100 group-hover/worker:[&>*:not(svg)]:pointer-events-auto group-focus-within/worker:opacity-100 [@media(pointer:coarse)]:opacity-100 [@media(pointer:coarse)]:[&>*:not(svg)]:pointer-events-auto'

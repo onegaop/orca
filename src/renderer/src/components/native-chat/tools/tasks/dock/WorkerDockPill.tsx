@@ -50,8 +50,10 @@ export function WorkerDockPill({
   pill,
   glyph,
   label,
+  spokenLabel = label,
   latest,
   total,
+  commandsOnly = false,
   expanded,
   listId,
   onToggle,
@@ -61,6 +63,10 @@ export function WorkerDockPill({
   glyph: Glyph | false
   /** The chip's text: the one worker's title, how many run or need you, or what is known. */
   label: string
+  /** The chip's count for assistive technology, both groups in full. */
+  spokenLabel?: string
+  /** Only background commands are listed: the running chip draws a terminal, not the worker grid. */
+  commandsOnly?: boolean
   /** The most relevant worker's title, for assistive technology. */
   latest: string
   total: number
@@ -84,10 +90,10 @@ export function WorkerDockPill({
         aria-expanded={expanded}
         aria-controls={expanded ? listId : undefined}
         aria-label={
-          total <= 1
+          total <= 1 && !commandsOnly
             ? undefined
             : t('components.native-chat.workerDock.chipLabel', '{{label}}, latest: {{title}}', {
-                label,
+                label: spokenLabel,
                 title: latest
               })
         }
@@ -95,7 +101,11 @@ export function WorkerDockPill({
         onClick={onToggle}
         onKeyDown={onKeyDown}
       >
-        <WorkerDockChipDot glyph={glyph} />
+        {commandsOnly && glyph === 'running' ? (
+          <WorkerDockGlyph glyph={glyph} chip terminal />
+        ) : (
+          <WorkerDockChipDot glyph={glyph} />
+        )}
         <span data-worker-dock-pill-title="" className="min-w-0 truncate">
           {label}
         </span>

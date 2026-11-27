@@ -1,6 +1,25 @@
+import { useTranslate } from '@/i18n/use-translate'
 import type { NativeChatToolRunDrawnRow } from '../../runs/use-native-chat-tool-run-window'
 import { WorkerDockRow, type WorkerDockRowView } from './WorkerDockRow'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { defaultRangeExtractor } from '@tanstack/react-virtual'
+
+/** Keep a focused row mounted even if it scrolls out of the virtual window. */
+export function useWorkerDockRangeWithFocus(
+  items: readonly { id: string }[],
+  focused: string | null
+) {
+  const activeIndex = useMemo(() => items.findIndex((row) => row.id === focused), [items, focused])
+  return useCallback(
+    (range: Parameters<typeof defaultRangeExtractor>[0]) => {
+      const indices = defaultRangeExtractor(range)
+      return activeIndex >= 0 && !indices.includes(activeIndex)
+        ? [...indices, activeIndex].sort((a, b) => a - b)
+        : indices
+    },
+    [activeIndex]
+  )
+}
 
 // Rows rise in 22ms apart once the open shape is ~20% grown; later rows share the last delay.
 const rowDelay = (drawnIndex: number) =>
@@ -38,6 +57,8 @@ function WorkerDockRise({
 export function WorkerDockRowSlots({
   drawn,
   ids,
+  workerCount,
+  grouped,
   entering,
   small,
   totalSize,
@@ -51,6 +72,8 @@ export function WorkerDockRowSlots({
 }: {
   drawn: readonly NativeChatToolRunDrawnRow[]
   ids: readonly string[]
+  workerCount: number
+  grouped: boolean
   /** The list is opening: the rows drawn with it rise in. */
   entering: boolean
   small: boolean
@@ -65,6 +88,7 @@ export function WorkerDockRowSlots({
 }) {
   // Rows that mount in the opening's first moments rise in with it; rows a scroll mounts later
   // (even while it is still opening) show at once.
+  const t = useTranslate()
   const [late, setLate] = useState(false)
   if (!entering && late) {
     setLate(false)
@@ -76,42 +100,67 @@ export function WorkerDockRowSlots({
     const timer = setTimeout(() => setLate(true), ARRIVAL_MS)
     return () => clearTimeout(timer)
   }, [entering])
+  const commandsLabel = t('components.native-chat.workerDock.commandsRegion', 'Background commands')
+  const workersLabel = t('components.native-chat.workerDock.workersRegion', 'Workers')
+  const renderRow = (item: NativeChatToolRunDrawnRow, drawnIndex: number) => {
+    const id = ids[item.index]
+    const row = rows.get(id)
+    return (
+      <div
+        key={id}
+        data-index={item.index}
+        ref={small ? undefined : measureRow}
+        style={{
+          position: small ? 'relative' : 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          transform: small ? undefined : `translateY(${item.start}px)`
+        }}
+      >
+        <WorkerDockRise
+          rise={entering && !late && drawnIndex < RISING_ROWS}
+          delay={rowDelay(drawnIndex)}
+        >
+          {grouped && item.index === workerCount ? (
+            <div
+              aria-hidden="true"
+              data-worker-dock-group-label=""
+              className="mt-1 flex h-6 items-center border-t border-border pl-2 pt-1 text-xs text-muted-foreground"
+            >
+              <span className="min-w-0 truncate">{commandsLabel}</span>
+            </div>
+          ) : null}
+          {/* One component either way, so focus on a loading row survives its details arriving. */}
+          <WorkerDockRow
+            id={id}
+            row={row}
+            mixed={mixed}
+            visible={visible}
+            pending={row ? pending.has(row.id) : false}
+            onOpen={onOpen}
+            onAction={onAction}
+          />
+        </WorkerDockRise>
+      </div>
+    )
+  }
+  const workers = drawn.filter((item) => item.index < workerCount)
+  const commands = drawn.filter((item) => item.index >= workerCount)
   return (
     <div style={{ height: small ? 'auto' : totalSize, position: 'relative' }}>
-      {drawn.map((item, drawnIndex) => {
-        const id = ids[item.index]
-        const row = rows.get(id)
-        return (
-          <div
-            key={id}
-            data-index={item.index}
-            ref={small ? undefined : measureRow}
-            style={{
-              position: small ? 'relative' : 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              transform: small ? undefined : `translateY(${item.start}px)`
-            }}
-          >
-            <WorkerDockRise
-              rise={entering && !late && drawnIndex < RISING_ROWS}
-              delay={rowDelay(drawnIndex)}
-            >
-              {/* One component either way, so focus on a loading row survives its details arriving. */}
-              <WorkerDockRow
-                id={id}
-                row={row}
-                mixed={mixed}
-                visible={visible}
-                pending={row ? pending.has(row.id) : false}
-                onOpen={onOpen}
-                onAction={onAction}
-              />
-            </WorkerDockRise>
-          </div>
-        )
-      })}
+      <div
+        role={grouped && workers.length ? 'group' : undefined}
+        aria-label={grouped && workers.length ? workersLabel : undefined}
+      >
+        {workers.map(renderRow)}
+      </div>
+      <div
+        role={grouped && commands.length ? 'group' : undefined}
+        aria-label={grouped && commands.length ? commandsLabel : undefined}
+      >
+        {commands.map((item, index) => renderRow(item, workers.length + index))}
+      </div>
     </div>
   )
 }
