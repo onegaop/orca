@@ -1,20 +1,12 @@
 import React, { useState } from 'react'
-import { Bell, BellMinus, BellOff, BellRing, Pencil } from 'lucide-react'
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger
-} from '@/components/ui/context-menu'
+import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu'
 import { HoverCardContent } from '@/components/ui/hover-card'
 import { ActivityThreadHoverCardRoot } from '@/components/activity/thread-preview/activity-thread-hover-card-root'
 import { WORKTREE_CARD_SURFACE_CLASS_NAME } from '@/components/sidebar/workspace-card/surface/worktree-card-surface'
 import { WorktreeCardNotificationsMutedBadge } from '@/components/sidebar/workspace-card/identity/WorktreeCardNotificationsMutedBadge'
 import { WorktreeTitleInlineRename } from '@/components/sidebar/workspace-card/identity/WorktreeTitleInlineRename'
 import type { WorktreeStatus } from '../../../../shared/worktree/row-display/worktree-status-rollup'
-import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
-import { useAppStore } from '@/store'
 import StatusIndicator from '@/components/sidebar/workspace-card/surface/StatusIndicator'
 import { getWorktreeStatusLabel } from '@/lib/workspace/activity/worktree-status'
 import { SidebarNumberHintBadge } from '@/components/sidebar/number-shortcuts/SidebarNumberHintBadge'
@@ -24,6 +16,7 @@ import {
   botAvatarBadgeCutout,
   useBotAvatarBadgeSleeping
 } from './bot-avatar-status-badge'
+import { BotSidebarRowMenuContent } from './BotRowContextMenu'
 
 /** One row of the Bots section, a bot's or a group's: picture, name and time, then its newest line. */
 export type BotSidebarRowProps = {
@@ -50,6 +43,8 @@ export type BotSidebarRowProps = {
   /** Set for a row Cmd/Ctrl+1–9 can address, so its number shows while the modifier is held. */
   numberHintKey?: string
   onRename: (name: string) => Promise<void>
+  beginRename?: boolean
+  onBeginRenameConsumed?: () => void
   /** How long ago its newest line happened. */
   age: string | null
   /** The second line, under the name. */
@@ -80,6 +75,8 @@ export function BotSidebarRow({
   onOpen,
   numberHintKey,
   onRename,
+  beginRename = false,
+  onBeginRenameConsumed,
   age,
   line,
   trailing = null,
@@ -87,12 +84,10 @@ export function BotSidebarRow({
   menuItems,
   menuFooter
 }: BotSidebarRowProps): React.JSX.Element {
-  const t = useTranslate()
-  const setWorkspaceUnreadByUser = useAppStore((s) => s.setWorkspaceUnreadByUser)
   const [renameRequested, setRenameRequested] = useState(false)
+  const [renaming, setRenaming] = useState(false)
   const [hoverOpen, setHoverOpen] = useState(false)
   const [keyboardFocus, setKeyboardFocus] = useState(false)
-  const toggleUnread = (): void => setWorkspaceUnreadByUser(workspaceId, !isUnread, hostId)
   // Working shows once, at the row's end, where every working row shows it.
   const badgeStatus = status === 'working' ? null : status
   const badge = {
@@ -142,7 +137,8 @@ export function BotSidebarRow({
               The trigger runs to the row's end, fold toggle included, so the card always opens past
               the sidebar's edge as a workspace row's does. */}
           <ActivityThreadHoverCardRoot
-            open={hoverOpen}
+            open={hoverOpen && !renaming}
+            enabled={!renaming}
             onOpenChange={setHoverOpen}
             closeDelay={120}
             trigger={
@@ -159,11 +155,20 @@ export function BotSidebarRow({
                       dimReadTitle
                       className="text-[13px] leading-5"
                       editingClassName="flex-1"
+                      onEditingChange={(editing) => {
+                        setRenaming(editing)
+                        if (editing) {
+                          setHoverOpen(false)
+                        }
+                      }}
                       onRename={onRename}
                       // The hover card already shows the full name.
                       titleWrapper={(title) => title}
-                      beginEditing={renameRequested}
-                      onBeginEditingConsumed={() => setRenameRequested(false)}
+                      beginEditing={renameRequested || beginRename}
+                      onBeginEditingConsumed={() => {
+                        setRenameRequested(false)
+                        onBeginRenameConsumed?.()
+                      }}
                     />
                     <WorktreeCardNotificationsMutedBadge worktreeId={workspaceId} />
                     {age ? (
@@ -191,40 +196,16 @@ export function BotSidebarRow({
           </ActivityThreadHoverCardRoot>
         </div>
       </ContextMenuTrigger>
-      <ContextMenuContent className="w-52">
-        <ContextMenuItem disabled={actionsDisabled} onSelect={() => setRenameRequested(true)}>
-          <Pencil className="size-3.5" />
-          {t('bots.row.rename', 'Rename')}
-        </ContextMenuItem>
-        {menuItems}
-        <ContextMenuItem disabled={actionsDisabled} onSelect={toggleUnread}>
-          {isUnread ? <BellOff className="size-3.5" /> : <Bell className="size-3.5" />}
-          {isUnread ? t('bots.row.markRead', 'Mark Read') : t('bots.row.markUnread', 'Mark Unread')}
-        </ContextMenuItem>
-        <BotNotificationMuteMenuItem workspaceId={workspaceId} />
-        {menuFooter}
-      </ContextMenuContent>
+      <BotSidebarRowMenuContent
+        workspaceId={workspaceId}
+        hostId={hostId}
+        isUnread={isUnread}
+        actionsDisabled={actionsDisabled}
+        onRename={() => setRenameRequested(true)}
+        menuItems={menuItems}
+        menuFooter={menuFooter}
+      />
     </ContextMenu>
-  )
-}
-
-/** Mounted only while the context menu is open, so closed rows never subscribe to the mute map. */
-function BotNotificationMuteMenuItem({ workspaceId }: { workspaceId: string }): React.JSX.Element {
-  const t = useTranslate()
-  const notificationsMuted = useAppStore(
-    (s) => s.notificationsMutedByWorktree?.[workspaceId] === true
-  )
-  const toggleWorktreeNotificationsMuted = useAppStore((s) => s.toggleWorktreeNotificationsMuted)
-  return (
-    <ContextMenuItem onSelect={() => toggleWorktreeNotificationsMuted(workspaceId)}>
-      {notificationsMuted ? <BellRing className="size-3.5" /> : <BellMinus className="size-3.5" />}
-      {notificationsMuted
-        ? t(
-            'auto.components.sidebar.WorktreeContextMenu.unmuteNotifications',
-            'Unmute Notifications'
-          )
-        : t('auto.components.sidebar.WorktreeContextMenu.muteNotifications', 'Mute Notifications')}
-    </ContextMenuItem>
   )
 }
 

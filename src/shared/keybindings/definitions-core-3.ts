@@ -1,6 +1,12 @@
 import type { KeybindingDefinition } from './types'
 import { platformBindings } from './definitions-support'
 
+const ANNOTATION_BINDINGS = {
+  darwin: ['Mod+Shift+C'],
+  linux: ['Alt+Shift+N'],
+  win32: ['Alt+Shift+N']
+}
+
 export const KEYBINDING_DEFINITION_CORE_3: readonly KeybindingDefinition[] = [
   {
     id: 'browser.reload',
@@ -41,11 +47,7 @@ export const KEYBINDING_DEFINITION_CORE_3: readonly KeybindingDefinition[] = [
     scope: 'browser',
     searchKeywords: ['shortcut', 'browser', 'annotate', 'comment', 'element'],
     // Why: Ctrl+Shift+C is terminal copy on Linux/Windows, including web terminals in the page.
-    defaultBindings: {
-      darwin: ['Mod+Shift+C'],
-      linux: ['Alt+Shift+N'],
-      win32: ['Alt+Shift+N']
-    }
+    defaultBindings: ANNOTATION_BINDINGS
   },
   {
     id: 'editor.find',
@@ -137,11 +139,7 @@ export const KEYBINDING_DEFINITION_CORE_3: readonly KeybindingDefinition[] = [
     searchKeywords: ['shortcut', 'editor', 'markdown', 'note', 'comment', 'annotation', 'review'],
     // Why: Ctrl+Alt+letter is AltGr text input on Windows/Linux, so an editor default must not reserve chars like Polish `ń`.
     // Shares Annotate Page Element's chords; Mod+Shift+A went to Search Tabs, Chrome's chord.
-    defaultBindings: {
-      darwin: ['Mod+Shift+C'],
-      linux: ['Alt+Shift+N'],
-      win32: ['Alt+Shift+N']
-    }
+    defaultBindings: ANNOTATION_BINDINGS
   },
   {
     id: 'sourceControl.sendReviewNotes',
@@ -222,6 +220,14 @@ export const KEYBINDING_DEFINITION_CORE_3: readonly KeybindingDefinition[] = [
     group: 'Settings',
     scope: 'settings',
     searchKeywords: ['shortcut', 'settings', 'search', 'find'],
+    defaultBindings: platformBindings(['Mod+F'])
+  },
+  {
+    id: 'page.search',
+    title: 'Search this page',
+    group: 'Global',
+    scope: 'global',
+    searchKeywords: ['shortcut', 'search', 'find', 'filter', 'tasks', 'skills', 'automations'],
     defaultBindings: platformBindings(['Mod+F'])
   },
   {

@@ -34,7 +34,6 @@
   "agentHistory": {
     "panel": {
       "all": "Tümü",
-      "emptyScope": "Bu kapsamda geçmiş ajan oturumu yok.",
       "missingResumeId": "Bu oturumun devam ettirme kimliği eksik.",
       "noSearchResults": "Aramanızla eşleşen oturum yok.",
       "noSessions": "Ajan oturumu yok",
@@ -65,14 +64,10 @@
       "untitledSession": "Başlıksız oturum"
     },
     "sessionHistoryList": {
-      "currentWorktree": "mevcut worktree",
       "messages_one": "{{count}} mesaj",
       "messages_other": "{{count}} mesaj",
       "resumeSession": "Ajan oturumuna devam et",
-      "continueInCli": "CLI'de Devam Et",
-      "hidePreview": "Son mesajları gizler.",
-      "showPreview": "Son mesajları gösterir.",
-      "you": "Siz"
+      "continueInCli": "CLI'de Devam Et"
     },
     "useAgentHistoryState": {
       "hostUnreachable": "Sunucuya ulaşılamadı",
@@ -136,43 +131,25 @@
     },
     "pairConfirm": {
       "backToHome": "Ana ekrana dön",
-      "connectTimedOut": "{{seconds}} saniye içinde bağlantı kurulamadı — işlemin nerede takıldığını görmek için aşağıdaki günlüğe bakın",
       "connecting": "Bağlanılıyor…",
-      "description": "Masaüstünüzden bir eşleştirme bağlantısı açtınız. Bu masaüstünü sunucu listenize eklemek için onaylayın.",
       "pairButton": "Eşleştir",
-      "pairingFailed": "Eşleştirme yapılamadı: {{error}}",
-      "pairingLog": "Eşleştirme günlüğü",
-      "title": "Bu masaüstüyle eşleştirilsin mi?"
+      "pairingFailed": "Eşleştirme yapılamadı: {{error}}"
     },
     "pairScan": {
-      "cameraDisabledDescription": "Ayarlar bölümünde kamera erişimini etkinleştirin veya eşleştirme kodunu yapıştırın.",
-      "cameraDisabledTitle": "Kamera Erişimi Devre Dışı",
-      "cameraPermissionDescription": "Masaüstünüzdeki Orca'da gösterilen QR kodunu tarayın veya eşleştirme kodunu yapıştırın.",
-      "connectTimedOut": "{{seconds}} saniye içinde bağlantı kurulamadı — işlemin nerede takıldığını görmek için aşağıdaki günlüğe bakın",
       "connecting": "Bağlanılıyor…",
       "invalidPairingCode": "Geçerli bir eşleştirme kodu değil — bilgisayarınızdan kopyalayıp yeniden yapıştırın",
       "invalidQrCode": "Geçerli bir Orca QR kodu değil",
-      "downloadQrCode": "Bu indirme kodu. Bilgisayarınızdaki 2. adımda bulunan eşleştirme kodunu tarayın.",
-      "openDesktopStep": "Bilgisayarınızda Orca'yı açın",
-      "openMobileSettingsStep": "Ayarlar → Mobil bölümüne gidin",
       "openSettings": "Ayarları Aç",
       "pairingFailed": "Eşleştirme yapılamadı: {{error}}",
-      "pairingLog": "Eşleştirme günlüğü",
       "pasteCodeMessage": "Bilgisayarınızda QR kodunun altında gösterilen kodu kopyalayın.",
       "pasteCodePlaceholder": "orca://pair?code=... veya kodu yapıştırın",
       "pasteCodeTitle": "Eşleştirme kodunu yapıştır",
-      "pasteInstead": "Bunun yerine kod yapıştır",
-      "pastePairingCode": "Eşleştirme kodunu yapıştır",
-      "scanCodeStep": "QR kodunu tarayın",
-      "title": "Masaüstüyle eşleştir",
-      "tryAgain": "Tekrar Dene",
-      "codeNoLongerValid": "Bu eşleştirme kodunun süresi doldu, kod zaten kullanıldı veya değiştirildi. Bilgisayarınızda yeni bir kod gösterip tekrar tarayın.",
       "runtimeAccessLink": "Bu bağlantı başka bir Orca uygulaması için. Bilgisayarınızda Ayarlar → Mobil bölümündeki kodu tarayın veya sunucunuzda orca pair --mobile komutunu çalıştırın."
     },
     "terminalSettings": {
       "keepPhoneSize": "Telefon boyutunda tut (varsayılan)",
       "leaveAppDescription": "Telefonunuzda terminal kullanırken Orca, terminali ekranınıza sığacak şekilde küçültür. Uygulamayı kapattığınızda veya başka bir uygulamaya geçtiğinizde bu ayar, terminalin telefon boyutunda kalmasını (etkileşimli CLI araçlarının düzeninin değişmemesi için) ya da masaüstü boyutuna geri dönmesini belirler. Boyutu elle değiştirmek için masaüstündeki bildirim çubuğunda Geri yükle seçeneğini her zaman kullanabilirsiniz.",
-      "leaveAppHeading": "UYGULAMADAN AYRILDIĞINIZDA",
+      "leaveAppHeading": "Uygulamadan ayrıldığınızda",
       "noPairedDesktops": "Henüz eşleştirilmiş masaüstü yok. Terminal davranışını ayarlamak için bir masaüstü eşleştirin.",
       "restoreAfterMinutes_one": "{{count}} dakika sonra",
       "restoreAfterMinutes_other": "{{count}} dakika sonra",
@@ -183,8 +160,8 @@
       "previewColumns_one": "{{count}} sütun",
       "previewColumns_other": "{{count}} sütun",
       "previewLabel": "Terminal önizlemesi",
-      "previewHeading": "ÖNİZLEME",
-      "fontHeading": "YAZI TİPİ",
+      "previewHeading": "Önizleme",
+      "fontHeading": "Yazı tipi",
       "fontDescription": "Boyutu değiştirmek için terminalde iki parmağınızı birbirine yaklaştırın veya uzaklaştırın. Ayar burada saklanır ve yalnızca bu cihazı etkiler; masaüstü terminali değişmez.",
       "font": "Yazı tipi",
       "size": "Boyut",
@@ -1408,25 +1385,13 @@
     },
     "customKeyModal": {
       "add": "Ekle",
-      "addShortcut": "Kısayol Ekle",
-      "command": "Komut",
       "commandPlaceholder": "Örn. pnpm build",
       "editing": "Düzenleme",
       "function": "İşlev",
       "key": "Tuş",
-      "label": "Etiket",
       "labelPlaceholder": "Örn. Derle",
-      "manageShortcuts": "Kısayolları Yönet",
-      "manageShortcutsHint": "Kısayol tuşlarını gösterin, gizleyin veya yeniden sıralayın",
-      "modifiers": "Değiştirici Tuşlar",
-      "moreKeys": "DİĞER TUŞLAR",
       "navigation": "Gezinme",
-      "pickKey": "Bir tuş seçin",
-      "pressEnter": "Enter Tuşuna Bas",
-      "shortcutCombo": "Tuş Birleşimi",
-      "shortcutComboHint": "Ctrl, Alt ve Shift ile tuş birleşimleri oluşturun",
-      "textMacro": "Metin Makrosu",
-      "textMacroHint": "Özel metin komutu gönderin"
+      "pressEnter": "Enter Tuşuna Bas"
     },
     "dictationSetupSheet": {
       "description": "Bir model indirin veya seçin ve eşleştirilmiş bilgisayarda sesli yazmayı etkinleştirin — tümünü buradan yapabilirsiniz.",
@@ -1467,8 +1432,6 @@
       "allStaged": "Tüm değişiklikler stage edildi"
     },
     "diffReviewDrawers": {
-      "addNote": "Not Ekle",
-      "cancelNote": "Notu iptal et",
       "clearSentNotes": "Gönderilen Notları Temizle",
       "copyNotes": "Notları Kopyala",
       "deleteNote": "Notu sil",
@@ -1477,12 +1440,10 @@
       "discardTitle": "Dosya Değişikliklerini At",
       "editNote": "Notu Düzenle",
       "fileNote": "Dosya notu",
-      "lineNumber": "Satır {{lineNumber}}",
       "loadingSessions": "Ajan oturumları yükleniyor…",
       "newAgentSession": "Yeni Ajan Oturumu",
       "openInSession": "Oturumda Aç",
       "reviewNote": "İnceleme notu",
-      "saveLineNote": "{{lineNumber}}. satırdaki notu kaydet",
       "sendNotes": "Notları Gönder",
       "sendNotesLabel": "Notları ajana gönder",
       "sendUnsentNotes": "Gönderilmemiş Notları Gönder",
@@ -1503,10 +1464,7 @@
       "discardChanges": "Değişiklikleri At",
       "rangeLine": "{{line}}. satır",
       "rangeLines": "{{startLine}}–{{line}}. satırlar",
-      "sendToAgent": "{{agent}} ajanına gönder",
-      "sendToAnAgent": "Ajana gönder",
-      "rangePlaceholder": "Burada ne değişmeli?",
-      "commentOnGitHub": "GitHub’da yorum yaz"
+      "rangePlaceholder": "Burada ne değişmeli?"
     },
     "diffReviewFileSummary": {
       "changed": "Değişti",
@@ -1532,7 +1490,6 @@
       "jumpToFile": "{{fileName}}, başka bir dosyaya geç"
     },
     "diffReviewLine": {
-      "addNoteOnLine": "{{number}}. satıra not ekle",
       "addedLine": "Eklenen satır",
       "addedLineNumber": "Eklenen satır: {{number}}",
       "contextLine": "Bağlam satırı",
@@ -1675,14 +1632,10 @@
       "linkUrl": "Bağlantı URL'si"
     },
     "richMarkdownToolbar": {
-      "body": "Gövde metni",
       "bold": "Kalın",
       "bulletList": "Madde işaretli liste",
       "checklist": "Kontrol listesi",
       "codeBlock": "Kod bloğu",
-      "heading1": "H1",
-      "heading2": "H2",
-      "heading3": "H3",
       "image": "Görsel",
       "inlineCode": "Satır içi kod",
       "italic": "İtalik",
@@ -1757,14 +1710,14 @@
     "terminalShortcutSettings": {
       "addDescription": "Tuş birleşimi veya metin makrosu oluştur",
       "addShortcut": "Özel Kısayol Ekle…",
-      "customShortcuts": "ÖZEL KISAYOLLAR",
+      "customShortcuts": "Özel kısayollar",
       "empty": "Henüz özel kısayol tanımlanmadı.",
       "removeShortcut": "{{label}} kısayolunu kaldır",
       "resetDefaults": "Varsayılanlara Sıfırla",
       "resetDescription": "Tüm yerleşik kısayol tuşlarını özgün sırayla göster",
-      "moreKeys": "DİĞER TUŞLAR",
+      "moreKeys": "Diğer tuşlar",
       "moreKeysDescription": "Bu tuşlar, terminal tuş satırındaki ⋯ altında bulunur. Tuşları göstermek veya gizlemek için açıp kapatın; istediğiniz sıraya sürüklemek için tutamacı basılı tutun. Esc veya oklar gibi satırda zaten bulunan tuşlar ⋯ altında gösterilmez.",
-      "directionPad": "YÖN TUŞ TAKIMI",
+      "directionPad": "Yön tuş takımı",
       "showDirectionPad": "Yön tuş takımını göster",
       "showDirectionPadDescription": "Ok takımını yan çubuğa sabitleyin. Kapalıyken çubukta ayrı ok tuşları listelenir.",
       "showShortcut": "{{label}} kısayolunu göster"
@@ -2227,26 +2180,18 @@
       "loadFailed": "Dosyalar yüklenemedi",
       "title": "Dosyalar",
       "truncatedList": "{{worktreeLabel}} - İlk 5000 dosya gösteriliyor",
-      "filterPlaceholder": "Dosyaları filtrele",
-      "noMatchesHint": "Yalnızca açtığınız klasörlerde aranır.",
-      "clearFilter": "Filtreyi temizle",
       "loading": "Dosyalar yükleniyor…"
     },
     "fileExplorerRow": {
       "fileUnavailable": "{{name}} mobilde kullanılamıyor",
+      "ignored": ".gitignore tarafından yok sayılıyor",
       "loadFolderFailed": "Klasör yüklenemedi",
       "loadedOfTotal": "{{loaded}} / {{total}}",
       "loading": "Yükleniyor…",
       "openFolder": "{{name}} klasörünü aç",
       "previewFile": "{{name}} dosyasını önizle",
       "retryLoading": "{{path}} klasörünü yüklemeyi yeniden dene",
-      "searchAll": "Tümünü ara",
-      "searchAllIn": "{{folder}} içinde tümünü ara",
-      "searched": "{{folder}} içinde {{total}} öğenin {{loaded}} tanesi arandı.",
-      "searching": "{{folder}} aranıyor… {{loaded}} / {{total}}",
-      "showMore": "{{rows}} tane daha göster",
-      "unavailable": "Mobilde kullanılamıyor",
-      "ignored": ".gitignore tarafından yok sayılıyor"
+      "showMore": "{{rows}} tane daha göster"
     },
     "fileExplorerRowActions": {
       "copyName": "Adı Kopyala",
@@ -2348,17 +2293,6 @@
       "showFor": "Otomasyonları gösterilecek masaüstü",
       "toggleFailed": "{{name}} güncellenemedi",
       "updateDesktop": "Otomasyonları kullanmak için {{desktop}} üzerindeki Orca'yı güncelleyin."
-    },
-    "emptyState": {
-      "connectedDescription": "Masaüstünüz burada görünecek. Her şey uçtan uca şifrelenir.",
-      "connectedTitle": "Bağlandınız",
-      "description": "Ajanlarınızı takip etmek, istediğiniz terminale erişmek ve işlerinizi telefonunuzdan yönetmek için bilgisayarınızdaki Orca ile eşleştirin.",
-      "openDesktopDescription": "Ayarlar → Mobil bölümüne gidin ve eşleştirme için bir QR kodu oluşturun.",
-      "openDesktopTitle": "Orca masaüstü uygulamasını açın",
-      "scanCodeTitle": "Kodu tarayın",
-      "title": "Masaüstünüzü bağlayın",
-      "pairDesktopButton": "Bilgisayarı eşleştir",
-      "scanCodeBelowDescription": "Aşağıdaki Bilgisayarı eşleştir düğmesine dokunun, ardından kameranızı ekrandaki QR koduna tutun."
     },
     "listFooter": {
       "hostPickerTitle": "Görevlerin Açılacağı Sunucu"
@@ -2687,16 +2621,11 @@
       "waitingOnYou": "Sizden yanıt bekleniyor."
     },
     "onboardingPage": {
-      "enableAgentNotifications": "Ajan bildirimlerini etkinleştir",
       "enableNotifications": "Bildirimleri etkinleştir",
       "keepTerminal": "Terminalle devam et",
       "notNow": "Şimdi değil",
-      "notificationsDescription": "Uygulamayı kullanmasanız bile bir ajan işini bitirdiğinde veya beklediğinde bu telefonda bildirim alın.",
-      "notificationsDisclosure": "Bilgisayarınız 3 dakika boşta kaldıktan sonra Orca'nın anlık bildirim hizmeti üzerinden iletilir. Bunu Ayarlar bölümünden istediğiniz zaman değiştirebilirsiniz.",
       "notificationsTitle": "Bir ajanın size ihtiyacı olduğunda haberdar olun",
-      "openInChatUi": "Oturumları Sohbet Arayüzü ile aç",
       "openInTerminal": "Oturumları terminalde aç",
-      "sessionViewDescription": "Bu cihazda desteklenen ajan oturumlarının terminalde mi yoksa Sohbet Arayüzü ile mi açılacağını seçin. Görünümünü değiştirmek için oturum sekmesine uzun basın veya varsayılanı istediğiniz zaman Ayarlar → Sohbet Arayüzü bölümünden değiştirin.",
       "sessionViewTitle": "Oturumlar nasıl açılsın?",
       "skipNotifications": "Bildirimleri şimdilik atla",
       "useChatUi": "Sohbet Arayüzünü kullan"
@@ -2726,15 +2655,7 @@
       "resolve": "Çöz",
       "unresolve": "Çözümü geri al",
       "yearsAgo_one": "{{count}} yıl önce",
-      "yearsAgo_other": "{{count}} yıl önce",
-      "resolved": "çözüldü",
-      "openOnGitHub": "Yorumu GitHub'da aç",
-      "replyToComment": "Yorumu yanıtla",
-      "editComment": "Yorumu düzenle",
-      "deleteComment": "Yorumu sil",
-      "unresolveThread": "Konuşma dizisini yeniden aç",
-      "resolveThread": "Yorum dizisini çöz",
-      "replyPlaceholder": "Yanıt yazın…"
+      "yearsAgo_other": "{{count}} yıl önce"
     },
     "commentsSection": {
       "comment": "Yorum yap",
@@ -2744,18 +2665,8 @@
       "noDescription": "Açıklama girilmemiş.",
       "showMore": "{{count}} tane daha göster",
       "title": "Yorumlar",
-      "all": "Tümü",
-      "humans": "İnsanlar",
-      "bots": "Botlar",
-      "noBotComments": "Bot yorumu yok.",
-      "noHumanComments": "İnsan yorumu yok.",
-      "commentsLoadFailed": "Yorumlar yüklenemedi. Yeniden denemek için Yenile’ye dokunun.",
-      "showMoreOf": "Kalan {{remaining}} öğeden {{count}} tane daha göster",
-      "addCommentPlaceholder": "Yorum ekleyin…",
       "resolvedThreadSingle": "{{author}} tarafından açılan çözülmüş konuşma dizisi",
       "resolvedThreadCount": "{{author}} tarafından açılan çözülmüş konuşma dizisi ({{count}})",
-      "resolvedCommentSingle": "{{author}} tarafından yazılan çözülmüş yorum",
-      "resolvedCommentCount": "{{author}} tarafından yazılan çözülmüş yorum ({{count}})",
       "commentsLoadFailedRetry": "Yorumlar yüklenemedi."
     },
     "linkPrForm": {
@@ -2862,14 +2773,6 @@
       "stateOpen": "Açık",
       "unavailable": "Kontroller kullanılamıyor"
     },
-    "prCommentAudienceLabels": {
-      "all": "Tümü",
-      "bots": "Botlar",
-      "humans": "İnsanlar",
-      "noBotComments": "Bot yorumu yok.",
-      "noComments": "Henüz yorum yok.",
-      "noHumanComments": "İnsan yorumu yok."
-    },
     "prSidebarCreateEmptyState": {
       "branchNotLinked": "{{branch}} branch'i açık bir PR'a bağlı değil.",
       "currentBranchNotLinked": "Geçerli branch açık bir PR'a bağlı değil.",
@@ -2961,7 +2864,6 @@
       "failedAfter": "{{duration}} sonra başarısız oldu",
       "failed": "Başarısız",
       "checkActions": "{{name}} için diğer işlemler",
-      "rerun": "Yeniden çalıştır",
       "copyErrorFailed": "Hata kopyalanamadı.",
       "durationSeconds": "{{seconds}} sn",
       "durationMinutes": "{{minutes}} dk {{seconds}} sn",
@@ -3063,23 +2965,15 @@
       "messageModeLabel": "Mesaj modu: yazın, ardından gönderin. Tuş moduna geç",
       "moreKeys": "Diğer tuşlar ve işlemler",
       "showKeyboard": "Klavyeyi göster",
-      "dismissKeyboardHint": "Ekran klavyesini gizler ve geçerli terminal oturumunu açık tutar.",
-      "switchToDesktopMode": "Masaüstü moduna geç",
-      "switchToPhoneMode": "Telefon moduna geç",
       "pasteFromClipboard": "Panodan yapıştır",
-      "paste": "Yapıştır",
-      "addCustomShortcut": "Özel kısayol ekle",
       "control": "Control",
       "alt": "Alt",
       "shift": "Shift"
     },
     "activeContent": {
-      "createTab": "Sekme Oluştur",
       "creatingTab": "Oluşturuluyor…",
       "fileTitle": "Dosya",
       "loadingTerminal": "Terminal yükleniyor",
-      "noTabs": "Bu oturumda sekme yok",
-      "retryLoadingTerminal": "Terminali yüklemeyi yeniden dene",
       "terminalTakingLonger": "Terminalin yüklenmesi beklenenden uzun sürüyor"
     },
     "agentChildRow": {
@@ -3164,26 +3058,15 @@
       "workflow": "Arka plan iş akışı"
     },
     "browserTabActionSheet": {
-      "forward": "İleri",
-      "reload": "Yenile",
       "hardReload": "Önbelleği atlayarak yenile",
       "title": "Tarayıcı"
     },
     "bulkCloseSheetActions": {
       "closeOtherTabs": "Diğer Sekmeleri Kapat"
     },
-    "bulkTabClose": {
-      "confirm": "Sekmeleri kapat",
-      "description": "Seçilen sekmeler kapatılacak. Sabitlenmiş sekmeler açık kalacak.",
-      "titleEditors": "Tüm düzenleyici sekmeleri kapatılsın mı?",
-      "titleLeft": "Soldaki sekmeler kapatılsın mı?",
-      "titleOthers": "Diğer sekmeler kapatılsın mı?",
-      "titleRight": "Sağdaki sekmeler kapatılsın mı?"
-    },
     "commandDock": {
       "liveInputHint": "Yazılan metin doğrudan etkin terminale gönderilir",
-      "liveInputLabel": "Canlı terminal girişi",
-      "tapToShowKeyboard": "Klavyeyi göstermek için dokunun"
+      "liveInputLabel": "Canlı terminal girişi"
     },
     "contentRow": {
       "dismissCreationWarning": "Çalışma alanı oluşturma uyarısını kapat"
@@ -3389,17 +3272,13 @@
       "requestFailed": "İstek tamamlanamadı: {{method}}"
     },
     "header": {
-      "workspaceDetailsHint": "Çalışma alanının tam adını ve konumunu gösterir",
       "backToWorktrees": "Worktree'lere dön",
       "moreActions": "Diğer oturum işlemleri",
-      "openSourceControl": "Kaynak kontrolünü aç",
       "reconnectToDesktop": "Masaüstüne yeniden bağlan",
       "showSidebar": "Kenar çubuğunu göster",
       "terminalTitle": "Terminal",
       "terminalLayout": "Terminal düzeni",
-      "fileExplorer": "Dosya gezgini",
       "sourceControl": "Kaynak kontrolü",
-      "newTab": "Yeni sekme",
       "quickCommands": "Hızlı komutlar",
       "items": "Öğeler",
       "itemsNeedYou": "Öğeler, {{count}} tanesi sizi bekliyor",
@@ -3408,16 +3287,11 @@
     "headerMoreActionsSheet": {
       "agentHistory": "Ajan Geçmişi",
       "agentHistoryHint": "Ajan oturumlarına göz atın ve kaldığınız yerden devam edin",
-      "checks": "Kontroller",
-      "checksHint": "Pull request kontrollerini açın"
+      "checks": "Kontroller"
     },
     "markdownReader": {
       "changedOnDesktop": "Masaüstünde değişti",
       "copyLoaded": "Yükleneni kopyala",
-      "copyLoadedSource": "Yüklenen Markdown kaynağını kopyala",
-      "copyPath": "Yolu kopyala",
-      "copyPathLabel": "Markdown yolunu kopyala",
-      "copySource": "Markdown kaynağını kopyala",
       "discard": "Vazgeç",
       "previewTruncated": "Önizleme kısaltıldı.",
       "readOnly": "Salt okunur",
@@ -3570,20 +3444,15 @@
     "sheets": {
       "browser": "Tarayıcı",
       "chat": "Sohbet",
-      "copyAllAndLeave": "Tümünü Kopyala ve Ayrıl",
-      "copyDraftsFailed": "Taslaklar kopyalanamadı",
       "copyNotes": "Notları Kopyala",
       "copyNotesFailed": "Notlar kopyalanamadı",
       "copyPath": "Yolu Kopyala",
       "discard": "At",
-      "discardAndLeave": "At ve Ayrıl",
       "discardChanges": "Değişiklikleri At",
       "discardMessage": "Telefondaki taslak, masaüstündeki dosyanın en güncel sürümüyle değiştirilsin mi?",
-      "draftsHint": "Ayrılmadan önce telefondaki taslakları kopyalayın veya atın.",
       "file": "Dosya",
       "markdown": "Markdown",
       "markdownNote": "Markdown Notu",
-      "newBrowser": "Yeni Tarayıcı",
       "newTab": "Yeni Sekme",
       "notesCopied": "Notlar kopyalandı",
       "notesHint": "Mevcut notlar için bir ajan oturumu seçin.",
@@ -3598,15 +3467,12 @@
       "shellGitBash": "Git Bash",
       "shellWsl": "WSL",
       "terminalName": "Terminal adı",
-      "unsavedMarkdown": "Kaydedilmemiş Markdown değişiklikleri",
-      "urlPrompt": "Bir URL girin veya yeni sekme için boş bırakın.",
       "allowAutoClose": "Otomatik kapatmaya izin ver",
       "agents": "Ajanlar",
       "more": "Daha fazla",
       "linkCopied": "Bağlantı kopyalandı",
       "copyLinkFailed": "Bağlantı kopyalanamadı",
       "renameTerminalFailed": "Terminal yeniden adlandırılamadı. {{reason}}",
-      "browserStreamingUnavailable": "Bu cihaz tarayıcı sekmelerini aktaramıyor",
       "cli": "CLI",
       "cliOnly": "Yalnızca CLI"
     },
@@ -3623,7 +3489,6 @@
     },
     "tabStrip": {
       "checkingCapabilities": "Masaüstü özellikleri kontrol ediliyor — birazdan tekrar deneyin",
-      "newTab": "Yeni sekme",
       "quickCommandsUpdateRequired": "Hızlı komutlar için masaüstü uygulaması güncellenmeli"
     },
     "terminalActionSheetActions": {
@@ -3632,20 +3497,13 @@
       "switchToDesktop": "Masaüstü Moduna Geç",
       "switchToPhone": "Telefon Moduna Geç"
     },
-    "terminalInputActions": {
-      "attachFileHint": "Fotoğraf yerine dosya eklemek için basılı tutun",
-      "attachPhoto": "Fotoğraf ekle",
-      "sendingImage": "Görsel gönderiliyor"
-    },
+    "terminalInputActions": {},
     "terminalLiveInputStatus": {
       "listening": "Dinliyor",
-      "liveInput": "Canlı giriş",
       "preparingMic": "Mikrofon hazırlanıyor",
       "processing": "İşleniyor",
       "releaseMicHint": "Durdurmak için mikrofonu bırakın",
-      "startingMic": "Mikrofon başlatılıyor",
-      "uploadingImage": "Görsel sunucuya yükleniyor",
-      "uploadingImageTitle": "Görsel yükleniyor"
+      "startingMic": "Mikrofon başlatılıyor"
     },
     "terminalRecords": {
       "defaultTitle": "Terminal"
@@ -3882,21 +3740,14 @@
       "mailOwnerUnconfirmed": "Orca bu mesajın hâlâ bu sohbet için olduğunu doğrulayamadı."
     },
     "workerAutoClose": {
-      "running": "Geçici orkestrasyon çalışanı · Tamamlandıktan 2 dakika sonra kapanır",
-      "finished": "Geçici orkestrasyon çalışanı tamamlandı · {{countdown}} içinde kapanır",
       "keepOpen": "Açık tut"
     },
     "terminalLayoutSheet": {
       "title": "Terminal düzeni",
       "oneTerminal": "Tek terminal",
-      "selected": "Seçili",
       "auto": "Otomatik",
-      "autoHint": "Kullanılabilir alana sığacak şekilde böl",
       "sideBySide": "Yan yana",
-      "sideBySideHint": "Kenar çubuğu açıkken bile iki sütun",
-      "stacked": "Alt alta",
-      "stackedHint": "Her yönlendirmede iki satır",
-      "selectedHint": "Seçili · {{hint}}"
+      "stacked": "Alt alta"
     },
     "terminalSplitLayout": {
       "saveFailedTitle": "Düzen kaydedilemedi",
@@ -3905,23 +3756,19 @@
     "terminalMoreKeys": {
       "sendKey": "{{label}} gönder",
       "paste": "Yapıştır",
-      "sending": "Gönderiliyor…",
       "photo": "Fotoğraf",
       "file": "Dosya",
       "desktopWidth": "Masaüstü genişliği",
       "phoneWidth": "Telefon genişliği",
       "keys": "Tuşlar",
-      "combos": "Kombinasyonlar",
       "yourKeys": "Tuşlarınız",
       "deleteKeyHint": "Bu tuşu silmek için uzun basın",
-      "addCustomKey": "Özel tuş ekle",
-      "addKey": "Tuş ekle"
+      "addCustomKey": "Özel tuş ekle"
     },
     "terminalPaneView": {
       "focusedPane": "{{title}}, odakta",
       "terminal": "Terminal",
-      "tapToFocusPane": "{{title}}, odaklamak için dokunun",
-      "inputPane": "{{title}} · Girdi"
+      "tapToFocusPane": "{{title}}, odaklamak için dokunun"
     },
     "structuredOpen": {
       "worktreeDeleted": "Çalışma ağacı silindi.",
@@ -3978,10 +3825,7 @@
     "tabBar": {
       "oneTab": "1 sekme",
       "tabCount": "{{count}} sekme",
-      "anotherNeedsYou": "başka bir sekme ilginizi bekliyor",
       "actionsHint": "Bu sekmenin işlemlerini gösterir",
-      "next": "Sonraki sekme",
-      "previous": "Önceki sekme",
       "hint": "Tüm sekmeleri gösterir"
     },
     "contentState": {
@@ -4042,7 +3886,6 @@
       "checkUpdates": "Güncellemeleri denetle",
       "checkUpdatesStatus": "Güncellemeleri denetle, {{status}}",
       "checking": "Kontrol ediliyor…",
-      "installedVersion": "Sürüm {{version}}",
       "lastCheckedDays_one": "Son kontrol: {{count}} gün önce",
       "lastCheckedDays_other": "Son kontrol: {{count}} gün önce",
       "lastCheckedHours_one": "Son kontrol: {{count}} sa önce",
@@ -4052,19 +3895,18 @@
       "lastCheckedMinutes_other": "Son kontrol: {{count}} dk önce",
       "neverChecked": "Hiçbir zaman",
       "upToDate": "Güncel",
-      "update": "Güncelle",
       "updateToVersion": "Orca {{version}} sürümüne güncelle"
     },
     "appearance": {
       "language": {
         "description": "Sistem seçeneği bu cihazın dilini kullanır. İzin istekleri her zaman cihazın dilinde gösterilir.",
-        "heading": "DİL",
+        "heading": "Dil",
         "systemWithCurrent": "Sistem ({{language}})"
       },
       "theme": {
         "dark": "Koyu",
         "description": "Sistem seçeneği bu cihazın açık veya koyu tema ayarını kullanır.",
-        "heading": "TEMA",
+        "heading": "Tema",
         "light": "Açık",
         "system": "Sistem"
       },
@@ -4072,7 +3914,7 @@
       "usage": {
         "used": "Kullanılan",
         "remaining": "Kalan",
-        "heading": "KULLANIM YÜZDELERİ",
+        "heading": "Kullanım yüzdeleri",
         "description": "Ana Sayfa ve Hesaplar’daki kullanım çubukları, her sınırın ne kadarının kullanıldığını veya kaldığını gösterir. Bu ayar telefona kaydedilir."
       }
     },
@@ -4082,7 +3924,7 @@
       "desktopBrowser": "Masaüstündeki Orca tarayıcısı",
       "desktopBrowserDescription": "Eşleştirdiğiniz masaüstü bilgisayardan aktarılan tarayıcıda açın.",
       "terminalAndChatLinksDescription": "Terminal çıktısında ve sohbette dokunduğunuz web bağlantılarının nerede açılacağını seçin.",
-      "linksHeading": "BAĞLANTILAR",
+      "linksHeading": "Bağlantılar",
       "loadFailed": "Tarayıcı tercihleri yüklenemedi. Yeniden deneyin.",
       "openLinks": "Bağlantıları aç",
       "phoneBrowser": "Telefon tarayıcısı",
@@ -4094,23 +3936,21 @@
       "about": "Hakkında",
       "appearance": "Görünüm",
       "browser": "Tarayıcı",
-      "chatUi": "Sohbet Arayüzü",
       "notifications": "Bildirimler",
       "terminal": "Terminal",
       "troubleshooting": "Sorun Giderme",
       "voice": "Ses"
     },
     "menuScreen": {
-      "privacyPolicy": "Gizlilik Politikası",
+      "privacyPolicy": "Gizlilik politikası",
       "support": "Destek"
     },
     "nativeChatSettingsScreen": {
       "defaultViewDescription": "Desteklenen ajan oturumlarının (Claude, Codex ve sohbet destekli diğer ajanlar) bu cihazda nasıl açılacağını seçin. Terminal, CLI'yi olduğu gibi gösterir; Sohbet Arayüzü ise masaüstü uygulamasındaki gibi bir sohbet arayüzü sunar. Her oturumun görünümünü, oturuma uzun basınca açılan menüden ayrıca değiştirebilirsiniz.",
-      "defaultViewHeading": "VARSAYILAN GÖRÜNÜM",
+      "defaultViewHeading": "Varsayılan görünüm",
       "off": "Kapalı",
       "on": "Açık",
-      "openInChatUi": "Oturumları Sohbet Arayüzü ile aç",
-      "title": "Sohbet Arayüzü"
+      "openInChatUi": "Oturumları Sohbet Arayüzü ile aç"
     },
     "nativeNotificationDeliverySettings": {
       "loadFailed": "İletim ayarları yüklenemedi. Yeniden denemek için bu ekranı tekrar açın.",
@@ -4168,7 +4008,7 @@
       "connectDesktop": "Ses ayarlarını yönetmek için bir masaüstüne bağlanın.",
       "deleteFailed": "Silinemedi",
       "dictationDescription": "Masaüstünüzde odaktaki herhangi bir bölmeye metin dikte edin.",
-      "dictationHeading": "DİKTE",
+      "dictationHeading": "Dikte",
       "dictationMode": "Dikte Modu",
       "dictationModeDescription": "Aç/kapat: başlatmak için bir kez, durdurmak için tekrar basın. Basılı tut: basılı tuttuğunuz sürece dikte edin.",
       "dictationModeWithAutoDescription": "Otomatik: başlatmak ve durdurmak için dokunun; bilgisayarınızda kısayolu basılı tutmak bırakana kadar kaydeder. Basılı tut: basılı tuttuğunuz sürece dikte edin. Aç/kapat: başlatmak için bir kez, durdurmak için tekrar basın.",
@@ -4181,7 +4021,7 @@
       "noneSelected": "Seçim yok",
       "selectModelFailed": "Model seçilemedi",
       "speechModel": "Konuşma Modeli",
-      "speechModelHeading": "KONUŞMA MODELİ",
+      "speechModelHeading": "Konuşma modeli",
       "title": "Ses",
       "toggleMode": "Aç/kapat",
       "updateFailed": "Güncellenemedi",
@@ -4191,7 +4031,7 @@
       "permissionOwnAll": "Ajanların kendi ayarları"
     },
     "voiceTranscribeOn": {
-      "heading": "YAZIYA DÖKME YERİ",
+      "heading": "Yazıya dökme yeri",
       "description": "Bu telefonun duyduğu konuşma telefonda kalır. Otomatik, bu telefon yazıya dökemediğinde bilgisayarınızı kullanır.",
       "automatic": "Otomatik",
       "phone": "Bu telefon",
@@ -4205,7 +4045,7 @@
       "phoneChecking": "Kontrol ediliyor…"
     },
     "nativeChatText": {
-      "heading": "METİN",
+      "heading": "Metin",
       "footer": "Bir sohbette iki parmağınızı yaklaştırıp uzaklaştırarak boyutu değiştirin. Ayar burada saklanır.",
       "size": "Metin boyutu",
       "sizeDefault": "Varsayılan",
@@ -4334,12 +4174,7 @@
     },
     "commitFailurePanel": {
       "fix": "Düzelt",
-      "fixWithAi": "Commit hatasını AI ile düzelt",
       "hideDetails": "Ayrıntıları gizle",
-      "hideFailureDetails": "Commit hatasının ayrıntılarını gizle",
-      "showDetails": "Ayrıntıları göster",
-      "showFailureDetails": "Commit hatasının ayrıntılarını göster",
-      "summary": "Commit'lenemedi.",
       "title": "Commit'lenemedi"
     },
     "commitMessageAi": {
@@ -4359,10 +4194,7 @@
       "cancelGeneration": "Commit mesajı oluşturmayı iptal et",
       "commitMessageDisabled": "Commit mesajı devre dışı. Stage edilmiş dosya yok.",
       "commitMessagePlaceholder": "Commit mesajı",
-      "emptyMessage": "Çalışma ağacı temiz.",
-      "emptyTitle": "Yerel değişiklik yok",
       "generateMessage": "Commit mesajını AI ile oluştur",
-      "reconnecting": "Masaüstüne yeniden bağlanılıyor…",
       "regenerateHint": "Yeniden oluşturmak için mesajı temizleyin."
     },
     "createPrAction": {
@@ -4504,7 +4336,6 @@
       "updateDesktop": "Mobilde Kaynak Kontrolü özelliğini kullanmak için bu sunucudaki Orca'yı güncelleyin."
     },
     "modals": {
-      "currentBranch": "geçerli",
       "discardButton": "At",
       "discardConfirmMessage": "“{{path}}” dosyasındaki değişiklikler atılsın mı? Bu işlem geri alınamaz.",
       "discardTitle": "Değişikliği At",
@@ -4801,13 +4632,6 @@
       "behind": "{{count}} geride",
       "upToDate": "Güncel",
       "switchBranch": "{{branch}} yerine başka bir branch'e geç",
-      "mergeInProgress": "Merge devam ediyor",
-      "rebaseInProgress": "Rebase devam ediyor",
-      "cherryPickInProgress": "Cherry-pick devam ediyor",
-      "filesNeedDecision_one": "Bitirmeden önce {{count}} dosya için karar vermeniz gerekiyor.",
-      "filesNeedDecision_other": "Bitirmeden önce {{count}} dosya için karar vermeniz gerekiyor.",
-      "conflictsResolved": "Tüm çakışmalar çözüldü. Aşağıdaki çubuktan işlemi tamamlayın.",
-      "continueOnComputer": "Tüm çakışmalar çözüldü. İşlemi tamamlamak için bilgisayarınızda devam edin.",
       "commits_one": "{{count}} commit",
       "commits_other": "{{count}} commit",
       "conflictsMayRemain": "Tüm dosyalar listelenmediği için çözülmemiş çakışmalar olabilir. Bilgisayarınızda kontrol edin."
@@ -4831,8 +4655,7 @@
     },
     "pagination": {
       "pageUnreachable": "{{page}}. sayfa GitHub aramasının döndürebileceği aralığın dışında.",
-      "loadPageFailed": "{{page}}. sayfa GitHub’dan yüklenemedi.",
-      "noMoreResults": "{{page}}. sayfada başka sonuç yok."
+      "loadPageFailed": "{{page}}. sayfa GitHub’dan yüklenemedi."
     },
     "composerSource": {
       "baseFailed": "Temel branch çözümlenemedi.",
@@ -4853,23 +4676,10 @@
     "filterPickers": {
       "allTeams": "Tüm takımlar",
       "changeStatus": "Durumu Değiştir",
-      "fieldHidden": "Kartlarda gizli",
-      "fieldShown": "Kartlarda gösteriliyor",
-      "fieldsSubtitle": "Öğe kartlarında gösterilecek Proje alanlarını seçin.",
-      "fieldsTitle": "Proje Alanları",
-      "gitlabFilter": "GitLab Filtresi",
-      "gitlabView": "GitLab Görünümü",
-      "jiraFilter": "Jira Filtresi",
-      "jiraSite": "Jira Sitesi",
-      "linearFilter": "Linear Filtresi",
       "linearIssue": "Linear sorunu",
-      "linearWorkspace": "Linear Çalışma Alanı",
       "loadingStates": "Durumlar yükleniyor…",
-      "noFields": "Bu görünümde gösterilecek ek alan yok.",
       "noStates": "Kullanılabilir durum yok",
       "switchWorkspaceFailed": "Çalışma alanı değiştirilemedi",
-      "teamsSubtitle": "Görevler bölümünde hangi takımların görüneceğini seçin.",
-      "teamsTitle": "Linear Takımları",
       "teams_one": "{{count}} takım",
       "teams_other": "{{count}} takım",
       "statesFailed": "Durumlar yüklenemedi. Yeniden denemek için kapatıp açın."
@@ -5009,9 +4819,6 @@
     "linearList": {
       "changeStatusFrom": "Durumu değiştir (şu an: {{status}})"
     },
-    "listDisplayPickers": {
-      "displayPropertiesTitle": "Gösterilecek Özellikler"
-    },
     "listSurface": {
       "connectLinearButton": "Linear'ı bağla",
       "connectLinearMessage": "Doğrudan Görevler bölümünden size atanan Linear sorunlarına göz atın ve üzerlerinde çalışmaya başlayın.",
@@ -5065,7 +4872,6 @@
       "projectMergeRequests": "Proje MR'ları",
       "projectMergeRequestsDescription": "Repository'ye göre merge request'ler ve sorunlar",
       "projects": "Projeler",
-      "pullRequests": "PR'lar",
       "repository": "Repository",
       "repositorySortDescription": "Repository'ye göre gruplama, en yeni etkinlik önce",
       "reviewRequestsDescription": "Size atanan inceleme istekleri",
@@ -5184,42 +4990,8 @@
       "reviewers": "İnceleyenler",
       "viewFile": "Görüntüle"
     },
-    "providerControls": {
-      "myTodos": "Yapılacaklarım",
-      "projectMergeRequests": "Proje MR'ları",
-      "reposLabel": "Repository'ler: {{repos}}",
-      "filterCount": "Filtrele · {{count}}",
-      "filter": "Filtrele",
-      "filterLabel": "Filtrele ve göster"
-    },
-    "providerItemList": {
-      "intoBranch": "{{base}} branch'ine",
-      "nextPage": "Sonraki sayfa",
-      "page": "Sayfa {{page}}",
-      "pageOfTotal": "Sayfa {{page}} / {{total}}",
-      "previousPage": "Önceki sayfa",
-      "selectPage": "Sayfa seç, sayfa {{page}}",
-      "selectPageOfTotal": "Sayfa seç, {{total}} sayfadan {{page}}. sayfa",
-      "kindAndStatus": "{{kind}}, {{status}}"
-    },
     "providerPickers": {
-      "allRepositories": "Tüm repository'ler",
-      "githubView": "GitHub Görünümü",
-      "issueSources": "GitHub Sorun Kaynakları",
-      "issueSourcesDescription": "Her repository'nin sorgulama ve iş oluşturma için upstream mi yoksa origin mi kullanacağını seçin.",
-      "issues": "Sorunlar",
-      "noIssueSources": "Alternatif sorun kaynağı yok.",
-      "origin": "Origin",
-      "pageHint": "Yüklenmiş veya kullanılabilir bir sonuç sayfasına geçin.",
-      "pageLoaded": "Yüklendi",
-      "pageNotLoaded": "Daha eski sonuçları yükler",
-      "pageNumber": "Sayfa {{page}}",
-      "pages": "GitHub Sayfaları",
-      "pullRequests": "Pull Request'ler",
-      "queryingSource": "{{source}} sorgulanıyor",
-      "repoDescription": "Sorgulanacak repository'leri seçin.",
-      "repos": "Repository'ler",
-      "upstream": "Upstream"
+      "allRepositories": "Tüm repository'ler"
     },
     "providerViewProjection": {
       "all": "Tümü",
@@ -5228,7 +5000,6 @@
       "allWorkspaces": "Tüm çalışma alanları",
       "chooseProject": "Proje seç",
       "default": "Varsayılan",
-      "defaultSubtitle": "{{subtitle}} · Varsayılan",
       "issues": "Sorunlar",
       "openState": "Açık",
       "projects": "Projeler",
@@ -5244,15 +5015,7 @@
     "screenChrome": {
       "newGitHubIssue": "Yeni GitHub sorunu",
       "newLinearIssue": "Yeni Linear sorunu",
-      "refreshGitHub": "GitHub işini yenile",
-      "refreshGitLab": "GitLab iş öğelerini yenile",
-      "refreshJira": "Jira sorunlarını yenile",
-      "refreshLinear": "Linear'ı yenile",
       "title": "Görevler"
-    },
-    "searchControl": {
-      "projectPlaceholder": "Proje görünümünde ara…",
-      "providerPlaceholder": "{{provider}} görevlerinde ara…"
     },
     "smartSourceModes": {
       "allStates": "Tümü",
@@ -5370,28 +5133,15 @@
       "createFailed": "Çalışma alanı oluşturulamadı"
     },
     "filterSheet": {
-      "sortBy": "Sıralama ölçütü",
       "issueSource": "Sorun kaynağı",
-      "issueSourceRow": "Upstream veya origin",
       "view": "Görüntüle",
-      "projectView": "Proje görünümü",
-      "projectItems_one": "{{count}} öğe",
-      "projectItems_other": "{{count}} öğe",
-      "chooseView": "Seç",
       "showOnRows": "Satırlarda göster",
-      "projectFields": "Proje alanları",
       "workspace": "Çalışma alanı",
-      "linearWorkspace": "Linear çalışma alanı",
       "layout": "Düzen",
       "groupBy": "Gruplama ölçütü",
       "orderBy": "Sıralama ölçütü",
-      "displayProperties": "Görüntülenecek özellikler",
       "title": "Filtrele ve göster",
-      "done": "Tamam",
-      "jqlReplacesPreset": "JQL aramanız “Göster” bölümündeki hazır filtrenin yerini alır. Yeniden hazır filtre seçmek için aramayı temizleyin."
-    },
-    "jiraViewControls": {
-      "jqlSearch": "JQL araması"
+      "done": "Tamam"
     },
     "itemComments": {
       "noComments": "Henüz yorum yok",
@@ -5439,7 +5189,6 @@
     },
     "webviewEngineErrorState": {
       "code": "kod {{code}}",
-      "reload": "Yeniden yükle",
       "rendererCrashed": "görüntüleyici çöktü",
       "status": "durum {{statusCode}}",
       "title": "Terminal yüklenemedi"
@@ -5548,7 +5297,6 @@
   },
   "automations": {
     "mobile": {
-      "extraAgentArguments": "Ek ajan argümanları",
       "allAutomations": "Tüm otomasyonlar",
       "schedule": "Zamanlama",
       "agent": "Ajan",
@@ -5561,8 +5309,6 @@
       "cancel": "İptal",
       "name": "Ad",
       "back": "Geri",
-      "continue": "Devam Et",
-      "createAutomation": "Otomasyon oluştur",
       "automations": "Otomasyonlar",
       "runs": "Çalıştırmalar",
       "refresh": "Yenile",
@@ -5586,40 +5332,17 @@
       "host": "Sunucu",
       "pending": "Beklemede",
       "starting": "Başlatılıyor",
-      "baseBranchOptional": "Temel dal (isteğe bağlı)",
-      "workspaceSetupScript": "Çalışma alanı kurulum betiği",
-      "useProjectSettings": "Proje ayarlarını kullan",
-      "runSetupScript": "Kurulum betiğini çalıştır",
-      "skipSetupScript": "Kurulum betiğini atla",
       "reuseAgentSession": "Aracı oturumunu yeniden kullan",
-      "precheckCommandOptional": "Ön kontrol komutu (isteğe bağlı)",
-      "precheckTimeoutSeconds": "Ön kontrol zaman aşımı (saniye)",
-      "missedRunGraceMinutes": "Kaçırılan çalıştırma toleransı (dakika)",
-      "choose": "Seçin…",
       "runOnSchedule": "{{name}} zamanlamaya göre çalışsın",
       "noNextScheduledRun": "Sonraki zamanlanmış çalıştırma yok",
-      "newWorkspacePerRun": "Her çalıştırmada yeni çalışma alanı",
       "instructions": "Talimatlar",
       "runNow": "Şimdi çalıştır",
-      "savedAgent": "{{agent}} (kaydedildi)",
       "chooseAProjectSetUpOnThisHost": "Bu ana makinede kurulmuş bir proje seçin.",
       "newAutomation": "Yeni otomasyon",
-      "editorStep": "{{step}} / 3 · {{section}}",
-      "retryProjectLoading": "Projeleri yeniden yükle",
-      "loadingProjects": "Projeler yükleniyor…",
-      "projectAndHostSetup": "Proje ve ana makine kurulumu",
       "savedTarget": "Kaydedilen hedef",
-      "useAnExistingWorkspace": "Mevcut bir çalışma alanını kullan",
-      "existingWorkspace": "Mevcut çalışma alanı",
       "savedWorkspace": "Kaydedilen çalışma alanı",
       "loadMoreWorkspaces": "Daha fazla çalışma alanı yükle",
-      "thisHostSWorkspaceInventoryIsIncompleteRefreshOrLoadMoreWorkspaces": "Bu ana makinenin çalışma alanı envanteri eksik. Yenileyin veya daha fazla çalışma alanı yükleyin.",
-      "agentDetecting": "Aracı · algılanıyor…",
       "installAndEnableAnAgentOnThisHostThenRetry": "Bu ana makineye bir aracı yükleyip etkinleştirin, sonra tekrar deneyin.",
-      "hideAdvancedOptions": "Gelişmiş seçenekleri gizle",
-      "advancedOptions": "Gelişmiş seçenekler",
-      "chooseAnAgent": "Bir aracı seçin",
-      "saveChanges": "Değişiklikleri kaydet",
       "loadingAutomations": "Otomasyonlar yükleniyor…",
       "letYourAgentsWorkOnASchedule": "Aracılarınız bir programa göre çalışsın",
       "createAnAutomationToRunATaskOnThisHost": "Bu ana makinede görev çalıştırmak için bir otomasyon oluşturun.",
@@ -5650,12 +5373,7 @@
       "scheduled": "Zamanlandı",
       "loadMoreRuns": "Daha fazla çalıştırma yükle",
       "customCronOrRRULE": "Özel Cron veya RRULE",
-      "cronOrRRULE": "Cron veya RRULE",
-      "minuteFromHHMM": "Dakika (SS:DD biçiminden)",
-      "timeHHMM24Hour": "Saat (SS:DD, 24 saat)",
-      "useATimeSuchAs0900": "09:00 gibi bir saat kullanın.",
       "timeZone": "Saat dilimi",
-      "runsOnTheSelectedHostKeepThatHostAvailableAtTheScheduledTime": "Seçilen ana makinede çalışır. Zamanlanan saatte ana makineyi kullanılabilir tutun.",
       "pairedHost": "Eşleştirilmiş ana makine",
       "selectedServerUnavailable": "Seçilen sunucu (kullanılamıyor)",
       "addANameInstructionsAndAnAgent": "Bir ad, talimatlar ve bir aracı ekleyin.",
@@ -5683,15 +5401,12 @@
       "unknownResult": "Bilinmeyen sonuç",
       "notReported": "Bildirilmedi",
       "searchOptions": "Seçenekleri ara",
-      "task": "Görev",
-      "review": "İncele",
       "discardChangesTitle": "Değişiklikler atılsın mı?",
       "discardChangesMessage": "Bu otomasyondaki kaydedilmemiş düzenlemeler kaybolacak.",
       "discard": "Değişiklikleri at",
       "keepEditing": "Düzenlemeye devam et",
       "on": "Açık",
       "repeats": "Tekrar",
-      "newOnePerRun": "Her çalıştırmada yeni",
       "moreActions": "Diğer işlemler",
       "noRunsYet": "Henüz çalıştırma yok",
       "nextRunToday": "Sonraki çalıştırma bugün {{time}}",
@@ -5809,7 +5524,6 @@
         }
       },
       "TaskPage": {
-        "99c2755218": "Sorun arayın veya JQL girin; ör. project = ABC",
         "jiraTextMatchesNotice": "Metin eşleşmeleri gösteriliyor. Jira bu aramayı JQL olarak çalıştıramadı."
       },
       "editor": {
@@ -8518,13 +8232,13 @@
       "workers_other": "{{count}} alt ajan",
       "noMatches": "“{{query}}” ile eşleşen ajan yok",
       "emptyTitle": "Çalışan ajan yok",
-      "pairDesktop": "Ajanlarını burada görmek için bir bilgisayar eşleştirin.",
       "emptyBody": "Herhangi bir çalışma alanında başlattığınız ajan burada görünür.",
       "unread": "Okunmadı",
-      "noDesktopTitle": "Bağlı bilgisayar yok",
-      "noDesktopBody": "Bir bilgisayar bağlandığında ajanları burada görünür.",
       "hideWorkers": "Gizle: {{workers}}",
-      "showWorkers": "Göster: {{workers}}"
+      "showWorkers": "Göster: {{workers}}",
+      "pairComputer": "Ajanlarını burada görmek için bir bilgisayar eşleştirin.",
+      "noComputerTitle": "Bağlı bilgisayar yok",
+      "noComputerBody": "Bir bilgisayar bağlandığında ajanları burada görünür."
     },
     "actions": {
       "offlineHint": "Ajanın çalıştığı bilgisayar çevrimdışı.",
@@ -8542,28 +8256,17 @@
       "workspace": "Çalışma alanı",
       "project": "Proje",
       "agent": "Ajan",
-      "desktop": "Masaüstü"
+      "computer": "Masaüstü"
     },
     "options": {
       "groupBy": "Gruplama ölçütü",
       "showWorkers": "Alt ajanları göster",
-      "open": "Ajan listesi seçenekleri",
       "unreadOnly": "Yalnızca okunmamışlar",
       "markAllRead": "Tümünü okundu işaretle",
       "clearFinished": "Tamamlananları temizle"
     },
     "search": {
-      "toggle": "Ajanlarda ara",
       "placeholder": "Ajanlarda ara"
-    },
-    "desktops": {
-      "pickerTitle": "Ajanların gösterileceği cihaz",
-      "agents_one": "{{count}} ajan",
-      "agents_other": "{{count}} ajan",
-      "all": "Tüm masaüstü cihazları",
-      "offline": "Çevrimdışı",
-      "needsYou_one": "{{count}} sizi bekliyor",
-      "needsYou_other": "{{count}} sizi bekliyor"
     },
     "sections": {
       "needsYou": "Sizi bekliyor",
@@ -8584,6 +8287,9 @@
     "activity": {
       "needsWindow": "Güncellenemedi. {{desktop}} üzerinde Orca’yı açın.",
       "failed": "Ajan listesi güncellenemedi."
+    },
+    "filterSheet": {
+      "allComputers": "Tüm masaüstü cihazları"
     }
   },
   "mcpServers": {

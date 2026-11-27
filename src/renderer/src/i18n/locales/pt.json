@@ -15715,7 +15715,6 @@
           "c13b82793c": "Gerenciar instalações",
           "aee7b99cc6": "Instalar de link",
           "filterProvider": "Filtrar por agente",
-          "filterSource": "Filtrar por origem",
           "allSources": "Todas",
           "clearFilters": "Limpar filtros",
           "closeSkills": "Fechar skills",
@@ -16465,7 +16464,6 @@
           "failed": "Falhou",
           "succeeded": "Bem-sucedida",
           "neverRan": "Nunca executada",
-          "filters": "Filtros",
           "all": "Todas",
           "clear": "Limpar filtros",
           "agent": "Agente",
@@ -26093,7 +26091,9 @@
       "chatOtherWindow": "O login está em andamento em outra janela.",
       "chatPageDidntOpen": "A página não abriu?",
       "chatPasteCode": "Cole o código",
-      "chatPasteCodeLabel": "O código que o Google mostra depois que você entra, ou o endereço dessa página"
+      "chatPasteCodeLabel": "O código que o Google mostra depois que você entra, ou o endereço dessa página",
+      "launchesUse": "Novas execuções do agy usam esta conta",
+      "loginNow": "Login atual do agy"
     },
     "claude": {
       "added": "Conta adicionada. Selecione-a para usar no próximo Claude que iniciar.",

@@ -115,6 +115,7 @@ export type KeybindingActionId =
   | 'fileExplorer.copyRelativePath'
   | 'fileExplorer.delete'
   | 'settings.search'
+  | 'page.search'
   | 'terminal.copySelection'
   | 'terminal.selectAll'
   | 'terminal.paste'

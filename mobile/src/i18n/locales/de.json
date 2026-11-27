@@ -34,7 +34,6 @@
   "agentHistory": {
     "panel": {
       "all": "Alle",
-      "emptyScope": "Keine früheren Agentensitzungen in diesem Bereich.",
       "hideDetails": "Details ausblenden",
       "showDetails": "Details anzeigen",
       "loading": "Agentensitzungen werden geladen…",
@@ -65,14 +64,10 @@
       "untitledSession": "Sitzung ohne Titel"
     },
     "sessionHistoryList": {
-      "currentWorktree": "Aktueller Worktree",
       "messages_one": "{{count}} Nachricht",
       "messages_other": "{{count}} Nachrichten",
       "resumeSession": "Agentensitzung fortsetzen",
-      "continueInCli": "In CLI fortsetzen",
-      "hidePreview": "Blendet die letzten Nachrichten aus.",
-      "showPreview": "Zeigt die letzten Nachrichten an.",
-      "you": "Du"
+      "continueInCli": "In CLI fortsetzen"
     },
     "useAgentHistoryState": {
       "hostUnreachable": "Host nicht erreichbar",
@@ -136,43 +131,25 @@
     },
     "pairConfirm": {
       "backToHome": "Zurück zur Startseite",
-      "connectTimedOut": "Verbindung konnte nicht innerhalb von {{seconds}} s hergestellt werden – das Protokoll unten zeigt, wo der Vorgang hängen blieb",
       "connecting": "Verbindung wird hergestellt…",
-      "description": "Ein Kopplungslink vom Desktop wurde geöffnet. Bestätigen, um diesen Desktop zu den Hosts hinzuzufügen.",
       "pairButton": "Koppeln",
-      "pairingFailed": "Kopplung fehlgeschlagen: {{error}}",
-      "pairingLog": "Kopplungsprotokoll",
-      "title": "Mit diesem Desktop koppeln?"
+      "pairingFailed": "Kopplung fehlgeschlagen: {{error}}"
     },
     "pairScan": {
-      "cameraDisabledDescription": "Den Kamerazugriff in den Einstellungen aktivieren oder stattdessen den Kopplungscode einfügen.",
-      "cameraDisabledTitle": "Kamerazugriff deaktiviert",
-      "cameraPermissionDescription": "Den QR-Code in Orca auf dem Desktop scannen oder stattdessen den Kopplungscode einfügen.",
-      "connectTimedOut": "Verbindung konnte nicht innerhalb von {{seconds}} s hergestellt werden – das Protokoll unten zeigt, wo der Vorgang hängen blieb",
       "connecting": "Verbindung wird hergestellt…",
       "invalidPairingCode": "Kein gültiger Kopplungscode – vom Computer kopieren und erneut einfügen",
       "invalidQrCode": "Kein gültiger Orca-QR-Code",
-      "downloadQrCode": "Das ist der Download-Code. Scanne den Kopplungscode in Schritt 2 auf deinem Computer.",
-      "openDesktopStep": "Orca auf dem Computer öffnen",
-      "openMobileSettingsStep": "Einstellungen → Mobil öffnen",
       "openSettings": "Einstellungen öffnen",
       "pairingFailed": "Kopplung fehlgeschlagen: {{error}}",
-      "pairingLog": "Kopplungsprotokoll",
       "pasteCodeMessage": "Den Code kopieren, der auf dem Computer unter dem QR-Code angezeigt wird.",
       "pasteCodePlaceholder": "orca://pair?code=... oder den Code einfügen",
       "pasteCodeTitle": "Kopplungscode einfügen",
-      "pasteInstead": "Stattdessen Code einfügen",
-      "pastePairingCode": "Kopplungscode einfügen",
-      "scanCodeStep": "QR-Code scannen",
-      "title": "Mit Desktop koppeln",
-      "tryAgain": "Erneut versuchen",
-      "codeNoLongerValid": "Dieser Kopplungscode ist abgelaufen, wurde bereits verwendet oder wurde ersetzt. Zeige auf deinem Computer einen neuen Code an und scanne erneut.",
       "runtimeAccessLink": "Dieser Link ist für eine andere Orca-App. Den Code auf dem Computer unter Einstellungen → Mobil scannen oder orca pair --mobile auf dem Server ausführen."
     },
     "terminalSettings": {
       "keepPhoneSize": "Smartphone-Größe beibehalten (Standard)",
       "leaveAppDescription": "Während ein Terminal auf dem Smartphone verwendet wird, verkleinert Orca es auf die Bildschirmgröße des Smartphones. Diese Einstellung legt fest, ob es beim Schließen oder Verlassen der App in Smartphone-Größe bleibt (damit interaktive CLI-Tools ihr Layout beibehalten) oder wieder an den Desktop angepasst wird. Über „Wiederherstellen“ im Desktop-Banner lässt sich die Größe jederzeit manuell anpassen.",
-      "leaveAppHeading": "BEIM VERLASSEN DER APP",
+      "leaveAppHeading": "Beim Verlassen der App",
       "noPairedDesktops": "Noch keine Desktops gekoppelt. Einen Desktop koppeln, um das Terminalverhalten festzulegen.",
       "restoreAfterMinutes_one": "Nach {{count}} Minute",
       "restoreAfterMinutes_other": "Nach {{count}} Minuten",
@@ -1088,25 +1065,13 @@
     },
     "customKeyModal": {
       "add": "Hinzufügen",
-      "addShortcut": "Tastenkürzel hinzufügen",
-      "command": "Befehl",
       "commandPlaceholder": "z. B. pnpm build",
       "editing": "Bearbeitung",
       "function": "Funktionstasten",
       "key": "Taste",
-      "label": "Bezeichnung",
-      "labelPlaceholder": "z. B. Kompilieren",
-      "manageShortcuts": "Tastenkürzel verwalten",
-      "manageShortcutsHint": "Tastenkürzel einblenden, ausblenden oder neu anordnen",
-      "modifiers": "Modifikatortasten",
-      "moreKeys": "WEITERE TASTEN",
       "navigation": "Navigation",
-      "pickKey": "Taste auswählen",
       "pressEnter": "Enter drücken",
-      "shortcutCombo": "Tastenkombination",
-      "shortcutComboHint": "Tastenkombinationen mit Ctrl, Alt und Shift erstellen",
-      "textMacro": "Textmakro",
-      "textMacroHint": "Benutzerdefinierten Textbefehl senden"
+      "labelPlaceholder": "z. B. Kompilieren"
     },
     "dictationSetupSheet": {
       "description": "Ein Modell herunterladen oder auswählen und das Diktat auf dem gekoppelten Computer aktivieren – alles von hier aus.",
@@ -1147,8 +1112,6 @@
       "tooLargeMessage": "Dieser Diff ist zu groß für die mobile Vorschau."
     },
     "diffReviewDrawers": {
-      "addNote": "Notiz hinzufügen",
-      "cancelNote": "Notizeingabe abbrechen",
       "clearSentNotes": "Gesendete Notizen löschen",
       "copyNotes": "Notizen kopieren",
       "deleteNote": "Notiz löschen",
@@ -1157,12 +1120,10 @@
       "discardTitle": "Änderungen verwerfen?",
       "editNote": "Notiz bearbeiten",
       "fileNote": "Dateinotiz",
-      "lineNumber": "Zeile {{lineNumber}}",
       "loadingSessions": "Agentensitzungen werden geladen…",
       "newAgentSession": "Neue Agentensitzung",
       "openInSession": "In Sitzung öffnen",
       "reviewNote": "Review-Notiz",
-      "saveLineNote": "Notiz zu Zeile {{lineNumber}} speichern",
       "sendNotes": "Notizen senden",
       "sendNotesLabel": "Notizen an den Agenten senden",
       "viewedFiles_one": "{{count}} Datei angesehen",
@@ -1176,10 +1137,7 @@
       "discardChanges": "Änderungen verwerfen",
       "rangeLine": "Zeile {{line}}",
       "rangeLines": "Zeilen {{startLine}}–{{line}}",
-      "sendToAgent": "An {{agent}} senden",
-      "sendToAnAgent": "An Agenten senden",
       "rangePlaceholder": "Was soll hier geändert werden?",
-      "commentOnGitHub": "Auf GitHub kommentieren",
       "sendUnsentNotes": "Ungesendete Notizen senden",
       "statusUnreadable": "Der Status dieses Hosts konnte nicht gelesen werden. Erneuter Versuch…",
       "terminal": "Terminal",
@@ -1212,7 +1170,6 @@
       "title": "Änderungen"
     },
     "diffReviewLine": {
-      "addNoteOnLine": "Notiz zu Zeile {{number}} hinzufügen",
       "addedLine": "Hinzugefügte Zeile",
       "addedLineNumber": "Hinzugefügte Zeile {{number}}",
       "contextLine": "Kontextzeile",
@@ -1355,14 +1312,10 @@
       "linkUrl": "Link-URL"
     },
     "richMarkdownToolbar": {
-      "body": "Fließtext",
       "bold": "Fett formatieren",
       "bulletList": "Aufzählung",
       "checklist": "Checkliste",
       "codeBlock": "Codeblock",
-      "heading1": "H1",
-      "heading2": "H2",
-      "heading3": "H3",
       "image": "Bild",
       "inlineCode": "Inline-Code",
       "italic": "Kursiv formatieren",
@@ -1437,14 +1390,14 @@
     "terminalShortcutSettings": {
       "addDescription": "Tastenkombination oder Textmakro erstellen",
       "addShortcut": "Eigenes Tastenkürzel hinzufügen…",
-      "customShortcuts": "EIGENE TASTENKÜRZEL",
+      "customShortcuts": "Eigene Tastenkürzel",
       "empty": "Noch keine eigenen Tastenkürzel definiert.",
       "removeShortcut": "{{label}} entfernen",
       "resetDefaults": "Auf Standard zurücksetzen",
       "resetDescription": "Alle integrierten Tastenkürzel in der ursprünglichen Reihenfolge anzeigen",
-      "moreKeys": "WEITERE TASTEN",
+      "moreKeys": "Weitere Tasten",
       "moreKeysDescription": "Diese Tasten befinden sich unter ⋯ in der Terminal-Tastenleiste. Blende Tasten ein oder aus und halte den Griff gedrückt, um sie in die gewünschte Reihenfolge zu ziehen. Tasten, die bereits in der Leiste sind, etwa Esc oder die Pfeiltasten, erscheinen nicht unter ⋯.",
-      "directionPad": "STEUERKREUZ",
+      "directionPad": "Steuerkreuz",
       "showDirectionPad": "Steuerkreuz anzeigen",
       "showDirectionPadDescription": "Das Steuerkreuz in der Seitenleiste anheften. Andernfalls werden dort die einzelnen Pfeiltasten angezeigt.",
       "showShortcut": "Tastenkürzel {{label}} anzeigen"
@@ -1879,9 +1832,6 @@
       "backToSession": "Zurück zur Sitzung",
       "closeFiles": "Dateien schließen",
       "emptyState": "Keine Dateien gefunden",
-      "filterPlaceholder": "Dateien filtern",
-      "noMatchesHint": "Nur bereits geöffnete Ordner werden durchsucht.",
-      "clearFilter": "Filter zurücksetzen",
       "loading": "Dateien werden geladen…",
       "loadFailed": "Dateien konnten nicht geladen werden.",
       "title": "Dateien",
@@ -1895,13 +1845,8 @@
       "openFolder": "Ordner {{name}} öffnen",
       "previewFile": "Vorschau der Datei {{name}} anzeigen",
       "retryLoading": "{{path}} erneut laden",
-      "searchAll": "Alle durchsuchen",
-      "searchAllIn": "Ganz {{folder}} durchsuchen",
       "ignored": "Durch .gitignore ignoriert",
-      "searched": "{{loaded}} von {{total}} in {{folder}} durchsucht.",
-      "searching": "{{folder}} wird durchsucht… {{loaded}} von {{total}}",
-      "showMore": "{{rows}} weitere anzeigen",
-      "unavailable": "Auf Mobilgeräten nicht verfügbar"
+      "showMore": "{{rows}} weitere anzeigen"
     },
     "fileExplorerRowActions": {
       "copyName": "Namen kopieren",
@@ -2003,17 +1948,6 @@
       "showFor": "Automatisierungen anzeigen für",
       "toggleFailed": "{{name}} konnte nicht aktualisiert werden",
       "updateDesktop": "Orca auf {{desktop}} aktualisieren, um Automatisierungen zu nutzen."
-    },
-    "emptyState": {
-      "connectedDescription": "Der Desktop erscheint hier. Alles ist Ende-zu-Ende-verschlüsselt.",
-      "connectedTitle": "Verbunden",
-      "description": "Mit Orca auf dem Computer koppeln, um Agenten im Blick zu behalten, beliebige Terminals zu öffnen und die Arbeit vom Smartphone aus zu steuern.",
-      "pairDesktopButton": "Desktop koppeln",
-      "scanCodeBelowDescription": "Unten auf „Desktop koppeln“ tippen und dann die Kamera auf den QR-Code auf dem Bildschirm richten.",
-      "openDesktopDescription": "Einstellungen → Mobil öffnen und einen QR-Code zum Koppeln erstellen.",
-      "openDesktopTitle": "Orca-Desktop-App öffnen",
-      "scanCodeTitle": "Code scannen",
-      "title": "Desktop verbinden"
     },
     "listFooter": {
       "hostPickerTitle": "Aufgaben auf Host öffnen"
@@ -2319,16 +2253,11 @@
       "waitingOnYou": "Wartet auf dich."
     },
     "onboardingPage": {
-      "enableAgentNotifications": "Agenten-Benachrichtigungen aktivieren",
       "enableNotifications": "Benachrichtigungen aktivieren",
       "keepTerminal": "Terminal beibehalten",
       "notNow": "Jetzt nicht",
-      "notificationsDescription": "Auf diesem Smartphone benachrichtigt werden, wenn ein Agent fertig ist oder wartet – auch wenn die App gerade nicht genutzt wird.",
-      "notificationsDisclosure": "Zustellung über den Push-Dienst von Orca, sobald der Computer 3 Minuten lang inaktiv ist. Jederzeit in den Einstellungen änderbar.",
       "notificationsTitle": "Nicht verpassen, wenn ein Agent dich braucht",
-      "openInChatUi": "Sitzungen in der Chat-Oberfläche öffnen",
       "openInTerminal": "Sitzungen im Terminal öffnen",
-      "sessionViewDescription": "Festlegen, ob unterstützte Agenten-Sitzungen auf diesem Gerät im Terminal oder in der Chat-Oberfläche geöffnet werden. Einen Sitzungs-Tab gedrückt halten, um die Ansicht zu wechseln, oder den Standard jederzeit unter Einstellungen → Chat-Oberfläche ändern.",
       "sessionViewTitle": "Wie sollen Sitzungen geöffnet werden?",
       "skipNotifications": "Benachrichtigungen vorerst überspringen",
       "useChatUi": "Chat-Oberfläche verwenden"
@@ -2347,7 +2276,6 @@
       "daysAgo_other": "vor {{count}} Tagen",
       "deleteConfirmMessage": "Dadurch wird der Kommentar auf GitHub dauerhaft gelöscht.",
       "editPlaceholder": "Kommentar bearbeiten…",
-      "replyToComment": "Auf Kommentar antworten",
       "hoursAgo_one": "vor {{count}} Std.",
       "hoursAgo_other": "vor {{count}} Std.",
       "justNow": "gerade eben",
@@ -2356,39 +2284,22 @@
       "monthsAgo_one": "vor {{count}} Monat",
       "monthsAgo_other": "vor {{count}} Monaten",
       "reply": "Antworten",
-      "editComment": "Kommentar bearbeiten",
-      "deleteComment": "Kommentar löschen",
-      "unresolveThread": "Thread als ungelöst markieren",
-      "resolveThread": "Thread als erledigt markieren",
       "resolve": "Erledigen",
-      "replyPlaceholder": "Antwort schreiben…",
       "unresolve": "Als ungelöst markieren",
       "yearsAgo_one": "vor {{count}} Jahr",
-      "yearsAgo_other": "vor {{count}} Jahren",
-      "resolved": "erledigt",
-      "openOnGitHub": "Kommentar auf GitHub öffnen"
+      "yearsAgo_other": "vor {{count}} Jahren"
     },
     "commentsSection": {
-      "all": "Alle",
-      "humans": "Menschen",
-      "bots": "Bots",
-      "noBotComments": "Keine Kommentare von Bots.",
-      "noHumanComments": "Keine Kommentare von Menschen.",
       "comment": "Kommentieren",
       "resolvedThreadSingle": "Erledigter Thread von {{author}}",
       "resolvedThreadCount": "Erledigter Thread von {{author}} ({{count}})",
-      "resolvedCommentSingle": "Erledigter Kommentar von {{author}}",
-      "resolvedCommentCount": "Erledigter Kommentar von {{author}} ({{count}})",
       "commentsLoadFailedRetry": "Kommentare konnten nicht geladen werden.",
       "description": "Beschreibung",
       "descriptionLoadFailed": "Beschreibung konnte nicht geladen werden. Zum erneuten Laden auf „Aktualisieren“ tippen.",
       "noComments": "Noch keine Kommentare.",
       "noDescription": "Keine Beschreibung angegeben.",
       "showMore": "{{count}} weitere anzeigen",
-      "addCommentPlaceholder": "Kommentar hinzufügen…",
-      "title": "Kommentare",
-      "commentsLoadFailed": "Kommentare konnten nicht geladen werden. Zum erneuten Laden auf „Aktualisieren“ tippen.",
-      "showMoreOf": "{{count}} von {{remaining}} weiteren anzeigen"
+      "title": "Kommentare"
     },
     "linkPrForm": {
       "linkButton": "Pull Request verknüpfen",
@@ -2494,14 +2405,6 @@
       "stateOpen": "Offen",
       "unavailable": "Checks nicht verfügbar"
     },
-    "prCommentAudienceLabels": {
-      "all": "Alle",
-      "bots": "Bots",
-      "humans": "Menschen",
-      "noBotComments": "Keine Kommentare von Bots.",
-      "noComments": "Noch keine Kommentare.",
-      "noHumanComments": "Keine Kommentare von Menschen."
-    },
     "tab": {
       "updated": "aktualisiert {{time}}",
       "moreActions": "Weitere Pull-Request-Aktionen",
@@ -2564,7 +2467,6 @@
       "failedAfter": "Fehlgeschlagen nach {{duration}}",
       "failed": "Fehlgeschlagen",
       "checkActions": "Weitere Optionen für {{name}}",
-      "rerun": "Erneut ausführen",
       "copyErrorFailed": "Der Fehler konnte nicht kopiert werden.",
       "durationSeconds": "{{seconds}} s",
       "durationMinutes": "{{minutes}} min {{seconds}} s",
@@ -2698,20 +2600,12 @@
       "messageModeLabel": "Nachrichtenmodus: Schreiben, dann senden. Zum Tastenmodus wechseln",
       "moreKeys": "Weitere Tasten und Aktionen",
       "showKeyboard": "Tastatur anzeigen",
-      "dismissKeyboardHint": "Blendet die Bildschirmtastatur aus und lässt die aktuelle Terminal-Sitzung geöffnet.",
-      "switchToDesktopMode": "In den Desktop-Modus wechseln",
-      "switchToPhoneMode": "In den Smartphone-Modus wechseln",
-      "pasteFromClipboard": "Aus der Zwischenablage einfügen",
-      "paste": "Einfügen",
-      "addCustomShortcut": "Benutzerdefiniertes Tastenkürzel hinzufügen"
+      "pasteFromClipboard": "Aus der Zwischenablage einfügen"
     },
     "activeContent": {
-      "createTab": "Tab erstellen",
       "creatingTab": "Wird erstellt…",
       "fileTitle": "Datei",
       "loadingTerminal": "Terminal wird geladen",
-      "noTabs": "Keine Tabs in dieser Sitzung",
-      "retryLoadingTerminal": "Terminal erneut laden",
       "terminalTakingLonger": "Das Laden des Terminals dauert länger als erwartet"
     },
     "agentChildRow": {
@@ -2796,25 +2690,14 @@
       "workflow": "Arbeitsablauf im Hintergrund"
     },
     "browserTabActionSheet": {
-      "forward": "Vorwärts",
-      "reload": "Neu laden",
       "hardReload": "Ohne Cache neu laden",
       "title": "Browser"
     },
     "bulkCloseSheetActions": {
       "closeOtherTabs": "Andere Tabs schließen"
     },
-    "bulkTabClose": {
-      "confirm": "Tabs schließen",
-      "description": "Die ausgewählten Tabs werden geschlossen. Angeheftete Tabs bleiben geöffnet.",
-      "titleEditors": "Alle Editor-Tabs schließen?",
-      "titleLeft": "Tabs links schließen?",
-      "titleOthers": "Andere Tabs schließen?",
-      "titleRight": "Tabs rechts schließen?"
-    },
     "commandDock": {
       "liveInputHint": "Eingegebener Text wird direkt an das aktive Terminal gesendet",
-      "tapToShowKeyboard": "Tippen, um die Tastatur anzuzeigen",
       "liveInputLabel": "Live-Eingabe im Terminal"
     },
     "contentRow": {
@@ -3021,17 +2904,13 @@
       "requestFailed": "Anfrage fehlgeschlagen: {{method}}"
     },
     "header": {
-      "workspaceDetailsHint": "Zeigt den vollständigen Namen des Arbeitsbereichs und wo er sich befindet",
       "backToWorktrees": "Zurück zu den Worktrees",
       "moreActions": "Weitere Sitzungsaktionen",
-      "openSourceControl": "Quellcodeverwaltung öffnen",
       "reconnectToDesktop": "Erneut mit dem Desktop verbinden",
       "showSidebar": "Seitenleiste anzeigen",
       "terminalTitle": "Terminal",
       "terminalLayout": "Terminal-Layout",
-      "fileExplorer": "Datei-Explorer",
       "sourceControl": "Quellcodeverwaltung",
-      "newTab": "Neuen Tab erstellen",
       "quickCommands": "Schnellbefehle",
       "items": "Einträge",
       "textSize": "Textgröße"
@@ -3039,17 +2918,12 @@
     "headerMoreActionsSheet": {
       "agentHistory": "Agentenverlauf",
       "agentHistoryHint": "Agentensitzungen durchsuchen und fortsetzen",
-      "checks": "Checks",
-      "checksHint": "Pull-Request-Checks öffnen"
+      "checks": "Checks"
     },
     "markdownReader": {
       "changedOnDesktop": "Auf dem Desktop geändert",
       "copyLoaded": "Geladenen Text kopieren",
-      "copyLoadedSource": "Geladenen Markdown-Quelltext kopieren",
-      "copyPath": "Pfad kopieren",
       "loading": "Dokument wird geladen…",
-      "copyPathLabel": "Pfad der Markdown-Datei kopieren",
-      "copySource": "Markdown-Quelltext kopieren",
       "discard": "Verwerfen",
       "previewTruncated": "Vorschau gekürzt.",
       "readOnly": "Schreibgeschützt"
@@ -3200,24 +3074,18 @@
     },
     "sheets": {
       "browser": "Browser",
-      "browserStreamingUnavailable": "Dieser Host kann keine Browser-Tabs streamen",
       "chat": "Chat",
       "cli": "CLI",
       "cliOnly": "Nur CLI",
-      "copyAllAndLeave": "Alles kopieren und verlassen",
-      "copyDraftsFailed": "Entwürfe konnten nicht kopiert werden",
       "copyNotes": "Notizen kopieren",
       "copyNotesFailed": "Notizen konnten nicht kopiert werden",
       "copyPath": "Pfad kopieren",
       "discard": "Verwerfen",
-      "discardAndLeave": "Verwerfen und verlassen",
       "discardChanges": "Änderungen verwerfen",
       "discardMessage": "Entwurf auf dem Smartphone durch die neueste Datei vom Desktop ersetzen?",
-      "draftsHint": "Vor dem Verlassen die Entwürfe auf dem Smartphone kopieren oder verwerfen.",
       "file": "Datei",
       "markdown": "Markdown",
       "markdownNote": "Markdown-Notiz",
-      "newBrowser": "Neuen Browser öffnen",
       "newTab": "Neuer Tab",
       "notesCopied": "Notizen kopiert",
       "notesHint": "Eine Agentensitzung für die aktuellen Notizen auswählen.",
@@ -3235,8 +3103,6 @@
       "shellGitBash": "Git Bash",
       "shellWsl": "WSL",
       "terminalName": "Terminal-Name",
-      "unsavedMarkdown": "Ungespeicherte Markdown-Änderungen",
-      "urlPrompt": "URL eingeben oder für einen neuen Tab leer lassen.",
       "allowAutoClose": "Automatisches Schließen erlauben",
       "agents": "Agenten",
       "renameTerminalFailed": "Das Terminal konnte nicht umbenannt werden. {{reason}}"
@@ -3254,7 +3120,6 @@
     },
     "tabStrip": {
       "checkingCapabilities": "Desktop-Funktionen werden geprüft – gleich erneut versuchen",
-      "newTab": "Neuen Tab erstellen",
       "quickCommandsUpdateRequired": "Desktop-Update für Schnellbefehle erforderlich"
     },
     "terminalActionSheetActions": {
@@ -3263,20 +3128,12 @@
       "switchToDesktop": "Zum Desktop-Modus wechseln",
       "switchToPhone": "Zum Smartphone-Modus wechseln"
     },
-    "terminalInputActions": {
-      "attachFileHint": "Lange drücken, um stattdessen eine Datei anzuhängen",
-      "attachPhoto": "Foto anhängen",
-      "sendingImage": "Bild wird gesendet"
-    },
     "terminalLiveInputStatus": {
       "listening": "Hört zu",
-      "liveInput": "Direkte Eingabe",
       "preparingMic": "Mikrofon wird vorbereitet",
       "processing": "Wird verarbeitet",
       "releaseMicHint": "Zum Stoppen Mikrofon loslassen",
-      "startingMic": "Mikrofon wird gestartet",
-      "uploadingImage": "Bild wird auf den Host hochgeladen",
-      "uploadingImageTitle": "Bild wird hochgeladen"
+      "startingMic": "Mikrofon wird gestartet"
     },
     "terminalRecords": {
       "defaultTitle": "Terminal"
@@ -3513,21 +3370,14 @@
       "waitMoment": "Einen Moment warten."
     },
     "workerAutoClose": {
-      "running": "Temporärer Orchestrierungs-Worker · Schließt sich 2 Minuten nach Abschluss",
-      "finished": "Temporärer Orchestrierungs-Worker abgeschlossen · Schließt sich in {{countdown}}",
       "keepOpen": "Offen halten"
     },
     "terminalLayoutSheet": {
       "title": "Terminal-Layout",
       "oneTerminal": "Ein Terminal",
-      "selected": "Ausgewählt",
       "auto": "Automatisch",
-      "autoHint": "An den verfügbaren Platz angepasst teilen",
       "sideBySide": "Nebeneinander",
-      "sideBySideHint": "Zwei Spalten, auch bei geöffneter Seitenleiste",
-      "stacked": "Untereinander",
-      "stackedHint": "Zwei Zeilen in jeder Ausrichtung",
-      "selectedHint": "Ausgewählt · {{hint}}"
+      "stacked": "Untereinander"
     },
     "terminalSplitLayout": {
       "saveFailedTitle": "Layout konnte nicht gespeichert werden",
@@ -3536,23 +3386,19 @@
     "terminalMoreKeys": {
       "sendKey": "{{label}} senden",
       "paste": "Einfügen",
-      "sending": "Wird gesendet…",
       "photo": "Foto",
       "file": "Datei",
       "desktopWidth": "Desktopbreite",
       "phoneWidth": "Telefonbreite",
       "keys": "Tasten",
-      "combos": "Kombinationen",
       "yourKeys": "Deine Tasten",
       "deleteKeyHint": "Gedrückt halten, um diese Taste zu löschen",
-      "addCustomKey": "Benutzerdefinierte Taste hinzufügen",
-      "addKey": "Taste hinzufügen"
+      "addCustomKey": "Benutzerdefinierte Taste hinzufügen"
     },
     "terminalPaneView": {
       "focusedPane": "{{title}}, fokussiert",
       "terminal": "Terminal",
-      "tapToFocusPane": "{{title}}, zum Fokussieren tippen",
-      "inputPane": "{{title}} · Eingabe"
+      "tapToFocusPane": "{{title}}, zum Fokussieren tippen"
     },
     "structuredOpen": {
       "goneGeneric": "Der Chat des Agenten ist nicht mehr auf diesem Host und kann hier nicht erneut geöffnet werden.",
@@ -3644,10 +3490,7 @@
     "tabBar": {
       "oneTab": "1 Tab",
       "tabCount": "{{count}} Tabs",
-      "anotherNeedsYou": "ein anderer Tab benötigt dich",
       "actionsHint": "Zeigt Aktionen für diesen Tab",
-      "next": "Nächster Tab",
-      "previous": "Vorheriger Tab",
       "hint": "Zeigt alle Tabs"
     },
     "textSizeSheet": {
@@ -3673,7 +3516,6 @@
       "checkUpdates": "Nach Updates suchen",
       "checkUpdatesStatus": "Nach Updates suchen, {{status}}",
       "checking": "Wird geprüft…",
-      "installedVersion": "Version {{version}}",
       "lastCheckedDays_one": "Zuletzt vor {{count}} Tag geprüft",
       "lastCheckedDays_other": "Zuletzt vor {{count}} Tagen geprüft",
       "lastCheckedHours_one": "Zuletzt vor {{count}} Std. geprüft",
@@ -3683,13 +3525,12 @@
       "lastCheckedMinutes_other": "Zuletzt vor {{count}} Min. geprüft",
       "neverChecked": "Nie",
       "upToDate": "Aktuell",
-      "update": "Aktualisieren",
       "updateToVersion": "Auf Orca {{version}} aktualisieren"
     },
     "appearance": {
       "language": {
         "description": "„System“ übernimmt die Gerätesprache. Berechtigungsabfragen verwenden immer die Gerätesprache.",
-        "heading": "SPRACHE",
+        "heading": "Sprache",
         "systemWithCurrent": "System ({{language}})"
       },
       "usage": {
@@ -3701,7 +3542,7 @@
       "theme": {
         "dark": "Dunkel",
         "description": "„System“ übernimmt den hellen oder dunklen Modus des Geräts.",
-        "heading": "DESIGN",
+        "heading": "Design",
         "light": "Hell",
         "system": "System"
       },
@@ -3713,7 +3554,7 @@
       "desktopBrowser": "Orca-Browser auf dem Desktop",
       "desktopBrowserDescription": "Im gestreamten Browser des gekoppelten Desktops öffnen.",
       "terminalAndChatLinksDescription": "Auswählen, wo Weblinks aus der Terminalausgabe und dem Chat beim Antippen geöffnet werden.",
-      "linksHeading": "LINKS",
+      "linksHeading": "Links",
       "loadFailed": "Browser-Einstellungen konnten nicht geladen werden. Erneut versuchen.",
       "openLinks": "Links öffnen",
       "phoneBrowser": "Browser auf dem Smartphone",
@@ -3725,7 +3566,6 @@
       "about": "Über Orca",
       "appearance": "Darstellung",
       "browser": "Browser",
-      "chatUi": "Chat-Oberfläche",
       "notifications": "Benachrichtigungen",
       "terminal": "Terminal",
       "troubleshooting": "Fehlerbehebung",
@@ -3737,11 +3577,10 @@
     },
     "nativeChatSettingsScreen": {
       "defaultViewDescription": "Festlegen, wie Sitzungen unterstützter Agenten (Claude, Codex und anderer chatfähiger Agenten) auf diesem Gerät geöffnet werden. Das Terminal zeigt die CLI direkt an; die Chat-Oberfläche zeigt eine Chatansicht wie in der Desktop-App. Die Ansicht jeder Sitzung lässt sich weiterhin über das Menü wechseln, das durch langes Drücken geöffnet wird.",
-      "defaultViewHeading": "STANDARDANSICHT",
+      "defaultViewHeading": "Standardansicht",
       "off": "Aus",
       "on": "Ein",
-      "openInChatUi": "Sitzungen in der Chat-Oberfläche öffnen",
-      "title": "Chat-Oberfläche"
+      "openInChatUi": "Sitzungen in der Chat-Oberfläche öffnen"
     },
     "nativeChatText": {
       "heading": "TEXT",
@@ -3821,7 +3660,7 @@
       "connectDesktop": "Mit einem Desktop verbinden, um die Einstellungen für die Spracheingabe zu verwalten.",
       "deleteFailed": "Löschen fehlgeschlagen",
       "dictationDescription": "Text in jeden fokussierten Bereich auf dem Desktop diktieren.",
-      "dictationHeading": "DIKTAT",
+      "dictationHeading": "Diktat",
       "dictationMode": "Diktatmodus",
       "dictationModeDescription": "Umschalten: einmal zum Starten und erneut zum Stoppen drücken. Gedrückt halten: währenddessen diktieren.",
       "dictationModeWithAutoDescription": "Automatisch: Tippen zum Starten und Stoppen; am Computer nimmt das Gedrückthalten des Kürzels auf, bis Sie loslassen. Gedrückt halten: währenddessen diktieren. Umschalten: einmal zum Starten und erneut zum Stoppen drücken.",
@@ -3835,7 +3674,7 @@
       "selectModelFailed": "Modell konnte nicht ausgewählt werden",
       "speechModel": "Spracherkennungsmodell",
       "loading": "Spracheinstellungen werden geladen…",
-      "speechModelHeading": "SPRACHERKENNUNGSMODELL",
+      "speechModelHeading": "Spracherkennungsmodell",
       "title": "Spracheingabe",
       "toggleMode": "Umschalten",
       "updateFailed": "Aktualisierung fehlgeschlagen"
@@ -3844,7 +3683,7 @@
       "permissionOwnAll": "Eigene Einstellungen der Agenten"
     },
     "voiceTranscribeOn": {
-      "heading": "TRANSKRIBIEREN AUF",
+      "heading": "Transkribieren auf",
       "description": "Was dieses Telefon hört, bleibt auf ihm. Automatisch nutzt deinen Computer, wenn dieses Telefon nicht transkribieren kann.",
       "automatic": "Automatisch",
       "phone": "Dieses Telefon",
@@ -3937,12 +3776,7 @@
     },
     "commitFailurePanel": {
       "fix": "Beheben",
-      "fixWithAi": "Commit-Fehler mit KI beheben",
       "hideDetails": "Details ausblenden",
-      "hideFailureDetails": "Details zum Commit-Fehler ausblenden",
-      "showDetails": "Details anzeigen",
-      "showFailureDetails": "Details zum Commit-Fehler anzeigen",
-      "summary": "Commit fehlgeschlagen.",
       "title": "Commit fehlgeschlagen"
     },
     "commitMessageAi": {
@@ -3962,10 +3796,7 @@
       "cancelGeneration": "Generierung der Commit-Nachricht abbrechen",
       "commitMessageDisabled": "Commit-Nachricht deaktiviert. Keine vorgemerkten Dateien.",
       "commitMessagePlaceholder": "Commit-Nachricht",
-      "emptyMessage": "Der Worktree ist sauber.",
-      "emptyTitle": "Keine lokalen Änderungen",
       "generateMessage": "Commit-Nachricht mit KI generieren",
-      "reconnecting": "Verbindung zum Desktop wird wiederhergestellt…",
       "regenerateHint": "Nachricht leeren, um sie neu zu generieren."
     },
     "createPrAction": {
@@ -4107,7 +3938,6 @@
       "updateDesktop": "Orca auf diesem Host aktualisieren, um die Quellcodeverwaltung mobil zu nutzen."
     },
     "modals": {
-      "currentBranch": "aktuell",
       "discardButton": "Verwerfen",
       "discardConfirmMessage": "Änderungen an „{{path}}“ verwerfen? Dies kann nicht rückgängig gemacht werden.",
       "discardTitle": "Änderung verwerfen?",
@@ -4404,13 +4234,6 @@
       "behind": "{{count}} zurück",
       "upToDate": "Aktuell",
       "switchBranch": "Von {{branch}} auf anderen Branch wechseln",
-      "mergeInProgress": "Merge läuft",
-      "rebaseInProgress": "Rebase läuft",
-      "cherryPickInProgress": "Cherry-Pick läuft",
-      "filesNeedDecision_one": "Vor dem Abschließen ist für {{count}} Datei eine Entscheidung nötig.",
-      "filesNeedDecision_other": "Vor dem Abschließen ist für {{count}} Dateien eine Entscheidung nötig.",
-      "conflictsResolved": "Alle Konflikte sind gelöst. Über die Leiste unten abschließen.",
-      "continueOnComputer": "Alle Konflikte sind gelöst. Zum Abschließen auf dem Computer fortfahren.",
       "commits_one": "{{count}} Commit",
       "commits_other": "{{count}} Commits",
       "conflictsMayRemain": "Nicht alle Dateien werden aufgelistet, daher können noch Konflikte bestehen. Auf dem Computer prüfen."
@@ -4434,32 +4257,18 @@
     },
     "pagination": {
       "pageUnreachable": "Seite {{page}} liegt außerhalb des Bereichs der GitHub-Suche.",
-      "loadPageFailed": "Seite {{page}} konnte nicht von GitHub geladen werden.",
-      "noMoreResults": "Keine weiteren Ergebnisse auf Seite {{page}}."
+      "loadPageFailed": "Seite {{page}} konnte nicht von GitHub geladen werden."
     },
     "filterSheet": {
-      "sortBy": "Sortieren nach",
       "issueSource": "Issue-Quelle",
-      "issueSourceRow": "Upstream oder Origin",
       "view": "Ansicht",
-      "projectView": "Projektansicht",
-      "projectItems_one": "{{count}} Eintrag",
-      "projectItems_other": "{{count}} Einträge",
-      "chooseView": "Auswählen",
       "showOnRows": "In Zeilen anzeigen",
-      "projectFields": "Projektfelder",
       "workspace": "Arbeitsbereich",
-      "linearWorkspace": "Linear-Arbeitsbereich",
       "layout": "Layout",
       "groupBy": "Gruppieren nach",
       "orderBy": "Ordnen nach",
-      "displayProperties": "Anzeigeeigenschaften",
       "title": "Filter & Anzeige",
-      "done": "Fertig",
-      "jqlReplacesPreset": "Die JQL-Suche ersetzt die Anzeige-Voreinstellung. Zum erneuten Auswählen die Suche leeren."
-    },
-    "jiraViewControls": {
-      "jqlSearch": "JQL-Suche"
+      "done": "Fertig"
     },
     "itemComments": {
       "noComments": "Noch keine Kommentare",
@@ -4496,24 +4305,11 @@
     "filterPickers": {
       "allTeams": "Alle Teams",
       "changeStatus": "Status ändern",
-      "fieldHidden": "Auf Karten ausgeblendet",
-      "fieldShown": "Auf Karten angezeigt",
-      "fieldsSubtitle": "Auswählen, welche Projektfelder auf Eintragskarten angezeigt werden.",
-      "fieldsTitle": "Projektfelder",
-      "gitlabFilter": "GitLab-Filter",
-      "gitlabView": "GitLab-Ansicht",
-      "jiraFilter": "Jira-Filter",
-      "jiraSite": "Jira-Site",
       "statesFailed": "Status konnten nicht geladen werden. Zum erneuten Versuch noch einmal öffnen.",
-      "linearFilter": "Linear-Filter",
       "linearIssue": "Linear-Issue",
-      "linearWorkspace": "Linear-Arbeitsbereich",
       "loadingStates": "Statusoptionen werden geladen…",
-      "noFields": "Diese Ansicht enthält keine zusätzlichen Felder.",
       "noStates": "Keine Statusoptionen verfügbar",
       "switchWorkspaceFailed": "Arbeitsbereich konnte nicht gewechselt werden.",
-      "teamsSubtitle": "Auswählen, welche Teams unter „Aufgaben“ angezeigt werden.",
-      "teamsTitle": "Linear-Teams",
       "teams_one": "{{count}} Team",
       "teams_other": "{{count}} Teams"
     },
@@ -4652,9 +4448,6 @@
     "linearList": {
       "changeStatusFrom": "Status ändern (aktuell: {{status}})"
     },
-    "listDisplayPickers": {
-      "displayPropertiesTitle": "Angezeigte Eigenschaften"
-    },
     "listSurface": {
       "connectLinearButton": "Linear verbinden",
       "connectLinearMessage": "Dir zugewiesene Linear-Issues direkt unter „Aufgaben“ durchsuchen und die Arbeit daran starten.",
@@ -4708,7 +4501,6 @@
       "projectMergeRequests": "Projekt-MRs",
       "projectMergeRequestsDescription": "Merge Requests und Issues nach Repository",
       "projects": "Projekte",
-      "pullRequests": "PRs",
       "repository": "Repository",
       "repositorySortDescription": "Nach Repository gruppieren, dann neueste Aktivität zuerst",
       "reviewRequestsDescription": "Review-Anfragen, die dir zugewiesen sind",
@@ -4827,42 +4619,8 @@
       "reviewers": "Prüfer",
       "viewFile": "Anzeigen"
     },
-    "providerControls": {
-      "myTodos": "Meine To-dos",
-      "reposLabel": "Repositorys: {{repos}}",
-      "filterCount": "Filter · {{count}}",
-      "filter": "Filter",
-      "filterLabel": "Filter und Anzeige",
-      "projectMergeRequests": "Projekt-MRs"
-    },
-    "providerItemList": {
-      "intoBranch": "in {{base}}",
-      "kindAndStatus": "{{kind}}, {{status}}",
-      "nextPage": "Nächste Seite",
-      "page": "Seite {{page}}",
-      "pageOfTotal": "Seite {{page}} von {{total}}",
-      "previousPage": "Vorherige Seite",
-      "selectPage": "Seite auswählen, Seite {{page}}",
-      "selectPageOfTotal": "Seite auswählen, Seite {{page}} von {{total}}"
-    },
     "providerPickers": {
-      "allRepositories": "Alle Repositorys",
-      "githubView": "GitHub-Ansicht",
-      "issueSources": "GitHub-Issue-Quellen",
-      "issueSourcesDescription": "Für jedes Repository auswählen, ob upstream oder origin für das Abfragen und Erstellen von Issues verwendet wird.",
-      "issues": "Issues",
-      "noIssueSources": "Keine alternativen Issue-Quellen verfügbar.",
-      "origin": "Origin",
-      "pageHint": "Zu einer geladenen oder verfügbaren Ergebnisseite wechseln.",
-      "pageLoaded": "Geladen",
-      "pageNotLoaded": "Lädt ältere Ergebnisse",
-      "pageNumber": "Seite {{page}}",
-      "pages": "GitHub-Seiten",
-      "pullRequests": "Pull Requests",
-      "queryingSource": "Abfrage von {{source}}",
-      "repoDescription": "Abzufragende Repositorys auswählen.",
-      "repos": "Repositorys",
-      "upstream": "Upstream"
+      "allRepositories": "Alle Repositorys"
     },
     "providerViewProjection": {
       "all": "Alle",
@@ -4871,7 +4629,6 @@
       "allWorkspaces": "Alle Arbeitsbereiche",
       "chooseProject": "Projekt auswählen",
       "default": "Standard",
-      "defaultSubtitle": "{{subtitle}} · Standard",
       "issues": "Issues",
       "openState": "Offen",
       "projects": "Projekte",
@@ -4887,15 +4644,7 @@
     "screenChrome": {
       "newGitHubIssue": "Neues GitHub-Issue",
       "newLinearIssue": "Neues Linear-Issue",
-      "refreshGitHub": "GitHub-Aufgaben aktualisieren",
-      "refreshGitLab": "GitLab-Arbeitselemente aktualisieren",
-      "refreshJira": "Jira-Issues aktualisieren",
-      "refreshLinear": "Linear aktualisieren",
       "title": "Aufgaben"
-    },
-    "searchControl": {
-      "projectPlaceholder": "Projektansicht durchsuchen…",
-      "providerPlaceholder": "{{provider}}-Aufgaben suchen…"
     },
     "smartSourceModes": {
       "allStates": "Alle",
@@ -5042,7 +4791,6 @@
     },
     "webviewEngineErrorState": {
       "code": "Code {{code}}",
-      "reload": "Neu laden",
       "rendererCrashed": "Renderer abgestürzt",
       "status": "Status {{statusCode}}",
       "title": "Terminal konnte nicht geladen werden"
@@ -5151,7 +4899,6 @@
   },
   "automations": {
     "mobile": {
-      "extraAgentArguments": "Zusätzliche Agentenargumente",
       "allAutomations": "Alle Automatisierungen",
       "schedule": "Zeitplan",
       "project": "Projekt",
@@ -5162,8 +4909,6 @@
       "editAutomation": "Automatisierung bearbeiten",
       "cancel": "Abbrechen",
       "back": "Zurück",
-      "continue": "Fortfahren",
-      "createAutomation": "Automatisierung erstellen",
       "automations": "Automatisierungen",
       "runs": "Ausführungen",
       "refresh": "Aktualisieren",
@@ -5186,42 +4931,19 @@
       "day": "Tag",
       "pending": "Ausstehend",
       "starting": "Wird gestartet",
-      "baseBranchOptional": "Basisbranch (optional)",
-      "workspaceSetupScript": "Arbeitsbereich-Einrichtungsskript",
-      "useProjectSettings": "Projekteinstellungen verwenden",
-      "runSetupScript": "Einrichtungsskript ausführen",
-      "skipSetupScript": "Einrichtungsskript überspringen",
       "reuseAgentSession": "Agentensitzung wiederverwenden",
-      "precheckCommandOptional": "Vorprüfungsbefehl (optional)",
-      "precheckTimeoutSeconds": "Vorprüfungszeitlimit (Sekunden)",
-      "missedRunGraceMinutes": "Toleranz für verpasste Ausführungen (Minuten)",
-      "choose": "Auswählen…",
       "runOnSchedule": "{{name}} nach Zeitplan ausführen",
       "noNextScheduledRun": "Keine nächste Ausführung geplant",
       "agent": "Agent",
-      "newWorkspacePerRun": "Neuer Arbeitsbereich pro Ausführung",
       "instructions": "Anweisungen",
       "runNow": "Jetzt ausführen",
-      "savedAgent": "{{agent}} (gespeichert)",
       "chooseAProjectSetUpOnThisHost": "Wähle ein auf diesem Host eingerichtetes Projekt.",
       "newAutomation": "Neue Automatisierung",
-      "editorStep": "{{step}} von 3 · {{section}}",
-      "retryProjectLoading": "Projekte erneut laden",
-      "loadingProjects": "Projekte werden geladen…",
       "name": "Name",
-      "projectAndHostSetup": "Projekt- und Hosteinrichtung",
       "savedTarget": "Gespeichertes Ziel",
-      "useAnExistingWorkspace": "Vorhandenen Arbeitsbereich verwenden",
-      "existingWorkspace": "Vorhandener Arbeitsbereich",
       "savedWorkspace": "Gespeicherter Arbeitsbereich",
       "loadMoreWorkspaces": "Weitere Arbeitsbereiche laden",
-      "thisHostSWorkspaceInventoryIsIncompleteRefreshOrLoadMoreWorkspaces": "Die Arbeitsbereichsliste dieses Hosts ist unvollständig. Aktualisiere oder lade weitere Arbeitsbereiche.",
-      "agentDetecting": "Agent · wird erkannt…",
       "installAndEnableAnAgentOnThisHostThenRetry": "Installiere und aktiviere einen Agenten auf diesem Host und versuche es erneut.",
-      "hideAdvancedOptions": "Erweiterte Optionen ausblenden",
-      "advancedOptions": "Erweiterte Optionen",
-      "chooseAnAgent": "Agenten auswählen",
-      "saveChanges": "Änderungen speichern",
       "loadingAutomations": "Automatisierungen werden geladen…",
       "letYourAgentsWorkOnASchedule": "Lass deine Agenten nach Zeitplan arbeiten",
       "createAnAutomationToRunATaskOnThisHost": "Erstelle eine Automatisierung, um eine Aufgabe auf diesem Host auszuführen.",
@@ -5252,12 +4974,7 @@
       "scheduled": "Geplant",
       "loadMoreRuns": "Weitere Ausführungen laden",
       "customCronOrRRULE": "Benutzerdefiniertes Cron oder RRULE",
-      "cronOrRRULE": "Cron oder RRULE",
-      "minuteFromHHMM": "Minute (aus HH:MM)",
-      "timeHHMM24Hour": "Uhrzeit (HH:MM, 24 Stunden)",
-      "useATimeSuchAs0900": "Verwende eine Uhrzeit wie 09:00.",
       "timeZone": "Zeitzone",
-      "runsOnTheSelectedHostKeepThatHostAvailableAtTheScheduledTime": "Wird auf dem ausgewählten Host ausgeführt. Halte diesen Host zur geplanten Zeit verfügbar.",
       "host": "Host",
       "pairedHost": "Gekoppelter Host",
       "chooseHost": "Automatisierungen auf {{host}}, anderen Host auswählen",
@@ -5287,15 +5004,12 @@
       "unknownResult": "Unbekanntes Ergebnis",
       "notReported": "Nicht gemeldet",
       "searchOptions": "Optionen suchen",
-      "task": "Aufgabe",
-      "review": "Prüfen",
       "discardChangesTitle": "Änderungen verwerfen?",
       "discardChangesMessage": "Nicht gespeicherte Änderungen an dieser Automatisierung gehen verloren.",
       "discard": "Verwerfen",
       "keepEditing": "Weiter bearbeiten",
       "on": "Ein",
       "repeats": "Wiederholung",
-      "newOnePerRun": "Bei jeder Ausführung neu",
       "moreActions": "Weitere Aktionen",
       "noRunsYet": "Noch keine Ausführungen",
       "nextRunToday": "Nächste Ausführung heute um {{time}}",
@@ -5371,7 +5085,6 @@
         }
       },
       "TaskPage": {
-        "99c2755218": "Issues suchen oder JQL eingeben, z. B. project = ABC",
         "jiraTextMatchesNotice": "Texttreffer werden angezeigt. Jira konnte diese Suche nicht als JQL ausführen."
       },
       "editor": {
@@ -5585,11 +5298,8 @@
       "workers_other": "{{count}} Worker",
       "noMatches": "Keine Agenten zu „{{query}}“ gefunden",
       "emptyTitle": "Keine laufenden Agenten",
-      "pairDesktop": "Einen Desktop koppeln, um hier seine Agenten zu sehen.",
       "emptyBody": "Ein in einem beliebigen Arbeitsbereich gestarteter Agent erscheint hier.",
       "unread": "Ungelesen",
-      "noDesktopTitle": "Kein Desktop verbunden",
-      "noDesktopBody": "Agenten erscheinen hier, sobald ein Desktop verbunden ist.",
       "hideWorkers": "{{workers}} ausblenden",
       "showWorkers": "{{workers}} anzeigen"
     },
@@ -5608,29 +5318,17 @@
       "status": "Status",
       "workspace": "Arbeitsbereich",
       "project": "Projekt",
-      "agent": "Agent",
-      "desktop": "Desktop"
+      "agent": "Agent"
     },
     "options": {
       "groupBy": "Gruppieren nach",
       "showWorkers": "Worker-Agenten anzeigen",
-      "open": "Optionen der Agentenliste",
       "unreadOnly": "Nur ungelesene",
       "markAllRead": "Alle als gelesen markieren",
       "clearFinished": "Erledigte entfernen"
     },
     "search": {
-      "toggle": "Agenten suchen",
       "placeholder": "Agenten suchen"
-    },
-    "desktops": {
-      "pickerTitle": "Desktop auswählen",
-      "agents_one": "{{count}} Agent",
-      "agents_other": "{{count}} Agenten",
-      "all": "Alle Desktops",
-      "offline": "Offline",
-      "needsYou_one": "{{count}} braucht dich",
-      "needsYou_other": "{{count}} brauchen dich"
     },
     "sections": {
       "needsYou": "Benötigt dich",
@@ -5654,7 +5352,6 @@
     }
   },
   "bots": {
-    "section": {},
     "link": {
       "pairTitle": "Computer koppeln",
       "pairRequired": "Kopple dieses Telefon mit einem Computer, um diesen Link zu öffnen, und öffne den Link dann erneut.",

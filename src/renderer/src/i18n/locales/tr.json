@@ -6852,7 +6852,6 @@
           "c13b82793c": "Yüklemeleri yönet",
           "aee7b99cc6": "Bağlantıdan yükle",
           "filterProvider": "Ajana göre filtrele",
-          "filterSource": "Kaynağa göre filtrele",
           "allSources": "Tümü",
           "clearFilters": "Filtreleri temizle",
           "closeSkills": "Becerileri kapat",
@@ -19685,7 +19684,6 @@
           "failed": "Başarısız",
           "succeeded": "Başarılı",
           "neverRan": "Hiç çalıştırılmadı",
-          "filters": "Filtreler",
           "all": "Tümü",
           "clear": "Filtreleri temizle",
           "agent": "Ajan",
@@ -25666,7 +25664,9 @@
       "chatOtherWindow": "Başka bir pencerede oturum açma işlemi sürüyor.",
       "chatPageDidntOpen": "Sayfa açılmadı mı?",
       "chatPasteCode": "Kodu yapıştır",
-      "chatPasteCodeLabel": "Oturum açtıktan sonra Google'ın gösterdiği kod veya o sayfanın adresi"
+      "chatPasteCodeLabel": "Oturum açtıktan sonra Google'ın gösterdiği kod veya o sayfanın adresi",
+      "launchesUse": "Yeni agy başlatmaları bu hesabı kullanır",
+      "loginNow": "agy'nin şu anki oturumu"
     },
     "claude": {
       "added": "Hesap eklendi. Başlatacağınız bir sonraki Claude'da kullanmak için bu hesabı seçin.",
