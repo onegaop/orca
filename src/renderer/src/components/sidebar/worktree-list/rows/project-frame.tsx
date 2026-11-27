@@ -15,7 +15,7 @@ const TREE_RIGHT_INSET = 8
 export type ProjectFramePiece = {
   project?: { depth: number; current: boolean }
   guides: readonly number[]
-  startGuide?: number
+  startGuides?: readonly number[]
   endGuides?: readonly number[]
   separated?: boolean
 }
@@ -42,12 +42,6 @@ export function isSeparatedTreeHeader(
 /** A Tree workspace or session row is one line: its height before the 6px gap it carries. */
 export const TREE_LINE_ROW_HEIGHT = 24
 
-function closesGroup(row: HostSectionRow, depth: number): boolean {
-  return (
-    row.type === 'host-header' || (row.type === 'header' && (row.projectGroupDepth ?? 0) <= depth)
-  )
-}
-
 function hasTreeLane(row: HostSectionRow): boolean {
   return row.type === 'item' || row.type === 'folder-workspace' || row.type === 'project-chats'
 }
@@ -73,12 +67,9 @@ export function computeProjectFrames(
       const depth = row.projectGroupDepth ?? 0
       openGroups = openGroups.filter((open) => open < depth)
       project = row.repo ? { depth, current: row.repo.id === activeRepoId } : undefined
-      const next = rows[index + 1]
       pieces.set(index, {
         guides: openGroups,
         project,
-        startGuide:
-          (project || row.projectGroup) && next && !closesGroup(next, depth) ? depth : undefined,
         separated: isSeparatedTreeHeader(rows, index, firstHeaderIndex)
       })
       if (row.projectGroup && !row.repo) {
@@ -91,7 +82,9 @@ export function computeProjectFrames(
     }
   })
   for (const [index, piece] of pieces) {
+    const previousGuides = pieces.get(index - 1)?.guides ?? []
     const nextGuides = pieces.get(index + 1)?.guides ?? []
+    piece.startGuides = piece.guides.filter((depth) => !previousGuides.includes(depth))
     piece.endGuides = piece.guides.filter((depth) => !nextGuides.includes(depth))
   }
   return pieces
@@ -122,7 +115,7 @@ export function getTreeCardInset(depth: number): { left: number; right: number }
 
 /** A child begins exactly one tree step to the right of the parent's disclosure chevron. */
 export function getTreeChildLane(depth: number): { surface: number; right: number; glyph: number } {
-  const glyph = getProjectTreeHeaderInset(depth) + TREE_STEP
+  const glyph = getProjectTreeHeaderInset(depth) + TREE_STEP + 2
   return { surface: glyph - TREE_GLYPH_INSET, right: TREE_RIGHT_INSET, glyph }
 }
 
@@ -151,12 +144,10 @@ export function ProjectFrameEdge({
         <TreeIndentGuide
           key={depth}
           depth={depth}
+          startsHere={piece.startGuides?.includes(depth)}
           bridge={piece.endGuides?.includes(depth) ? 'bottom-2.5' : bridge}
         />
       ))}
-      {piece.startGuide !== undefined ? (
-        <TreeIndentGuide depth={piece.startGuide} bridge={bridge} startsHere />
-      ) : null}
     </>
   )
 }
@@ -177,7 +168,7 @@ function TreeIndentGuide({
       data-project-tree-indent-guide=""
       className={cn(
         'pointer-events-none absolute w-px bg-worktree-sidebar-foreground/20',
-        startsHere ? 'top-[calc(100%-3px)]' : 'top-0',
+        startsHere ? 'top-1' : 'top-0',
         bridge
       )}
       style={{ insetInlineStart: getProjectTreeHeaderInset(depth) + 6 }}

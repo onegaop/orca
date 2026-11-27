@@ -218,7 +218,9 @@ export function renderWorktreeSectionHeaderRow(
               'rounded-md bg-worktree-sidebar-accent ring-1 ring-worktree-sidebar-ring/40',
             row.repo && 'overflow-hidden',
             cardInset && 'rounded-lg hover:bg-worktree-sidebar-accent/60',
-            cardInset && args.projectFrame?.project?.current && 'bg-worktree-sidebar-accent/70'
+            cardInset &&
+              args.projectFrame?.project?.current &&
+              'bg-worktree-sidebar-accent ring-1 ring-inset ring-worktree-sidebar-foreground/12'
           )}
           style={
             cardInset

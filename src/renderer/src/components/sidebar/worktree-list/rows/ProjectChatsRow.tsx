@@ -101,7 +101,7 @@ function SourceChats({ mainWorktree }: { mainWorktree: Worktree }): React.JSX.El
   const roots = useHostRootKeys(mainWorktree.id, mainWorktree.hostId, allRoots)
   return roots.length > 0 ? (
     // Agent rows inset their glyph 4px; pulling back keeps it on the lane.
-    <div className="-ms-1">
+    <div className="-ms-1 pe-0.75 [&_[data-agent-spinner]]:size-2">
       <WorktreeCardAgents
         worktreeId={mainWorktree.id}
         executionHostId={mainWorktree.hostId}
