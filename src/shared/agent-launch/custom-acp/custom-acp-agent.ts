@@ -1,6 +1,6 @@
 // User-defined ACP agents: a local command Orca runs as an ACP server for Chat.
 
-import { z } from 'zod'
+import * as z from 'zod'
 import { lazyZodSchema } from '../../schema/lazy-zod-schema'
 import type { TuiAgent } from '../catalog/tui-agent'
 
