@@ -11,6 +11,7 @@ import NewWorkspaceComposerModal from '../components/new-workspace/composer/NewW
 import { CrashReportDialog } from '../components/crash-report/CrashReportDialog'
 import { MarkdownTemplatePicker } from '../components/editor/markdown/documents/MarkdownTemplatePicker'
 import RecentTabSwitcher from '../components/tab-bar/recent-switcher/RecentTabSwitcher'
+import { TabSearchHost } from '../components/tab-bar/tab-search/TabSearchHost'
 import { SkillFreshnessUpdateDialogHost } from '../components/skills/freshness/SkillFreshnessUpdateDialogHost'
 import { StarNagAgentValueMomentObserver } from '../components/star-nag/StarNagAgentValueMomentObserver'
 import { NativeChatResumeToasts } from '../components/native-chat-recovery/toast/NativeChatResumeToastHost'
@@ -139,7 +140,6 @@ export const AppRootSurfaces = memo(function AppRootSurfaces(props: {
   const activeContextualTourId = useAppStore((s) => s.activeContextualTourId)
   const hasSshCredentialRequest = useAppStore((s) => s.sshCredentialQueue.length > 0)
 
-  const shouldMountSetupGuideTelemetryObserver = persistedUIReady
   const shouldMountUpdateCard = shouldMountUpdateCardForStatus(updateStatus)
   const shouldMountDictationController = voiceEnabled || dictationState !== 'idle'
   const renderPetOverlay = shouldRenderPetOverlay({ persistedUIReady, petEnabled, petVisible })
@@ -277,7 +277,7 @@ export const AppRootSurfaces = memo(function AppRootSurfaces(props: {
           </ModalBoundary>
         ) : null}
       </Suspense>
-      {shouldMountSetupGuideTelemetryObserver ? (
+      {persistedUIReady ? (
         <Suspense fallback={null}>
           <SetupGuideTelemetryObserver />
         </Suspense>
@@ -394,6 +394,7 @@ export const AppRootSurfaces = memo(function AppRootSurfaces(props: {
       <OverlayBoundary boundaryId="overlay.recent-tab-switcher" resetKey={activeView}>
         <RecentTabSwitcher />
       </OverlayBoundary>
+      <TabSearchHost />
       {/* Its live terminal requires the link-routing preference context. */}
       <OverlayBoundary boundaryId="overlay.skill-freshness-update-dialog">
         <SkillFreshnessUpdateDialogHost />

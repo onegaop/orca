@@ -7,7 +7,7 @@ import type { AppState } from '@/store/types'
 import { usePluginCommands } from '@/store/plugins/catalog/plugin-contribution-catalog'
 import { usePluginNewFiles } from '@/store/plugins/file-creation/plugin-new-files'
 import { useSettingsNavigationMetadata } from '@/components/settings/navigation/useSettingsNavigationMetadata'
-import { dedupePaletteWorktrees } from '@/lib/workspace/search/palette-repo-resolution'
+import { buildPaletteWorkspaces } from '@/lib/workspace/search/palette-workspaces'
 import {
   readHiddenVmCheckouts,
   subscribeHiddenVmCheckouts,
@@ -18,13 +18,11 @@ import {
   selectPaletteStatusInputs
 } from './worktree-jump-palette-status-inputs'
 import { selectWorktreePaletteCacheInputs } from '@/components/cmd-j/worktree-palette-cache-inputs'
-import { resolveQualifiedIndexedFolderWorkspace } from '@/store/folder-workspaces/folder-workspace-record-index'
 import {
   selectDetectedWorktreesByRepo,
   selectFolderWorkspaces,
   selectWorktreesByRepo
 } from '@/store/workspaces/catalog/workspace-record-fields'
-import { getFolderWorkspaceWorktree } from '../../../../../shared/folder-workspaces/folder-workspace-worktree'
 import type { Worktree } from '../../../../../shared/worktree/types'
 
 const NO_WORKTREES_BY_REPO: AppState['worktreesByRepo'] = {}
@@ -69,21 +67,7 @@ export function useWorktreeJumpPaletteStoreState({
   const workspaces = useMemo(
     () =>
       resultsReady
-        ? dedupePaletteWorktrees([
-            ...Object.values(worktreesByRepo).flat(),
-            ...folderWorkspaces.map((folder) => {
-              const result = resolveQualifiedIndexedFolderWorkspace(
-                { folderWorkspaces, repos, projectGroups },
-                folder.id
-              )
-              return getFolderWorkspaceWorktree(
-                folder,
-                result.kind === 'selected' && result.value.workspace === folder
-                  ? result.value
-                  : undefined
-              )
-            })
-          ])
+        ? buildPaletteWorkspaces({ worktreesByRepo, folderWorkspaces, repos, projectGroups })
         : NO_WORKSPACES,
     [folderWorkspaces, projectGroups, repos, worktreesByRepo, resultsReady]
   )
