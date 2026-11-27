@@ -108,6 +108,7 @@ const {
 } = require('./scripts/desktop-distribution/macos/build-macos-native-addon.cjs')
 
 // Dev channels need release bundle ID/signature/notarization so Squirrel.Mac accepts updates and macOS retains app identity.
+const isWeeklyRelease = process.env.ORCA_WEEKLY_RELEASE === '1'
 const isMacHourly = process.env.ORCA_MAC_HOURLY === '1'
 const isMacDaily = process.env.ORCA_MAC_DAILY === '1'
 const isMacAdhoc = process.env.ORCA_MAC_ADHOC === '1'
@@ -446,8 +447,18 @@ module.exports = {
     orcadTemplateDir = join(__dirname, '..', orcadTemplateExtraResource.from),
     ensureProviderExec = ensureBundledProviderExec
   ) => {
+    const mainBuildDir = join(__dirname, '..', 'out', 'main')
+    const releaseChannelMarker = join(mainBuildDir, 'release-channel.marker')
+    const compiledReleaseChannel = existsSync(releaseChannelMarker)
+      ? readFileSync(releaseChannelMarker, 'utf8').trim()
+      : 'upstream'
+    if (compiledReleaseChannel !== (isWeeklyRelease ? 'fork' : 'upstream')) {
+      throw new Error(
+        'Compiled updater and package use different release channels. Rebuild desktop assets with the same ORCA_WEEKLY_RELEASE as packaging.'
+      )
+    }
     // The template is the server every SSH host gets, so a dark test template must never ship.
-    assertNotDarkBuild([join(__dirname, '..', 'out', 'main'), mobileWebBundleDir, orcadTemplateDir])
+    assertNotDarkBuild([mainBuildDir, mobileWebBundleDir, orcadTemplateDir])
     assertPackagedNativeVariantsInstalled(context.electronPlatformName, context.arch)
     assertBundledRipgrepInstalled()
     assertProcessHostOutputBuilt()
@@ -908,8 +919,8 @@ module.exports = {
   npmRebuild: true,
   publish: {
     provider: 'github',
-    owner: process.env.ORCA_WEEKLY_RELEASE === '1' ? 'onegaop' : 'stablyai',
-    repo: process.env.ORCA_WEEKLY_RELEASE === '1' ? 'orca' : (devChannelRepo ?? 'orca'),
+    owner: isWeeklyRelease ? 'onegaop' : 'stablyai',
+    repo: isWeeklyRelease ? 'orca' : (devChannelRepo ?? 'orca'),
     // Keep main-repo releases draft until release-cut verifies all assets; early --publish always would expose missing Windows installers.
     releaseType: devChannelRepo ? 'prerelease' : 'draft'
   }

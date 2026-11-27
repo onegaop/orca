@@ -51,6 +51,20 @@ const darkBuildSwitches: {
   darkBuildMarkers: () => { fileName: string; text: string }[]
 } = createRequire(import.meta.url)('./config/dark-build-switches.cjs')
 const DARK_BUILD_DEFINES = darkBuildSwitches.darkBuildDefines()
+const WEEKLY_RELEASE_BUILD = process.env.ORCA_WEEKLY_RELEASE === '1'
+
+function createReleaseChannelMarkerPlugin(): Plugin {
+  return {
+    name: 'orca-release-channel-marker',
+    generateBundle() {
+      this.emitFile({
+        type: 'asset',
+        fileName: 'release-channel.marker',
+        source: WEEKLY_RELEASE_BUILD ? 'fork\n' : 'upstream\n'
+      })
+    }
+  }
+}
 
 /** Marks a dark switched-on main build so packaging refuses it. */
 function createDarkBuildMarkerPlugin(): Plugin {
@@ -221,6 +235,7 @@ export const electronViteConfig: UserConfig = {
           createMainCjsEntryShimPlugin(),
           createProcessHostDevRebuildPlugin(),
           createDarkBuildMarkerPlugin(),
+          createReleaseChannelMarkerPlugin(),
           createSandboxedScriptBundlesPlugin(),
           createMainLocaleSubsetPlugin()
         ]
@@ -231,7 +246,7 @@ export const electronViteConfig: UserConfig = {
       ORCA_POSTHOG_WRITE_KEY: ORCA_POSTHOG_WRITE_KEY_LITERAL,
       ORCA_DIAGNOSTICS_TOKEN_URL: ORCA_DIAGNOSTICS_TOKEN_URL_LITERAL,
       ORCA_BUILD_COMMIT: ORCA_BUILD_COMMIT_LITERAL,
-      ORCA_WEEKLY_RELEASE: process.env.ORCA_WEEKLY_RELEASE === '1' ? 'true' : 'false',
+      ORCA_WEEKLY_RELEASE: JSON.stringify(WEEKLY_RELEASE_BUILD),
       ...DARK_BUILD_DEFINES
     },
     // @xterm/headless declares exports:null; point Vite directly at its published CJS main to permit inlining.
@@ -255,7 +270,7 @@ export const electronViteConfig: UserConfig = {
     cacheDir: resolve('.cache/vite/renderer'),
     define: {
       ORCA_BUILD_COMMIT: ORCA_BUILD_COMMIT_LITERAL,
-      ORCA_WEEKLY_RELEASE: process.env.ORCA_WEEKLY_RELEASE === '1' ? 'true' : 'false',
+      ORCA_WEEKLY_RELEASE: JSON.stringify(WEEKLY_RELEASE_BUILD),
       ...DARK_BUILD_DEFINES
     },
     resolve: {
