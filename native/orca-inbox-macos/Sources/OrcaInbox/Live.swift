@@ -5,17 +5,37 @@ import Darwin
 import os
 
 enum Live {
-    static let appURL = FileManager.default.homeDirectoryForCurrentUser
-        .appending(path: "Applications/Orca.app", directoryHint: .isDirectory)
+    private static let orcaBundleID = "com.stablyai.orca"
 
-    static func fetch() throws -> Snapshot {
+    static func resolveAppURL() -> URL? {
+        let fm = FileManager.default
+        let candidates: [URL] = [
+            URL(fileURLWithPath: "/Applications/Orca.app", isDirectory: true),
+            fm.homeDirectoryForCurrentUser.appending(path: "Applications/Orca.app", directoryHint: .isDirectory),
+            NSWorkspace.shared.urlForApplication(withBundleIdentifier: orcaBundleID)
+        ].compactMap { $0 }
+
+        for candidate in candidates {
+            let cliPath = candidate.appending(path: "Contents/Resources/bin/orca").path
+            if fm.isExecutableFile(atPath: cliPath) {
+                return candidate
+            }
+        }
+        return nil
+    }
+
+    private static func runCLI(_ arguments: [String], timeoutSeconds: TimeInterval = 7) throws -> Data {
+        guard let appURL = resolveAppURL() else { throw InboxFailure.missingCLI }
         let cliPath = appURL.appending(path: "Contents/Resources/bin/orca").path
         guard FileManager.default.isExecutableFile(atPath: cliPath) else { throw InboxFailure.missingCLI }
         let process = Process()
         process.executableURL = URL(fileURLWithPath: cliPath)
-        process.arguments = ["agent", "list", "--environment", "local", "--json"]
-        process.environment = ["HOME": NSHomeDirectory(), "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
-                               "TMPDIR": NSTemporaryDirectory()]
+        process.arguments = arguments
+        process.environment = [
+            "HOME": NSHomeDirectory(),
+            "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+            "TMPDIR": NSTemporaryDirectory()
+        ]
         let pipe = Pipe()
         process.standardOutput = pipe
         process.standardError = FileHandle.nullDevice
@@ -29,11 +49,23 @@ enum Live {
                 _ = kill(process.processIdentifier, SIGKILL)
             }
         }
-        DispatchQueue.global().asyncAfter(deadline: .now() + 7, execute: timeout)
+        DispatchQueue.global().asyncAfter(deadline: .now() + timeoutSeconds, execute: timeout)
         defer { timeout.cancel() }
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         _ = completion.wait(timeout: .now() + 1)
         if expired.withLock({ $0 }) { throw InboxFailure.timeout }
+        return data
+    }
+
+    static func fetchHosts() -> [HostTarget] {
+        guard let data = try? runCLI(["host", "list", "--json"], timeoutSeconds: 5) else {
+            return [.local]
+        }
+        return decodeHosts(data)
+    }
+
+    static func fetch(environment: String = "local") throws -> Snapshot {
+        let data = try runCLI(["agent", "list", "--environment", environment, "--json"])
         return try decodeSnapshot(data)
     }
 }

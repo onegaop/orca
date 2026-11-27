@@ -207,18 +207,78 @@ public struct Snapshot: Decodable, Sendable {
     }
 }
 
+public struct HostTarget: Identifiable, Hashable, Sendable {
+    public let id: String
+    public let name: String
+    public let isLocal: Bool
+
+    public init(id: String, name: String, isLocal: Bool) {
+        self.id = id
+        self.name = name
+        self.isLocal = isLocal
+    }
+
+    public static let local = HostTarget(id: "local", name: "本机", isLocal: true)
+
+    public var displayName: String {
+        if isLocal {
+            return name == "本机" || name.isEmpty ? "本机" : "本机（\(name)）"
+        }
+        return name
+    }
+
+    public var symbolName: String {
+        if isLocal { return "laptopcomputer" }
+        let lower = name.lowercased()
+        if lower.contains("mini") { return "macmini" }
+        return "desktopcomputer"
+    }
+}
+
+public func decodeHosts(_ data: Data) -> [HostTarget] {
+    struct RawHost: Decodable {
+        let kind: String
+        let name: String
+        let id: String
+        let machineName: String?
+    }
+    struct ResultPayload: Decodable { let hosts: [RawHost] }
+    struct Envelope: Decodable {
+        let ok: Bool
+        let result: ResultPayload?
+    }
+    guard let envelope = try? JSONDecoder().decode(Envelope.self, from: data),
+          envelope.ok,
+          let rawHosts = envelope.result?.hosts else {
+        return [.local]
+    }
+    var seen = Set<String>()
+    let parsed = rawHosts.compactMap { raw -> HostTarget? in
+        guard raw.kind == "local" || raw.kind == "environment" else { return nil }
+        let id = raw.kind == "local" ? "local" : raw.id
+        guard !id.isEmpty, seen.insert(id).inserted else { return nil }
+        if raw.kind == "local" {
+            let label = raw.machineName?.trimmingCharacters(in: .whitespacesAndNewlines)
+            return HostTarget(id: "local", name: (label?.isEmpty == false ? label! : "本机"), isLocal: true)
+        }
+        let name = raw.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return HostTarget(id: id, name: name.isEmpty ? id : name, isLocal: false)
+    }
+    return parsed.isEmpty ? [.local] : parsed
+}
+
 public enum InboxFailure: LocalizedError {
     case missingCLI, timeout, unreadable, rejected(String)
 
     public var errorDescription: String? {
         switch self {
-        case .missingCLI: "找不到 Orca CLI。请先确认 Mini 上装着 Orca。"
+        case .missingCLI: "找不到 Orca CLI。请先确认本机已安装 Orca。"
         case .timeout: "Orca 暂未响应。"
         case .unreadable: "这版 Orca 返回了收件箱暂不认识的数据。"
         case .rejected(let code):
             code == "runtime_access_denied"
                 ? "收件箱没有权限连接 Orca。"
-                : "连不上 Mini 上的 Orca。请确认 Orca 或它的后台正在运行。"
+                : "连不上当前 Orca 环境。请确认本机或远程 Orca 正在运行。"
         }
     }
 }
@@ -268,19 +328,25 @@ public struct InboxPanelState: Sendable {
     public var problem: String?
     public var refreshing: Bool
     public var referenceDate: Date?
+    public var hosts: [HostTarget]
+    public var selectedHost: HostTarget
 
     public init(
         snapshot: Snapshot? = nil,
         updated: Date? = nil,
         problem: String? = nil,
         refreshing: Bool = false,
-        referenceDate: Date? = nil
+        referenceDate: Date? = nil,
+        hosts: [HostTarget] = [.local],
+        selectedHost: HostTarget = .local
     ) {
         self.snapshot = snapshot
         self.updated = updated
         self.problem = problem
         self.refreshing = refreshing
         self.referenceDate = referenceDate
+        self.hosts = hosts.isEmpty ? [.local] : hosts
+        self.selectedHost = selectedHost
     }
 
     public var isDisconnectedWithStaleData: Bool {

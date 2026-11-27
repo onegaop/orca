@@ -7,6 +7,8 @@ const packagePath = path.join(repoRoot, 'native', 'orca-inbox-macos')
 const binaryPath = path.join(packagePath, '.build', 'release', 'OrcaInbox')
 const appPath = path.join(packagePath, '.build', 'release', 'Orca Inbox.app')
 const appExecutablePath = path.join(appPath, 'Contents', 'MacOS', 'OrcaInbox')
+const appIconPath = path.join(appPath, 'Contents', 'Resources', 'AppIcon.icns')
+const sourceIconPath = path.join(repoRoot, 'resources', 'build', 'icon.icns')
 const signingIdentity = resolveSigningIdentity()
 
 if (process.platform !== 'darwin') {
@@ -47,7 +49,9 @@ function buildBinary() {
 function createCompanionApp() {
   rmSync(appPath, { recursive: true, force: true })
   mkdirSync(path.dirname(appExecutablePath), { recursive: true })
+  mkdirSync(path.dirname(appIconPath), { recursive: true })
   copyFileSync(binaryPath, appExecutablePath)
+  copyFileSync(sourceIconPath, appIconPath)
   chmodSync(appExecutablePath, 0o755)
   const plistPath = path.join(appPath, 'Contents', 'Info.plist')
   writeFileSync(plistPath, infoPlist(), 'utf8')
@@ -105,14 +109,16 @@ function infoPlist() {
   <string>com.onegaop.orca-inbox</string>
   <key>CFBundleExecutable</key>
   <string>OrcaInbox</string>
+  <key>CFBundleIconFile</key>
+  <string>AppIcon</string>
   <key>CFBundleName</key>
   <string>Orca Inbox</string>
   <key>CFBundleDisplayName</key>
   <string>Orca 任务收件箱</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.2.0</string>
+  <string>0.3.0</string>
   <key>CFBundleVersion</key>
-  <string>3</string>
+  <string>4</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>LSMinimumSystemVersion</key>

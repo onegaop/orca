@@ -134,3 +134,22 @@ private func sample() throws -> Snapshot {
         #expect(abs(fitting.height - InboxMetrics.panelHeight) < 0.5)
     }
 }
+
+@Test func decodeHostsParsesLocalAndPairedEnvironments() throws {
+    let payload: [String: Any] = [
+        "ok": true,
+        "result": [
+            "hosts": [
+                ["kind": "local", "name": "this machine", "id": "local", "machineName": "SoldierBoy"],
+                ["kind": "environment", "name": "Mac mini", "id": "env-mini-1"]
+            ]
+        ]
+    ]
+    let data = try JSONSerialization.data(withJSONObject: payload)
+    let hosts = decodeHosts(data)
+    #expect(hosts.count == 2)
+    #expect(hosts[0] == HostTarget(id: "local", name: "SoldierBoy", isLocal: true))
+    #expect(hosts[0].displayName == "本机（SoldierBoy）")
+    #expect(hosts[1] == HostTarget(id: "env-mini-1", name: "Mac mini", isLocal: false))
+    #expect(hosts[1].displayName == "Mac mini")
+}

@@ -10,18 +10,20 @@ mkdir -p "$HOME/Applications"
 stage=$(mktemp -d "$HOME/Applications/.orca-inbox-stage.XXXXXX")
 trap 'rm -rf "$stage"' EXIT
 bundle="$stage/Orca Inbox.app"
-mkdir -p "$bundle/Contents/MacOS"
+mkdir -p "$bundle/Contents/MacOS" "$bundle/Contents/Resources"
 install -m 755 .build/release/OrcaInbox "$bundle/Contents/MacOS/OrcaInbox"
+install -m 644 ../../resources/build/icon.icns "$bundle/Contents/Resources/AppIcon.icns"
 cat > "$bundle/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
 <key>CFBundleIdentifier</key><string>com.onegaop.orca-inbox</string>
 <key>CFBundleExecutable</key><string>OrcaInbox</string>
+<key>CFBundleIconFile</key><string>AppIcon</string>
 <key>CFBundleName</key><string>Orca Inbox</string>
 <key>CFBundleDisplayName</key><string>Orca 任务收件箱</string>
-<key>CFBundleShortVersionString</key><string>0.2.0</string>
-<key>CFBundleVersion</key><string>3</string>
+<key>CFBundleShortVersionString</key><string>0.3.0</string>
+<key>CFBundleVersion</key><string>4</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>LSMinimumSystemVersion</key><string>26.0</string>
 <key>LSUIElement</key><true/>

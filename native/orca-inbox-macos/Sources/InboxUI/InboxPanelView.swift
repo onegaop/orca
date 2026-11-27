@@ -6,6 +6,7 @@ public struct InboxPanelView: View {
     public let state: InboxPanelState
     @Binding public var bucket: Bucket
     public let onRefresh: () -> Void
+    public let onSelectHost: (HostTarget) -> Void
     public let onOpenOrca: () -> Void
     public let onCopySessionID: (String) -> Void
     public let onQuit: () -> Void
@@ -19,6 +20,7 @@ public struct InboxPanelView: View {
         state: InboxPanelState,
         bucket: Binding<Bucket>,
         onRefresh: @escaping () -> Void,
+        onSelectHost: @escaping (HostTarget) -> Void = { _ in },
         onOpenOrca: @escaping () -> Void,
         onCopySessionID: @escaping (String) -> Void,
         onQuit: @escaping () -> Void
@@ -26,6 +28,7 @@ public struct InboxPanelView: View {
         self.state = state
         self._bucket = bucket
         self.onRefresh = onRefresh
+        self.onSelectHost = onSelectHost
         self.onOpenOrca = onOpenOrca
         self.onCopySessionID = onCopySessionID
         self.onQuit = onQuit
@@ -101,9 +104,40 @@ public struct InboxPanelView: View {
 
     private var headerSubtitle: some View {
         HStack(spacing: 5) {
-            Label("Orca · Mac mini", systemImage: "macmini")
-                .labelStyle(.titleAndIcon)
-                .foregroundStyle(.secondary)
+            if state.hosts.count > 1 {
+                Menu {
+                    ForEach(state.hosts) { host in
+                        Button {
+                            onSelectHost(host)
+                        } label: {
+                            HStack {
+                                Label(host.displayName, systemImage: host.symbolName)
+                                if host.id == state.selectedHost.id {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 3) {
+                        Image(systemName: state.selectedHost.symbolName)
+                            .font(.system(size: 10.5))
+                        Text(state.selectedHost.displayName)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 8.5, weight: .semibold))
+                            .opacity(0.75)
+                    }
+                    .foregroundStyle(.secondary)
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
+                .help("切换 Orca 主机")
+            } else {
+                Label("Orca · \(state.selectedHost.displayName)", systemImage: state.selectedHost.symbolName)
+                    .labelStyle(.titleAndIcon)
+                    .foregroundStyle(.secondary)
+            }
 
             if state.refreshing {
                 Text("· 正在刷新")
@@ -289,7 +323,7 @@ public struct InboxPanelView: View {
         if let updated = state.updated {
             return "上次成功同步于 \(updated.formatted(date: .omitted, time: .shortened))，确认 Orca 运行后重试。"
         }
-        return "确认 Mini 上的 Orca 运行后点击重试。"
+        return "确认 \(state.selectedHost.displayName) 的 Orca 运行后点击重试。"
     }
 
     // MARK: - Footer (Liquid Glass Action Controls)
@@ -352,7 +386,7 @@ public struct InboxPanelView: View {
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
         } else {
-            Text("Mini · 只读")
+            Text("\(state.selectedHost.displayName) · 只读")
                 .foregroundStyle(.secondary)
         }
     }
