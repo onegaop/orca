@@ -3,14 +3,9 @@ import type { LargeDiffRenderLimit } from '../../../../../../shared/source-contr
 
 export type DiffViewerProps = {
   modelKey: string
-  /** Open-file ID that owns the models, so closing the file releases every view scope. */
-  modelOwnerKey?: string
-  originalModelKey?: string
-  modifiedModelKey?: string
   originalContent: string
   modifiedContent: string
   language: string
-  filePath: string
   relativePath: string
   sideBySide: boolean
   editable?: boolean

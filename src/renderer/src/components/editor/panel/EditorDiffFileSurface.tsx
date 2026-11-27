@@ -2,7 +2,6 @@ import { DiffTooLargeNotice } from '../diff/large-files/DiffTooLargeNotice'
 import { useTranslate } from '@/i18n/use-translate'
 import type { OpenFile } from '@/store/slices/editor/types/open-file'
 import type { GitDiffResult } from '../../../../../shared/git/diff/git-diff-compare-types'
-import { getDiffContentSignature } from '../diff/sections/diff-content-signature'
 import { DiffViewer, ImageDiffViewer, MarkdownPreview } from '../editor-lazy-views'
 import { ExternalFileChangeBanner } from '../external-changes/ExternalFileChangeBanner'
 import { MarkdownPreviewSizeGate } from '../markdown-preview/render-tree/MarkdownPreviewSizeGate'
@@ -145,22 +144,15 @@ export function EditorDiffFileSurface({
   }
 
   const diffReloadNonce = activeFile.diffContentReloadNonce ?? 0
-  const originalModelKey = `${diffViewStateKey}:original:${getDiffContentSignature(diffContent.originalContent)}`
-  const modifiedModelKey = `${diffViewStateKey}:modified:${getDiffContentSignature(diffContent.modifiedContent)}:${diffReloadNonce}`
   const diffViewer = (
     <DiffViewer
-      // Refresh through modifiedModelKey; keying the widget by content would remount and flash on save.
       key={`${viewStateScopeId}:${diffReloadNonce}`}
       modelKey={diffViewStateKey}
-      modelOwnerKey={activeFile.id}
-      originalModelKey={originalModelKey}
-      modifiedModelKey={modifiedModelKey}
       originalContent={diffContent.originalContent}
       modifiedContent={modifiedDiffContent}
       largeDiffRenderLimit={diffContent.largeDiffRenderLimit}
       largeDiffSaveContentAvailable={largeDiffSaveContentAvailable}
       language={resolvedLanguage}
-      filePath={activeFile.filePath}
       relativePath={activeFile.relativePath}
       sideBySide={sideBySide}
       editable={isEditable}

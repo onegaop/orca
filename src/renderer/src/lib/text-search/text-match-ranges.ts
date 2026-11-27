@@ -130,6 +130,6 @@ function isWordGraphemeBefore(text: string, index: number): boolean {
   return isWordCharacter(codePoint)
 }
 
-function isWholeWordMatch(text: string, start: number, end: number): boolean {
+export function isWholeWordMatch(text: string, start: number, end: number): boolean {
   return !isWordGraphemeBefore(text, start) && !isWordCharacter(codePointAt(text, end))
 }

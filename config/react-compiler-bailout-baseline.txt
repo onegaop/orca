@@ -78,7 +78,7 @@
 1 src/renderer/src/components/dashboard/snapshot/useLiveDashboardSnapshot.ts
 1 src/renderer/src/components/dictation/use-audio-capture.ts
 2 src/renderer/src/components/diff-comments/DiffCommentCard.tsx
-5 src/renderer/src/components/diff-comments/DiffCommentPopover.tsx
+3 src/renderer/src/components/diff-comments/DiffCommentPopover.tsx
 2 src/renderer/src/components/diff-comments/diff-comment-draft-zone.ts
 1 src/renderer/src/components/diff-comments/useDiffCommentDecorator.tsx
 3 src/renderer/src/components/dismiss/confirmation/confirmation-dialog.tsx
@@ -88,7 +88,6 @@
 23 src/renderer/src/components/editor/combined-diff/browse-files/use-combined-diff-tree-navigation.ts
 2 src/renderer/src/components/editor/combined-diff/load-sections/combined-diff-section-load-registry.ts
 1 src/renderer/src/components/editor/combined-diff/load-sections/use-combined-diff-section-loader.ts
-2 src/renderer/src/components/editor/combined-diff/load-sections/use-combined-diff-section-retry.ts
 1 src/renderer/src/components/editor/combined-diff/resolve-changes/use-combined-diff-entry-set.ts
 9 src/renderer/src/components/editor/combined-diff/resolve-changes/use-combined-diff-section-index-map.ts
 1 src/renderer/src/components/editor/combined-diff/resolve-changes/use-combined-diff-section-row-keys.ts
@@ -98,7 +97,6 @@
 3 src/renderer/src/components/editor/csv/editing/useCsvTableEditor.ts
 1 src/renderer/src/components/editor/csv/grid/CsvGrid.tsx
 1 src/renderer/src/components/editor/csv/preview/useCsvPagedPreview.ts
-1 src/renderer/src/components/editor/diff/large-files/useDiffViewerLargeDiffLifecycle.ts
 1 src/renderer/src/components/editor/diff/review/DiffNotesSendMenu.tsx
 1 src/renderer/src/components/editor/external-changes/ExternalFileChangeCompareDialog.tsx
 2 src/renderer/src/components/editor/file-drop/use-editor-group-file-drop-owner.ts

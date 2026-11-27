@@ -12,6 +12,10 @@ export function isNativeChatPaneTarget(target: EventTarget | null): boolean {
 export const BROWSER_KEYBOARD_PROXY_SELECTOR = '[data-browser-keyboard-proxy]'
 export const INPUT_PROXY_SELECTOR = `.xterm-helper-textarea, [data-emulator-keyboard-proxy], ${BROWSER_KEYBOARD_PROXY_SELECTOR}`
 
+export function isEditorKeyboardTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && target.closest('[data-editor-keyboard-scope]') !== null
+}
+
 // Share the capture-listener guard so app/onboarding shortcuts cannot hijack active text edits.
 export function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) {
@@ -23,7 +27,7 @@ export function isEditableTarget(target: EventTarget | null): boolean {
     return false
   }
 
-  if (target.isContentEditable) {
+  if (target.isContentEditable || isEditorKeyboardTarget(target)) {
     return true
   }
   return (
