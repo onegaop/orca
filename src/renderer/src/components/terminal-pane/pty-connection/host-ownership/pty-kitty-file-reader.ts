@@ -2,7 +2,10 @@ import { callRuntimeRpc } from '@/runtime/rpc/calls/runtime-rpc-call'
 import { captureRuntimeEnvironmentRequestRevision } from '@/runtime/rpc/environment-revisions/runtime-environment-revision'
 import { bindTerminalKittyFileReader } from '@/lib/pane-manager/terminal-rendering/terminal-kitty-file-reader'
 import { decodeBase64Bytes } from '@/lib/base64-bytes'
-import { waitForPromiseWithSignal } from '../../../../../../shared/concurrency/abort-signal-reason'
+import {
+  throwIfSignalAborted,
+  waitForPromiseWithSignal
+} from '../../../../../../shared/concurrency/abort-signal-reason'
 import {
   HOST_TERMINAL_SURFACE_SEPARATOR,
   toHostSessionTabId
@@ -29,11 +32,10 @@ export function installPtyKittyFileReader(session: ConnectPanePtySession): void 
       throw new Error('Terminal file transport is unavailable')
     }
     const generation = session.transportStreamGeneration
+    const environmentId = session.runtimeEnvironmentId
     const signal = AbortSignal.any([request.signal, lifetime.signal, AbortSignal.timeout(5000)])
     const target: RuntimeClientTarget =
-      session.runtimeEnvironmentId === null
-        ? { kind: 'local' }
-        : { kind: 'environment', environmentId: session.runtimeEnvironmentId }
+      environmentId === null ? { kind: 'local' } : { kind: 'environment', environmentId }
     const targetKey = target.kind === 'local' ? 'local' : `env:${target.environmentId}`
     const options = {
       signal,
@@ -43,6 +45,19 @@ export function installPtyKittyFileReader(session: ConnectPanePtySession): void 
         target.kind === 'environment'
           ? captureRuntimeEnvironmentRequestRevision(target.environmentId)
           : undefined
+    }
+    const isStillBound = (): boolean =>
+      !session.disposed &&
+      !session.terminalOwnerUnresolved &&
+      session.transport.getPtyId() === ptyId &&
+      session.transportStreamGeneration === generation &&
+      session.runtimeEnvironmentId === environmentId
+
+    const assertStillBound = (): void => {
+      throwIfSignalAborted(signal)
+      if (!isStillBound()) {
+        throw new Error('Terminal binding changed')
+      }
     }
 
     const resolvePaneTerminal = async (): Promise<RuntimeTerminalResolvePane> => {
@@ -65,11 +80,8 @@ export function installPtyKittyFileReader(session: ConnectPanePtySession): void 
         target.kind === 'environment'
           ? toRemoteRuntimePtyId(resolved.terminal.handle, target.environmentId)
           : resolved.terminal.ptyId
-      if (
-        !resolved.terminal.ptyId ||
-        session.transport.getPtyId() !== ptyId ||
-        resolvedPtyId !== ptyId
-      ) {
+      assertStillBound()
+      if (!resolved.terminal.ptyId || resolvedPtyId !== ptyId) {
         throw new Error('Terminal binding changed')
       }
       cachedResolvedPane = {
@@ -83,8 +95,9 @@ export function installPtyKittyFileReader(session: ConnectPanePtySession): void 
 
     const readFromResolved = async (
       terminalInfo: RuntimeTerminalResolvePane
-    ): Promise<{ base64: string }> =>
-      waitForPromiseWithSignal(
+    ): Promise<{ base64: string }> => {
+      assertStillBound()
+      return waitForPromiseWithSignal(
         callRuntimeRpc<{ base64: string }>(
           target,
           'terminal.readKittyFile',
@@ -101,21 +114,22 @@ export function installPtyKittyFileReader(session: ConnectPanePtySession): void 
         ),
         signal
       )
+    }
 
+    const cached = cachedResolvedPane
     const cacheHit =
-      cachedResolvedPane !== null &&
-      cachedResolvedPane.ptyId === ptyId &&
-      cachedResolvedPane.generation === generation &&
-      cachedResolvedPane.targetKey === targetKey
+      cached?.ptyId === ptyId && cached.generation === generation && cached.targetKey === targetKey
     let result: { base64: string }
-    if (cacheHit && cachedResolvedPane) {
+    if (cacheHit) {
       try {
-        result = await readFromResolved(cachedResolvedPane.terminal)
+        result = await readFromResolved(cached.terminal)
       } catch (error) {
-        if (signal.aborted || session.transport.getPtyId() !== ptyId) {
+        if (signal.aborted || !isStillBound()) {
           throw error
         }
-        cachedResolvedPane = null
+        if (cachedResolvedPane === cached) {
+          cachedResolvedPane = null
+        }
         const fresh = await resolvePaneTerminal()
         result = await readFromResolved(fresh)
       }
@@ -124,10 +138,7 @@ export function installPtyKittyFileReader(session: ConnectPanePtySession): void 
       result = await readFromResolved(fresh)
     }
 
-    if (session.transport.getPtyId() !== ptyId) {
-      cachedResolvedPane = null
-      throw new Error('Terminal binding changed')
-    }
+    assertStillBound()
     if (typeof result.base64 !== 'string' || result.base64.length > 2_796_204) {
       throw new Error('Terminal image exceeds transport limit')
     }
