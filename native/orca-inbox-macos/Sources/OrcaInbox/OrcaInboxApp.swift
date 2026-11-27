@@ -2,11 +2,13 @@ import SwiftUI
 import AppKit
 import InboxCore
 import InboxUI
+import Observation
 import Darwin
 
 @main
-struct OrcaInboxApp: App {
-    init() {
+@MainActor
+enum OrcaInboxApp {
+    static func main() {
         if CommandLine.arguments.contains("--check-live") {
             do {
                 let hosts = try Live.fetchHosts()
@@ -20,29 +22,99 @@ struct OrcaInboxApp: App {
                 exit(EXIT_FAILURE)
             }
         }
-    }
 
-    @State private var store = InboxStore(
+        let application = NSApplication.shared
+        let delegate = InboxApplicationDelegate()
+        application.delegate = delegate
+        application.setActivationPolicy(.accessory)
+        withExtendedLifetime(delegate) { application.run() }
+    }
+}
+
+@MainActor
+private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
+    private let store = InboxStore(
         fetchHosts: { try await Task.detached(priority: .utility) { try Live.fetchHosts() }.value },
         fetchSnapshot: { target in
             try await Task.detached(priority: .utility) { try Live.fetch(environment: target) }.value
         }
     )
+    private var statusItem: NSStatusItem?
+    private var menuStatus: InboxMenuStatus?
+    private var pollingTask: Task<Void, Never>?
+    private var menuUpdates: Task<Void, Never>?
+    private var clockUpdates: Task<Void, Never>?
 
-    var body: some Scene {
-        MenuBarExtra {
-            InboxWindow(store: store)
-        } label: {
-            TimelineView(.periodic(from: .now, by: 15)) { context in
-                let status = InboxMenuStatus(state: store.panelState(at: context.date))
-                Label(status.text, systemImage: status.symbolName)
-                    .monospacedDigit()
-                    .help(status.description)
-                    .accessibilityLabel("Orca 任务收件箱 · \(status.description)")
+    private lazy var popover: NSPopover = {
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.delegate = self
+        popover.contentViewController = NSHostingController(rootView: InboxWindow(store: store))
+        return popover
+    }()
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        item.autosaveName = "Item-0"
+        statusItem = item
+        item.button?.target = self
+        item.button?.action = #selector(togglePopover(_:))
+        item.button?.imagePosition = .imageLeading
+        updateMenuButton(InboxMenuStatus(state: store.panelState()))
+
+        menuUpdates = Task { [weak self, store] in
+            for await status in Observations({ InboxMenuStatus(state: store.panelState()) }) {
+                self?.updateMenuButton(status)
             }
-            .task { await store.runPolling() }
         }
-        .menuBarExtraStyle(.window)
+        clockUpdates = Task { [weak self, store] in
+            while !Task.isCancelled {
+                do {
+                    try await Task.sleep(for: .seconds(15))
+                } catch {
+                    return
+                }
+                self?.updateMenuButton(InboxMenuStatus(state: store.panelState()))
+            }
+        }
+        pollingTask = Task { [store] in await store.runPolling() }
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        pollingTask?.cancel()
+        menuUpdates?.cancel()
+        clockUpdates?.cancel()
+    }
+
+    private func updateMenuButton(_ status: InboxMenuStatus) {
+        guard let button = statusItem?.button else { return }
+        if menuStatus?.symbolName != status.symbolName {
+            let image = NSImage(systemSymbolName: status.symbolName, accessibilityDescription: nil)
+            image?.isTemplate = true
+            button.image = image
+        }
+        if menuStatus?.text != status.text { button.title = status.text }
+        if menuStatus?.description != status.description {
+            button.toolTip = status.description
+            button.setAccessibilityLabel("Orca 任务收件箱 · \(status.description)")
+        }
+        menuStatus = status
+    }
+
+    @objc private func togglePopover(_ button: NSStatusBarButton) {
+        if popover.isShown {
+            popover.performClose(button)
+        } else {
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        }
+    }
+
+    func popoverWillShow(_ notification: Notification) {
+        store.setPanelOpen(true)
+    }
+
+    func popoverWillClose(_ notification: Notification) {
+        store.setPanelOpen(false)
     }
 }
 
@@ -65,8 +137,6 @@ private struct InboxWindow: View {
                 onQuit: { NSApplication.shared.terminate(nil) }
             )
         }
-        .onAppear { store.setPanelOpen(true) }
-        .onDisappear { store.setPanelOpen(false) }
     }
 
     private func copySessionID(_ id: String) {

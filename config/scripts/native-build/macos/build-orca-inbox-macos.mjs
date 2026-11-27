@@ -116,9 +116,9 @@ function infoPlist() {
   <key>CFBundleDisplayName</key>
   <string>Orca 任务收件箱</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.4.0</string>
+  <string>0.4.1</string>
   <key>CFBundleVersion</key>
-  <string>5</string>
+  <string>6</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>LSMinimumSystemVersion</key>
