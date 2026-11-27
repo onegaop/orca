@@ -38,19 +38,18 @@ afterEach(async () => {
 // A throttled guest paints about once a second, and Chromium acks a mouse move only on the next frame.
 async function throttledGuest(skipsInputWaits: boolean) {
   const mock = createMockWebContents()
+  const moveAck = Promise.withResolvers<Record<string, unknown>>()
   mock.webContents.getType.mockReturnValue('webview')
   Object.assign(mock.webContents, { isOffscreen: () => false })
   mock.webContents.debugger.sendCommand.mockImplementation(async (method, params) =>
-    method === 'Input.dispatchMouseEvent' && params?.type === 'mouseMoved'
-      ? new Promise<Record<string, unknown>>(() => {})
-      : {}
+    method === 'Input.dispatchMouseEvent' && params?.type === 'mouseMoved' ? moveAck.promise : {}
   )
   proxy = new CdpWsProxy(mockAsWebContents(mock), () => () => {}, undefined, {
     show: async () => {},
     skipsInputWaits: () => skipsInputWaits
   })
   ws = await connect(await proxy.start())
-  return { mock, ws }
+  return { mock, ws, acknowledgeMove: moveAck.resolve }
 }
 
 describe('CdpPageInputCommands under --no-effects', () => {
@@ -66,14 +65,20 @@ describe('CdpPageInputCommands under --no-effects', () => {
   })
 
   it('waits for the move ack without --no-effects', async () => {
-    const { ws } = await throttledGuest(false)
-
-    const reply = nextMessage(ws)
+    const { mock, ws, acknowledgeMove } = await throttledGuest(false)
+    const replies: unknown[] = []
+    const reply = nextMessage(ws).then((value) => {
+      replies.push(value)
+      return value
+    })
     ws.send(JSON.stringify(MOVE))
-    const outcome = await Promise.race([
-      reply.then(() => 'answered'),
-      new Promise((resolve) => setTimeout(() => resolve('waiting'), 100))
-    ])
-    expect(outcome).toBe('waiting')
+    await vi.waitFor(() =>
+      expect(getSendCommandCalls(mock)).toContainEqual(
+        expect.arrayContaining([MOVE.method, expect.objectContaining({ type: 'mouseMoved' })])
+      )
+    )
+    expect(replies).toEqual([])
+    acknowledgeMove({})
+    await expect(reply).resolves.toMatchObject({ id: MOVE.id, result: {} })
   })
 })

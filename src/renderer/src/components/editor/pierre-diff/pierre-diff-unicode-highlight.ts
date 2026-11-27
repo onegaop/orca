@@ -17,7 +17,11 @@ export const PIERRE_UNICODE_HIGHLIGHT_CSS = `
 const WORD = /[\p{L}\p{M}\p{N}_]/u
 const BASIC_ASCII = /^[\t\n\r\x20-\x7E]$/
 
-type Matcher = { pattern: RegExp; ambiguous: AmbiguousCharacters | null }
+type AmbiguityTable = {
+  getConfusableCodePoints: () => ReadonlySet<number>
+  isAmbiguous: (codePoint: number) => boolean
+}
+type Matcher = { pattern: RegExp; ambiguous: AmbiguityTable | null }
 const matchers = new Map<string, Matcher>()
 
 /** Monaco's allowed locales: characters native to the UI or OS language are not "ambiguous". */
