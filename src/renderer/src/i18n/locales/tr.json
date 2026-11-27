@@ -19676,6 +19676,7 @@
           "all": "Tümü",
           "clear": "Filtreleri temizle",
           "agent": "Ajan",
+          "bot": "Bot",
           "lastRun": "Son çalıştırma"
         },
         "AutomationListSortHeader": {
@@ -20325,7 +20326,6 @@
       "linear-issue-attribute-filter-dropdowns": {
         "removeFilter": "{{value0}} filtresini kaldır",
         "teamRequired": "Bu çalışma alanı için durum, atanan kişi ve etiketleri yüklemek üzere bir takım seçin.",
-        "filters": "Filtreler",
         "allWorkspacesTitle": "Bir çalışma alanı seçin",
         "allWorkspacesBody": "Durum, atanan kişi ve etiket filtreleri tek bir Linear çalışma alanından gelen id'leri kullanır. Bu özelliklere göre filtrelemek için bir çalışma alanı seçin.",
         "clearAll": "Tüm filtreleri temizle",
@@ -20856,18 +20856,8 @@
         "keyword-hooks": "kancalar"
       },
       "NativeChatResumeToast": {
-        "resumingOn_one": "{{machine}} üzerinde {{count}} ajan devam ettiriliyor…",
-        "resumingOn_other": "{{machine}} üzerinde {{count}} ajan devam ettiriliyor…",
-        "resuming_one": "{{count}} ajan devam ettiriliyor…",
-        "resuming_other": "{{count}} ajan devam ettiriliyor…",
-        "resumedOn_one": "{{machine}} üzerinde {{count}} ajan devam ettirildi.",
-        "resumedOn_other": "{{machine}} üzerinde {{count}} ajan devam ettirildi.",
-        "resumedUpdate_one": "Güncellemeden sonra {{count}} ajan devam ettirildi.",
-        "resumedUpdate_other": "Güncellemeden sonra {{count}} ajan devam ettirildi.",
-        "resumedRestart_one": "Yeniden başlatmadan sonra {{count}} ajan devam ettirildi.",
-        "resumedRestart_other": "Yeniden başlatmadan sonra {{count}} ajan devam ettirildi.",
-        "partial_one": "{{resumed}}/{{total}} ajan devam ettirildi. {{count}} tanesi sizi bekliyor.",
-        "partial_other": "{{resumed}}/{{total}} ajan devam ettirildi. {{count}} tanesi sizi bekliyor.",
+        "resuming_one": "Devam ettiriliyor: {{count}} ajan…",
+        "resuming_other": "Devam ettiriliyor: {{count}} ajan…",
         "stoppedOn_one": "{{machine}} üzerinde {{count}} ajan durdu.",
         "stoppedOn_other": "{{machine}} üzerinde {{count}} ajan durdu.",
         "stoppedUpdate_one": "Orca güncellenirken {{count}} ajan durdu.",
@@ -20880,8 +20870,6 @@
         "close": "Kapat",
         "listLabel": "Ajanlar",
         "untitled": "Başlıksız ajan",
-        "willAsk": "Orca, ajanlardan devam etmelerini ister. Sıradaki iletiler gönderilebilir.",
-        "asked": "Orca, ajanlardan devam etmelerini istedi. Sıradaki iletiler gönderilebilir.",
         "resumedAutomatically": "Otomatik olarak devam ettirildi.",
         "changeInSettings": "Ayarlardan değiştir",
         "dismissAll": "Tümünü kaldır",
@@ -20891,7 +20879,16 @@
         "stateResumed": "Devam ettirildi",
         "stateNeedsYou": "Sizi bekliyor",
         "stateResuming": "Devam ettiriliyor",
-        "stateStopped": "Durdu"
+        "stateStopped": "Durdu",
+        "resumingOne": "Devam ettiriliyor: {{name}}…",
+        "failedOne": "Devam ettirilemedi: {{name}}",
+        "failedSome_one": "Devam ettirilemedi: {{count}}/{{total}}",
+        "failedSome_other": "Devam ettirilemedi: {{count}}/{{total}}",
+        "resumedOne": "Devam ettirildi: {{name}}",
+        "resumedMany_one": "Devam ettirildi: {{count}} ajan",
+        "resumedMany_other": "Devam ettirildi: {{count}} ajan",
+        "needYou_one": "{{count}} tanesi sizi bekliyor",
+        "needYou_other": "{{count}} tanesi sizi bekliyor"
       },
       "RunTargetCombobox": {
         "noWslDistros": "WSL dağıtımı bulunamadı",

@@ -19893,6 +19893,7 @@
           "all": "All",
           "clear": "Clear filters",
           "agent": "Agent",
+          "bot": "Bot",
           "lastRun": "Last run"
         },
         "AutomationListSortHeader": {
@@ -20542,7 +20543,6 @@
       "linear-issue-attribute-filter-dropdowns": {
         "removeFilter": "Remove {{value0}} filter",
         "teamRequired": "Select a team to load status, assignees, and labels for this workspace.",
-        "filters": "Filters",
         "allWorkspacesTitle": "Select one workspace",
         "allWorkspacesBody": "Status, assignee, and label filters use ids from a single Linear workspace. Choose one workspace to filter by those attributes.",
         "clearAll": "Clear all filters",
@@ -21094,18 +21094,8 @@
         "create": "Create"
       },
       "NativeChatResumeToast": {
-        "resumingOn_one": "Resuming {{count}} agent on {{machine}}…",
-        "resumingOn_other": "Resuming {{count}} agents on {{machine}}…",
         "resuming_one": "Resuming {{count}} agent…",
         "resuming_other": "Resuming {{count}} agents…",
-        "resumedOn_one": "Resumed {{count}} agent on {{machine}}.",
-        "resumedOn_other": "Resumed {{count}} agents on {{machine}}.",
-        "resumedUpdate_one": "Resumed {{count}} agent after the update.",
-        "resumedUpdate_other": "Resumed {{count}} agents after the update.",
-        "resumedRestart_one": "Resumed {{count}} agent after the restart.",
-        "resumedRestart_other": "Resumed {{count}} agents after the restart.",
-        "partial_one": "Resumed {{resumed}} of {{total}} agents. {{count}} needs you.",
-        "partial_other": "Resumed {{resumed}} of {{total}} agents. {{count}} need you.",
         "stoppedOn_one": "{{count}} agent stopped on {{machine}}.",
         "stoppedOn_other": "{{count}} agents stopped on {{machine}}.",
         "stoppedUpdate_one": "{{count}} agent stopped when Orca updated.",
@@ -21118,8 +21108,6 @@
         "close": "Close",
         "listLabel": "Agents",
         "untitled": "Untitled agent",
-        "willAsk": "Orca asks agents to continue. Queued messages may be sent.",
-        "asked": "Orca asked agents to continue. Queued messages may be sent.",
         "resumedAutomatically": "Resumed automatically.",
         "changeInSettings": "Change in Settings",
         "dismissAll": "Dismiss all",
@@ -21129,7 +21117,16 @@
         "stateResumed": "Resumed",
         "stateNeedsYou": "Needs you",
         "stateResuming": "Resuming",
-        "stateStopped": "Stopped"
+        "stateStopped": "Stopped",
+        "resumingOne": "Resuming {{name}}…",
+        "failedOne": "Couldn’t resume {{name}}",
+        "failedSome_one": "Couldn’t resume {{count}} of {{total}}",
+        "failedSome_other": "Couldn’t resume {{count}} of {{total}}",
+        "resumedOne": "Resumed {{name}}",
+        "resumedMany_one": "Resumed {{count}} agent",
+        "resumedMany_other": "Resumed {{count}} agents",
+        "needYou_one": "{{count}} needs you",
+        "needYou_other": "{{count}} need you"
       },
       "RunTargetCombobox": {
         "noWslDistros": "No WSL distros found",
@@ -26504,7 +26501,9 @@
     "statusFilters": {
       "loadFailed": "Could not load Jira status filters.",
       "saveFailed": "Could not save Jira status filters.",
+      "unavailable": "No statuses are available for this view yet.",
       "manualQuery": "Status filters apply to preset views. Clear the search to use them.",
+      "favouriteActive": "Clear the Jira favourite or choose a preset view to use status filters.",
       "label": "Filter Jira issues by status",
       "clear": "Clear statuses",
       "jql": "Status filter JQL",

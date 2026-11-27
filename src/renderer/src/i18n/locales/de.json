@@ -19409,6 +19409,7 @@
           "all": "Alle",
           "clear": "Filter zurücksetzen",
           "agent": "Agent",
+          "bot": "Bot",
           "lastRun": "Letzte Ausführung"
         },
         "AutomationListSortHeader": {
@@ -20058,7 +20059,6 @@
       "linear-issue-attribute-filter-dropdowns": {
         "removeFilter": "Filter für {{value0}} entfernen",
         "teamRequired": "Ein Team auswählen, um Status, Zuständige und Labels für diesen Arbeitsbereich zu laden.",
-        "filters": "Filter",
         "allWorkspacesTitle": "Einen Arbeitsbereich auswählen",
         "allWorkspacesBody": "Status-, Zuständigkeits- und Label-Filter verwenden IDs aus einem einzelnen Linear-Arbeitsbereich. Einen Arbeitsbereich auswählen, um nach diesen Attributen zu filtern.",
         "clearAll": "Alle Filter zurücksetzen",
@@ -20600,18 +20600,8 @@
         "create": "Erstellen"
       },
       "NativeChatResumeToast": {
-        "resumingOn_one": "{{count}} Agent auf {{machine}} wird fortgesetzt…",
-        "resumingOn_other": "{{count}} Agenten auf {{machine}} werden fortgesetzt…",
-        "resuming_one": "{{count}} Agent wird fortgesetzt…",
-        "resuming_other": "{{count}} Agenten werden fortgesetzt…",
-        "resumedOn_one": "{{count}} Agent auf {{machine}} fortgesetzt.",
-        "resumedOn_other": "{{count}} Agenten auf {{machine}} fortgesetzt.",
-        "resumedUpdate_one": "{{count}} Agent nach dem Update fortgesetzt.",
-        "resumedUpdate_other": "{{count}} Agenten nach dem Update fortgesetzt.",
-        "resumedRestart_one": "{{count}} Agent nach dem Neustart fortgesetzt.",
-        "resumedRestart_other": "{{count}} Agenten nach dem Neustart fortgesetzt.",
-        "partial_one": "{{resumed}} von {{total}} Agenten fortgesetzt. {{count}} braucht dich.",
-        "partial_other": "{{resumed}} von {{total}} Agenten fortgesetzt. {{count}} brauchen dich.",
+        "resuming_one": "Wird fortgesetzt: {{count}} Agent…",
+        "resuming_other": "Werden fortgesetzt: {{count}} Agenten…",
         "stoppedOn_one": "{{count}} Agent auf {{machine}} angehalten.",
         "stoppedOn_other": "{{count}} Agenten auf {{machine}} angehalten.",
         "stoppedUpdate_one": "{{count}} Agent beim Orca-Update angehalten.",
@@ -20624,8 +20614,6 @@
         "close": "Schließen",
         "listLabel": "Agenten",
         "untitled": "Agent ohne Titel",
-        "willAsk": "Orca bittet die Agenten, fortzufahren. Wartende Nachrichten werden evtl. gesendet.",
-        "asked": "Orca hat die Agenten gebeten, fortzufahren. Wartende Nachrichten werden evtl. gesendet.",
         "resumedAutomatically": "Automatisch fortgesetzt.",
         "changeInSettings": "In den Einstellungen ändern",
         "dismissAll": "Alle verwerfen",
@@ -20635,7 +20623,16 @@
         "stateResumed": "Fortgesetzt",
         "stateNeedsYou": "Braucht dich",
         "stateResuming": "Wird fortgesetzt",
-        "stateStopped": "Angehalten"
+        "stateStopped": "Angehalten",
+        "resumingOne": "Wird fortgesetzt: {{name}}…",
+        "failedOne": "Nicht fortgesetzt: {{name}}",
+        "failedSome_one": "Fehler: {{count}} von {{total}}",
+        "failedSome_other": "Fehler: {{count}} von {{total}}",
+        "resumedOne": "Fortgesetzt: {{name}}",
+        "resumedMany_one": "Fortgesetzt: {{count}} Agent",
+        "resumedMany_other": "Fortgesetzt: {{count}} Agenten",
+        "needYou_one": "{{count}} braucht dich",
+        "needYou_other": "{{count}} brauchen dich"
       },
       "RunTargetCombobox": {
         "noWslDistros": "Keine WSL-Distributionen gefunden",
