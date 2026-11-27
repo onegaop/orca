@@ -18,6 +18,7 @@ it('evicts old views across workspaces and preserves an unfinished annotation un
     expect(chatViewRetention.retainedAmong(tabs)).toBe('a\nb\nd\ne\nsplit')
     chatViewRetention.show('first', ['c', 'split'])
     chatViewRetention.show('first', ['d', 'split'])
+    chatViewRetention.show('first', ['e', 'split'])
     expect(chatViewRetention.retainedAmong(tabs)).toBe('a\nb\nc\nd\ne\nsplit')
     release()
     expect(chatViewRetention.retainedAmong(tabs)).toBe('b\nc\nd\ne\nsplit')
