@@ -34,6 +34,7 @@ export function authoredNativeChatLinkUrl(node: { data?: unknown }): string | un
 type MarkdownNode = {
   type: string
   value?: string
+  lang?: string | null
   url?: string
   data?: unknown
   children?: MarkdownNode[]
@@ -250,6 +251,24 @@ function inlineCodeFileLink(node: MarkdownNode, exists: FileLinkExists): Markdow
   return link ? createFileLinkNode(link, node) : null
 }
 
+function singlePathCodeBlock(node: MarkdownNode, exists: FileLinkExists): MarkdownNode | null {
+  const value = node.value?.trim()
+  if (
+    !value ||
+    /[\r\n]/.test(value) ||
+    (node.lang && !/^(?:text|txt|plaintext)$/i.test(node.lang))
+  ) {
+    return null
+  }
+  const link = exactFileLink(value, exists)
+  return link
+    ? {
+        type: 'paragraph',
+        children: [createFileLinkNode(link, { type: 'inlineCode', value })]
+      }
+    : null
+}
+
 function transformFileLinks(node: MarkdownNode, exists: FileLinkExists): void {
   if (node.type === 'link') {
     const route = routeNativeChatHref(node.url)
@@ -272,6 +291,10 @@ function transformFileLinks(node: MarkdownNode, exists: FileLinkExists): void {
   for (const child of node.children) {
     if (child.type === 'text' && child.value !== undefined) {
       children.push(...splitTextNode(child.value, exists))
+      continue
+    }
+    if (child.type === 'code') {
+      children.push(singlePathCodeBlock(child, exists) ?? child)
       continue
     }
     if (child.type === 'inlineCode') {

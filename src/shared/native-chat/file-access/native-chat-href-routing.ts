@@ -76,6 +76,28 @@ function maybeDecodeHrefPath(value: string): string {
   }
 }
 
+/** A chat download placeholder may name a real absolute file on the conversation's host. */
+export function nativeChatSandboxFilePath(href: string | undefined): string | null {
+  const match = /^sandbox:(\/(?!\/)[^?#\s]+)$/i.exec(href ?? '')
+  const encoded = match?.[1]
+  if (!encoded || /%(?:2f|5c)/i.test(encoded)) {
+    return null
+  }
+  let decoded: string
+  try {
+    decoded = decodeURIComponent(encoded)
+  } catch {
+    return null
+  }
+  return !/[\\\p{Cc}]/u.test(decoded) &&
+    decoded
+      .slice(1)
+      .split('/')
+      .every((part) => part && part !== '.' && part !== '..')
+    ? decoded
+    : null
+}
+
 export function routeNativeChatHref(href: string | null | undefined): NativeChatHrefRoute {
   let trimmed = href?.trim()
   if (!trimmed) {

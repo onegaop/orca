@@ -1,5 +1,6 @@
 import {
   createNativeChatFileHref,
+  nativeChatSandboxFilePath,
   routeNativeChatHref
 } from '../../../../../shared/native-chat/file-access/native-chat-href-routing'
 import { formatFileLinkLocation } from '../../../../../shared/file-links/file-link-location'
@@ -22,7 +23,7 @@ type MarkdownNode = {
 const SCHEME_PREFIX_PATTERN = /^[A-Za-z][A-Za-z0-9+.-]*:/
 const NETWORK_PATH_PATTERN = /^[\\/]{2}/
 
-type FileRewrite = { link: string; image: string }
+type FileRewrite = { link: string; image?: string }
 
 /** A definition's destination, resolved once however many references share it. */
 type ResolvedDefinition = {
@@ -104,6 +105,11 @@ function linkedImagePreviews(
 }
 
 function fileRewrite(url: string | undefined): FileRewrite | null {
+  const sandboxPath = nativeChatSandboxFilePath(url)
+  if (sandboxPath) {
+    // Click-only: a sandbox destination never enables inline reads or a browser protocol.
+    return { link: createNativeChatFileHref(sandboxPath, 'literal') }
+  }
   const route = url && SCHEME_PREFIX_PATTERN.test(url) ? routeNativeChatHref(url) : null
   return route?.kind === 'file'
     ? {
@@ -132,13 +138,14 @@ function rewriteFileDestinations(
     : node.type === 'link' || node.type === 'image'
       ? fileRewrite(node.url)
       : null
-  if (rewrite) {
+  const href = isImageNode(node) ? rewrite?.image : rewrite?.link
+  if (href) {
     if (definition) {
       // One definition can serve both images (literal paths) and links (locations).
       node.type = node.type === 'imageReference' ? 'image' : 'link'
       node.title = definition.title
     }
-    node.url = node.type === 'image' ? rewrite.image : rewrite.link
+    node.url = href
   }
   if (!node.children) {
     return
