@@ -45,6 +45,11 @@ type DesktopWindowSettings = {
   linuxTilingWindowMode?: boolean
 }
 
+type TaskPageSettings = {
+  /** Keep the Tasks page mounted while hidden so it can show the last list instantly. */
+  preloadTaskPage: boolean
+}
+
 /** Settings groups owned by their feature modules and composed into GlobalSettings. */
 export type GlobalSettingsBase = AntigravityChatAuthSettings &
   EmulatorOpeningSettings &
@@ -83,4 +88,5 @@ export type GlobalSettingsBase = AntigravityChatAuthSettings &
   NewTabMenuSettings &
   UiLanguageSettings &
   ChatDeleteSettings &
-  CustomAcpAgentSettings
+  CustomAcpAgentSettings &
+  TaskPageSettings
