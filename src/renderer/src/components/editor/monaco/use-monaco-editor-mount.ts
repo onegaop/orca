@@ -4,13 +4,11 @@ import { useAppStore } from '@/store/index'
 import { registerFileSearchSelectedTextProvider } from '@/lib/files/search/file-search-selection'
 import { syncContentOnMount } from '../model-lifetime/buffer-text/monaco-content-sync'
 import { toEditorModelUri } from '../model-lifetime/identity/editor-model-uri'
-import {
-  beginProgrammaticContentSync,
-  endProgrammaticContentSync
-} from '../model-lifetime/buffer-text/monaco-programmatic-sync'
+import { withProgrammaticContentSync } from '../model-lifetime/buffer-text/monaco-programmatic-sync'
 import { createMarkdownDocLinkDecorationController } from '../markdown-source-tools/monaco/monaco-markdown-doc-link-decorations'
 import { ensureMarkdownDocCompletionProvider } from '../markdown-source-tools/monaco/monaco-markdown-doc-completions'
 import { clampMonacoAutoHeight } from './monaco-auto-height'
+import { installMonacoLocationHistory } from './monaco-location-history'
 import { installMonacoE2EProbe } from './monaco-e2e-probe'
 import { matchesPendingEditorFocusRequest } from '../commands/pending-editor-focus-request'
 import { installMonacoEditorInputBindings } from './monaco-editor-input-bindings'
@@ -27,21 +25,6 @@ import {
 } from '../model-lifetime/buffer-text/editor-stale-mount-guard'
 
 function ignoreCursorLine(): void {}
-
-function withMountProgrammaticContentSync(
-  modelKey: string,
-  isApplyingRef: { current: boolean },
-  run: () => void
-): void {
-  beginProgrammaticContentSync(modelKey)
-  isApplyingRef.current = true
-  try {
-    run()
-  } finally {
-    isApplyingRef.current = false
-    endProgrammaticContentSync(modelKey)
-  }
-}
 
 // Read changing inputs through refs so retained Monaco listeners do not require remounts.
 export function useMonacoEditorMount(params: MonacoEditorMountParams): OnMount {
@@ -145,7 +128,7 @@ export function useMonacoEditorMount(params: MonacoEditorMountParams): OnMount {
         // Why: no live model holds the truth, so drop the stale cache once to reload from disk.
         requestStaleCacheReload(fileIdRef.current, contentRef.current)
       } else {
-        withMountProgrammaticContentSync(modelKey, isApplyingProgrammaticContentRef, () => {
+        withProgrammaticContentSync(modelKey, isApplyingProgrammaticContentRef, () => {
           if (
             syncContentOnMount(
               editorInstance,
@@ -193,6 +176,16 @@ export function useMonacoEditorMount(params: MonacoEditorMountParams): OnMount {
         scrollThrottleTimerRef,
         setEditorCursorLine: passiveMirror ? ignoreCursorLine : setEditorCursorLine
       })
+
+      if (!passiveMirror && !autoHeight && worktreeId && viewStateId) {
+        installMonacoLocationHistory(
+          editorInstance,
+          monaco.editor.CursorChangeReason.Explicit,
+          worktreeId,
+          viewStateId,
+          () => fileIdRef.current
+        )
+      }
 
       const gutterMouseDownSub = editorInstance.onMouseDown((e) => {
         if (

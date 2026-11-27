@@ -3,9 +3,8 @@ import type { editor } from 'monaco-editor'
 import { syncContentUpdate, type MonacoContentSyncMode } from './monaco-content-sync'
 import { mayPushTabTextIntoModel } from './editor-stale-mount-guard'
 import {
-  beginProgrammaticContentSync,
-  endProgrammaticContentSync,
-  shouldIgnoreMonacoContentChange
+  shouldIgnoreMonacoContentChange,
+  withProgrammaticContentSync
 } from './monaco-programmatic-sync'
 
 export type MonacoContentSyncBridge = {
@@ -13,21 +12,6 @@ export type MonacoContentSyncBridge = {
   lastSyncedContentRef: MutableRefObject<string>
   contentSyncModeRef: MutableRefObject<MonacoContentSyncMode>
   isApplyingProgrammaticContentRef: MutableRefObject<boolean>
-}
-
-function withProgrammaticContentSync(
-  modelKey: string,
-  isApplyingRef: { current: boolean },
-  run: () => void
-): void {
-  beginProgrammaticContentSync(modelKey)
-  isApplyingRef.current = true
-  try {
-    run()
-  } finally {
-    isApplyingRef.current = false
-    endProgrammaticContentSync(modelKey)
-  }
 }
 
 /** Callers update the content/mode refs during render so mount handlers can read current props before commit. */
