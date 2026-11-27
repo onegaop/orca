@@ -57,6 +57,22 @@ function itemSelector(repo: Repo | undefined, item: GitLabWorkItem): GitLabRowSe
   }
 }
 
+async function runGitLabItemMutation(
+  mutate: () => Promise<MutationResult>,
+  onSettled: () => void
+): Promise<void> {
+  try {
+    const result = await mutate()
+    if (!result.ok) {
+      toast.error(codeHostErrorText(result))
+    }
+  } catch (err) {
+    toast.error(err instanceof Error ? err.message : String(err))
+  } finally {
+    onSettled()
+  }
+}
+
 export function GitLabItemActions({
   item,
   repo,
@@ -77,22 +93,15 @@ export function GitLabItemActions({
       setPicker(null)
     }
   }
-  const runMutation = async (mutate: () => Promise<MutationResult>): Promise<void> => {
+  const runMutation = (mutate: () => Promise<MutationResult>): Promise<void> => {
     setBusy(true)
-    try {
-      const result = await mutate()
-      if (!result.ok) {
-        toast.error(codeHostErrorText(result))
-      }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : String(err))
-    } finally {
+    return runGitLabItemMutation(mutate, () => {
       setBusy(false)
       setOpen(false)
       setPicker(null)
       // A failed or partial response doesn't prove the server kept the previous values.
       onRefresh()
-    }
+    })
   }
   const changeState = (): void => {
     if (!selector) {

@@ -3531,6 +3531,7 @@
         "cf144856dc": "已复制",
         "filesFound_other": "找到 {{count}} 个文件",
         "hostCouldNotOpenPath": "主机无法打开此文件路径",
+        "homeRelativeHostUnsupported": "此工作区的主机无法展开主目录相对路径，请输入完整路径。",
         "chooseFileNotDirectory": "请选择文件，而非目录"
       },
       "SelectedTextCopyMenu": {

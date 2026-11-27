@@ -4348,6 +4348,7 @@
         "filesFound_one": "{{count}} file found",
         "filesFound_other": "{{count}} files found",
         "hostCouldNotOpenPath": "The host could not open this file path.",
+        "homeRelativeHostUnsupported": "Home-relative paths cannot be expanded for this workspace host. Enter the full path instead.",
         "chooseFileNotDirectory": "Choose a file rather than a directory."
       },
       "SelectedTextCopyMenu": {

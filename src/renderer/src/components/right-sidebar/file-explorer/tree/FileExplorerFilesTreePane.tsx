@@ -30,7 +30,7 @@ import type { WslHostReadOutage } from '../../../wsl-host-stopped/use-stopped-ws
 const FILE_EXPLORER_ROW_SELECTOR = '[data-file-explorer-row]'
 const FOCUS_OWNING_TARGETS = `${FILE_EXPLORER_ROW_SELECTOR}, [data-slot="context-menu-trigger"], input, textarea, button`
 
-export function isFilesTreeBackgroundPress(target: EventTarget | null): boolean {
+function isFilesTreeBackgroundPress(target: EventTarget | null): boolean {
   if (!(target instanceof Element) || target.closest(FOCUS_OWNING_TARGETS) !== null) {
     return false
   }
@@ -156,6 +156,13 @@ export function FileExplorerFilesTreePane({
     hasNameFilter && !nameFilterFiles.loadError
       ? t('auto.components.right.sidebar.FileExplorer.2f4483d6c4', 'No files match this filter')
       : undefined
+  const viewportProps = {
+    [KEEPS_FOCUS_ATTRIBUTE]: '',
+    onMouseDown: keepFocusOnBackgroundPress,
+    onContextMenuCapture: handleExplorerBackgroundContextMenuCapture,
+    onDoubleClick: handleExplorerBackgroundDoubleClick
+  } satisfies React.ComponentProps<typeof ScrollArea>['viewportProps'] &
+    Record<typeof KEEPS_FOCUS_ATTRIBUTE, string>
 
   return (
     <ScrollArea
@@ -173,15 +180,7 @@ export function FileExplorerFilesTreePane({
       viewportRef={scrollRef}
       viewportTabIndex={-1}
       viewportClassName="h-full min-h-0 py-2"
-      viewportProps={
-        {
-          // Radix's viewport props type omits arbitrary data attributes; the spread still reaches the DOM.
-          [KEEPS_FOCUS_ATTRIBUTE]: '',
-          onMouseDown: keepFocusOnBackgroundPress,
-          onContextMenuCapture: handleExplorerBackgroundContextMenuCapture,
-          onDoubleClick: handleExplorerBackgroundDoubleClick
-        } as React.ComponentProps<typeof ScrollArea>['viewportProps']
-      }
+      viewportProps={viewportProps}
       onWheelCapture={handleWheelCapture}
       onDragOverCapture={rootDragHandlers.onDragOverCapture}
       onDragOver={rootDragHandlers.onDragOver}
