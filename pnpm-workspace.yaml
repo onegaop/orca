@@ -8,6 +8,21 @@ packages:
   - src/packages/*
 
 minimumReleaseAge: 4320
+# Exact versions verified for this fork release.
+minimumReleaseAgeExclude:
+  - '@pierre/diffs@1.7.2'
+  - '@pierre/highlights@0.6.0'
+  - '@xterm/addon-fit@0.12.0-beta.336'
+  - '@xterm/addon-image@0.10.0-beta.335'
+  - '@xterm/addon-ligatures@0.11.0-beta.334'
+  - '@xterm/addon-search@0.17.0-beta.334'
+  - '@xterm/addon-serialize@0.15.0-beta.334'
+  - '@xterm/addon-unicode11@0.10.0-beta.334'
+  - '@xterm/addon-web-links@0.13.0-beta.334'
+  - '@xterm/addon-webgl@0.20.0-beta.333'
+  - '@xterm/headless@6.1.0-beta.338'
+  - '@xterm/xterm@6.1.0-beta.340'
+  - 'vite@8.4.0'
 shamefullyHoist: true
 
 # Enables pnpm's global virtual store outside CI; under config/ because the repo root only admits

@@ -4,6 +4,12 @@ allowBuilds:
   react-native-libsodium: true
 
 minimumReleaseAge: 4320
+# Exact versions verified for this fork release.
+minimumReleaseAgeExclude:
+  - '@xterm/addon-unicode11@0.10.0-beta.334'
+  - '@xterm/addon-webgl@0.20.0-beta.333'
+  - '@xterm/xterm@6.1.0-beta.340'
+  - 'vite@8.4.0'
 
 overrides:
   sprintf-js@<1.1.3: 1.1.3
