@@ -387,12 +387,7 @@ export type GlobalSettings = GlobalSettingsBase & {
   deleteChatHistoryWithWorkspace?: boolean
   /** Custom CODEX_HOME for Codex session-history discovery (defaults to ~/.codex).
    *  History-only: does not change which account/config/hooks Orca uses. */
-  codexSessionSourceHome?: {
-    /** Absolute host path; empty/undefined falls back to ~/.codex. */
-    host?: string
-    /** Per-WSL-distro absolute Linux path; missing distro falls back to <wslHome>/.codex. */
-    wsl?: Record<string, string>
-  }
+  codexSessionSourceHome?: { host?: string; wsl?: Record<string, string> }
   /** Per-agent default CLI arguments appended after the binary/path and before prompts. */
   agentDefaultArgs?: Partial<Record<TuiAgent, string>>
   agentLaunchChoices?: AgentLaunchChoices

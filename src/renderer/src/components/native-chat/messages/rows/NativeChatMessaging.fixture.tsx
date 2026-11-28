@@ -90,7 +90,7 @@ function Conversation({ bot = true, streamingText }: { bot?: boolean; streamingT
       <NativeChatTranscriptRowStack
         slots={shownSlots}
         context={{
-          turnBot: bot ? { name: 'Scout', src: null, fallback: 'S' } : null,
+          turnBot: bot ? { id: 'scout', hostId: 'local', name: 'Scout', avatar: null } : null,
           expandSignal: false,
           revealedDiff: null,
           taskListPredecessors: new Map(),

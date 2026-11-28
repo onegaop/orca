@@ -147,14 +147,7 @@ export class AgentHookResultRetryScheduler {
     const museDelayMs = source === 'muse' ? (delayMs ?? nextMusePollDelay()) : undefined
     this.transcriptPollScheduler.schedule(
       original.paneKey,
-      {
-        source,
-        body,
-        original,
-        env,
-        version,
-        delayMs: museDelayMs
-      },
+      { source, body, original, env, version, delayMs: museDelayMs },
       hookTranscriptWatchPath(this.host.state, source, original.paneKey),
       museDelayMs
     )

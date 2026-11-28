@@ -77,7 +77,6 @@ export function normalizeProviderEvent(input: {
       : codexEventName === undefined
         ? undefined
         : codexHookEventForEndedTurn(state, paneKey, codexEventName, hookPayload)
-  let resolvedEventName = eventName
   let resolvedPromptText = promptText
   let promptInteractionKey: string | undefined
   let hasTranscriptPromptEvidence = false
@@ -127,7 +126,7 @@ export function normalizeProviderEvent(input: {
       }
       payload = normalizeAntigravityEvent(state, eventName, promptText, paneKey, hookPayload)
       if (childHook) {
-        resolvedEventName = undefined
+        eventName = undefined
       }
       break
     }
@@ -271,7 +270,7 @@ export function normalizeProviderEvent(input: {
     resolvedPromptText,
     promptInteractionKey,
     hasTranscriptPromptEvidence,
-    eventName: resolvedEventName,
+    eventName,
     hostTurnSignals: readHostTurnSignals(source, hookPayload, promptInteractionKey),
     replyCandidate
   }

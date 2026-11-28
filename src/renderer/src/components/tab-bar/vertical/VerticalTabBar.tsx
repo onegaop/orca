@@ -102,6 +102,9 @@ function VerticalTabBar({
     })
   const leadingCount = homeCount + pinnedRowCount
   const hasTrailingRows = restIds.length + strip.clientHostedBrowserRows.length > 0
+  const listStyle: React.CSSProperties & Record<'--tab-project-color', string> = {
+    '--tab-project-color': runtime.tabProjectColor ?? 'transparent'
+  }
 
   return (
     <TabStripOrientationContext.Provider value="vertical">
@@ -112,11 +115,7 @@ function VerticalTabBar({
         data-tab-group-tab-list-id={runtime.resolvedGroupId}
         data-worktree-id={worktreeId}
         data-collapsed={collapsed ? '' : undefined}
-        style={
-          {
-            '--tab-project-color': runtime.tabProjectColor ?? 'transparent'
-          } as React.CSSProperties & Record<'--tab-project-color', string>
-        }
+        style={listStyle}
         className={cn(
           'relative flex h-full min-h-0 max-w-[50%] shrink-0 flex-col border-r border-border bg-tab-bar',
           // Collapsed rows keep only their icon; the label stays as the row's accessible name.

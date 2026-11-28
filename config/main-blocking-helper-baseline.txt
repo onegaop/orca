@@ -1516,6 +1516,10 @@
 1 src/shared/agent-hook-listener/normalization/normalize-hook-payload.ts
 4 src/shared/agent-hook-listener/pane-provider-session.ts
 4 src/shared/agent-hook-listener/provider-dispatch.ts
+8 src/shared/agent-hook-listener/providers/antigravity/antigravity-brain-metadata.ts # antigravity hook listener reads local brain/transcript metadata
+2 src/shared/agent-hook-listener/providers/antigravity/antigravity-events.ts # antigravity hook listener classifies transcript origin
+1 src/shared/agent-hook-listener/providers/antigravity/antigravity-pane-state.ts # antigravity hook listener reads child start timestamp
+4 src/shared/agent-hook-listener/providers/antigravity/antigravity-subagent-roster.ts # antigravity hook listener reads brain subagents and swarm roster
 7 src/shared/agent-hook-listener/providers/codex/codex-events.ts
 1 src/shared/agent-hook-listener/providers/codex/codex-subagent-identity.ts
 1 src/shared/agent-hook-listener/providers/codex/codex-subagent-reviewer.ts

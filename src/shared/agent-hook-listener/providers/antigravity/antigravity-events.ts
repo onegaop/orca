@@ -8,7 +8,6 @@ import {
   continueMainAgentStatus,
   foldAgentLeadStatus
 } from '../../../agent-status/lifecycle/agent-lead-status-fold'
-import { isRecord } from '../../../agent-status/child-work/agent-status-child-work-value-guards'
 import { readFirstString } from '../../interactive-tool'
 import type { HookListenerState } from '../../listener-state'
 import { resolvePrompt, resolveToolState } from '../../prompt-fields'
@@ -35,37 +34,10 @@ import {
   recordAntigravityChildHook,
   type AntigravityPaneChildState
 } from './antigravity-subagent-roster'
+import { trackAntigravityBackgroundCommand } from './antigravity-pane-state'
 import { readAntigravityToolCall } from './antigravity-tool-fields'
 
 export { isAntigravityFeedbackTool }
-
-/** agy sends a backgrounded run_command's PostToolUse only when the command ends; daemons are never expected to. */
-function trackAntigravityBackgroundCommand(
-  paneState: AntigravityPaneChildState,
-  eventName: unknown,
-  conversationId: string | undefined,
-  hookPayload: Record<string, unknown>
-): boolean {
-  const { toolName, toolInputSource } = readAntigravityToolCall(hookPayload)
-  const stepIdx = hookPayload.stepIdx
-  if (
-    toolName !== 'run_command' ||
-    !conversationId ||
-    typeof stepIdx !== 'number' ||
-    (eventName !== 'PreToolUse' && eventName !== 'PostToolUse')
-  ) {
-    return false
-  }
-  const key = `${conversationId}:${stepIdx}`
-  if (eventName === 'PostToolUse') {
-    return paneState.commands?.delete(key) === true
-  }
-  if (isRecord(toolInputSource) && toolInputSource.IsDaemon === true) {
-    return false
-  }
-  paneState.commands = (paneState.commands ?? new Set()).add(key)
-  return false
-}
 
 export function isAntigravityInSessionChildHook(
   state: HookListenerState,
@@ -86,7 +58,7 @@ export function buildAntigravityFoldedStatusPayload(
   paneKey: string,
   paneState: AntigravityPaneChildState,
   now: number,
-  options?: { subagents?: AgentSubagentSnapshot[] }
+  options?: { subagents?: AgentSubagentSnapshot[]; failed?: boolean }
 ): ParsedAgentStatusPayload | null {
   const subagents = options?.subagents ?? reconcileAntigravityActiveSubagents(paneState, now)
   const leadState = paneState.leadState ?? 'working'
@@ -104,6 +76,14 @@ export function buildAntigravityFoldedStatusPayload(
   const folded = foldAgentLeadStatus({ leadState, childWorkLiveness: liveness })
   const snapshot = state.lastToolByPaneKey.get(paneKey)
   const prompt = state.lastPromptByPaneKey.get(paneKey) ?? ''
+  const mainAgent =
+    liveness !== null || options?.failed
+      ? {
+          state: leadState,
+          stateStartedAt: leadStateStartedAt,
+          ...(options?.failed ? { outcome: 'failure' as const } : {})
+        }
+      : undefined
 
   return normalizeAgentStatusPayload({
     state: folded.stateName,
@@ -117,7 +97,7 @@ export function buildAntigravityFoldedStatusPayload(
     lastAssistantMessage: snapshot?.lastAssistantMessage,
     lastAssistantMessageIsToolOutput: snapshot?.lastAssistantMessageIsToolOutput,
     subagents: subagents.length > 0 ? subagents : undefined,
-    mainAgent: { state: leadState, stateStartedAt: leadStateStartedAt }
+    ...(mainAgent ? { mainAgent } : {})
   })
 }
 
@@ -159,7 +139,13 @@ function normalizeColdChildAntigravityEvent(
     lastAssistantMessage: snapshot.lastAssistantMessage,
     lastAssistantMessageIsToolOutput: snapshot.lastAssistantMessageIsToolOutput,
     ...(failed
-      ? { mainAgent: { state: 'done' as const, stateStartedAt: Date.now(), outcome: 'failure' as const } }
+      ? {
+          mainAgent: {
+            state: 'done' as const,
+            stateStartedAt: Date.now(),
+            outcome: 'failure' as const
+          }
+        }
       : {})
   })
 }
@@ -268,7 +254,6 @@ export function normalizeAntigravityEvent(
     conversationId,
     hookPayload
   )
-
   const hookModel = normalizeAntigravityModel(readFirstString(hookPayload, ['modelName', 'model']))
   paneState.leadModel =
     hookModel ?? paneState.leadModel ?? readAntigravityTranscriptModel(transcriptPath)
@@ -310,8 +295,10 @@ export function normalizeAntigravityEvent(
     resetOnNewTurn: resetsTurn
   })
 
+  const failed = leadState === 'done' && isAntigravityStopFailed(hookPayload)
   const payload = buildAntigravityFoldedStatusPayload(state, paneKey, paneState, now, {
-    subagents
+    subagents,
+    failed
   })
   if (
     ((eventName === 'Stop' && !stopStillBusy) || preservesDoneLead) &&

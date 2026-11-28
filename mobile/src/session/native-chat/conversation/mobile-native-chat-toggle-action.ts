@@ -43,7 +43,7 @@ export function getMobileNativeChatToggleActions(args: {
     {
       id: 'toggleAgentMapView',
       label: isMap
-        ? args.t('session.nativeChatToggleAction.switchToTerminalView', 'Switch to terminal view')
+        ? args.t('session.nativeChatToggleAction.switchToTerminalView', 'Switch to terminal')
         : args.t('session.nativeChatToggleAction.showAgentMap', 'Show agent map'),
       icon: Waypoints,
       onPress: () => {

@@ -236,7 +236,9 @@ function NativeChatMarkdownImagePreview({ src, alt }: MarkdownImageProps): React
           ? 'max-h-28 max-w-[min(100%,calc(var(--spacing)*28))] rounded-md object-contain'
           : nativeChatMarkdownImageClassName(imageSize)
       }
-      triggerClassName={!isBotSticker && columnWidth ? 'native-chat-column-image w-full' : undefined}
+      triggerClassName={
+        !isBotSticker && columnWidth ? 'native-chat-column-image w-full' : undefined
+      }
       onError={() => setFailedSrc(imageSrc)}
       onLoad={() => {
         const bounds = triggerRef.current?.getBoundingClientRect()

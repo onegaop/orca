@@ -1,7 +1,9 @@
 import type { AgentStatusState } from '../../../agent-status/contracts/agent-status-types'
+import { isRecord } from '../../../agent-status/child-work/agent-status-child-work-value-guards'
 import { readFirstString } from '../../interactive-tool'
 import type { HookListenerState } from '../../listener-state'
 import { extractToolFields } from '../../provider-event-routing'
+import { readAntigravityToolCall } from './antigravity-tool-fields'
 import {
   createAntigravityBrainCache,
   normalizeAntigravityModel,
@@ -126,4 +128,32 @@ export function recordAntigravityChildHook(
     tracked.toolInput = undefined
     tracked.hookState = isAntigravityStopStillBusy(hookPayload) ? 'working' : 'done'
   }
+}
+
+/** agy sends a backgrounded run_command's PostToolUse only when the command ends; daemons are never expected to. */
+export function trackAntigravityBackgroundCommand(
+  paneState: AntigravityPaneChildState,
+  eventName: unknown,
+  conversationId: string | undefined,
+  hookPayload: Record<string, unknown>
+): boolean {
+  const { toolName, toolInputSource } = readAntigravityToolCall(hookPayload)
+  const stepIdx = hookPayload.stepIdx
+  if (
+    toolName !== 'run_command' ||
+    !conversationId ||
+    typeof stepIdx !== 'number' ||
+    (eventName !== 'PreToolUse' && eventName !== 'PostToolUse')
+  ) {
+    return false
+  }
+  const key = `${conversationId}:${stepIdx}`
+  if (eventName === 'PostToolUse') {
+    return paneState.commands?.delete(key) === true
+  }
+  if (isRecord(toolInputSource) && toolInputSource.IsDaemon === true) {
+    return false
+  }
+  paneState.commands = (paneState.commands ?? new Set()).add(key)
+  return false
 }

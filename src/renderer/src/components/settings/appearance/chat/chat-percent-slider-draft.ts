@@ -1,3 +1,5 @@
+export type ChatPercentSliderCommitOwner = Readonly<Record<string, never>>
+
 export type ChatPercentSliderDraft = {
   /** The last saved value the slider has seen. */
   saved: number
@@ -5,7 +7,7 @@ export type ChatPercentSliderDraft = {
   /** Moved since its last commit. */
   dirty: boolean
   /** The pending commit that owns the shown value, if any. */
-  owner: object | null
+  owner: ChatPercentSliderCommitOwner | null
 }
 
 export function initialSliderDraft(value: number): ChatPercentSliderDraft {
@@ -38,7 +40,7 @@ export function sliderDraftAfterRelease(draft: ChatPercentSliderDraft): ChatPerc
 export function sliderDraftAfterCommit(
   draft: ChatPercentSliderDraft,
   value: number,
-  owner: object
+  owner: ChatPercentSliderCommitOwner
 ): ChatPercentSliderDraft {
   return { ...draft, value, dirty: false, owner }
 }
@@ -46,7 +48,7 @@ export function sliderDraftAfterCommit(
 /** Settles only the latest commit, and keeps any drag made since it was sent. */
 export function sliderDraftAfterSettle(
   draft: ChatPercentSliderDraft,
-  owner: object,
+  owner: ChatPercentSliderCommitOwner,
   committed: number,
   saved: boolean
 ): ChatPercentSliderDraft {

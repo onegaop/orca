@@ -9,7 +9,6 @@ export const getChatMarkdownImageSizeSearchEntry = createLocalizedCatalog(
     description: translate(
       'components.settings.nativeChat.markdownImageSizeCopy',
       'Pictures in a message use this size and stay whole. Column width fills the message. Open a picture to see it full size.'
-    ),
-    keywords: ['picture', 'image', 'photo', 'column', 'compact', 'medium', 'width']
+    )
   })
 )

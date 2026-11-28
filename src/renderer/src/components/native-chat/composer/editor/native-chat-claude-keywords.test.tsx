@@ -11,11 +11,11 @@ afterEach(cleanup)
 
 // Tiptap hangs the editor on its contenteditable element.
 function editorOf(container: HTMLElement): Editor {
-  const editor: unknown = Reflect.get(within(container).getByRole('textbox'), 'editor')
-  if (!(editor instanceof Editor)) {
+  const textbox: HTMLElement & { editor?: unknown } = within(container).getByRole('textbox')
+  if (!(textbox.editor instanceof Editor)) {
     throw new Error('textbox has no Tiptap editor')
   }
-  return editor
+  return textbox.editor
 }
 
 const words = (text: string) => claudeKeywords(text).map(({ word, rainbow }) => [word, rainbow])
