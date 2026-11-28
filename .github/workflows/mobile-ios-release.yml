@@ -7,6 +7,10 @@ on:
       - 'mobile-ios-v*'
   workflow_dispatch:
     inputs:
+      compile_only:
+        description: 'Compile the native iOS app without signing or uploading'
+        type: boolean
+        default: false
       bump_patch_version:
         description: 'Use the first open iOS patch version after the checked-in version, skipping versions already closed on the App Store.'
         required: false
@@ -21,8 +25,35 @@ on:
         required: false
         type: string
 
+  workflow_call:
+    inputs:
+      release_version:
+        required: true
+        type: string
+    secrets:
+      ASC_KEY_ID:
+        required: true
+      ASC_ISSUER_ID:
+        required: true
+      ASC_API_KEY_P8:
+        required: true
+      APPLE_TEAM_ID:
+        required: true
+      IOS_DIST_CERT_P12:
+        required: true
+      IOS_DIST_CERT_PASSWORD:
+        required: true
+
 permissions:
   contents: read
+
+concurrency:
+  group: mobile-ios-${{ inputs.compile_only && 'compile' || inputs.release_version || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  IOS_BUNDLE_IDENTIFIER: ${{ github.repository == 'onegaop/orca' && 'io.github.onegaop.orca' || '' }}
+  BUNDLE_FROZEN: 'true'
 
 jobs:
   ios-build:
@@ -31,9 +62,7 @@ jobs:
     # Archive + upload is ~30–40m when healthy; 90m leaves margin for setup.
     timeout-minutes: 90
 
-    env:
-      # Freeze Gemfile.lock in both jobs; installs ~25min apart must not resolve different fastlane versions.
-      BUNDLE_FROZEN: 'true'
+    environment: ${{ github.repository == 'onegaop/orca' && !inputs.compile_only && 'orca-ios-testflight' || 'mobile-ios-build' }}
 
     outputs:
       release_version: ${{ steps.release_metadata.outputs.version }}
@@ -46,6 +75,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -75,12 +106,13 @@ jobs:
           working-directory: mobile
 
       - name: Resolve release version and build number
+        if: ${{ !inputs.compile_only }}
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
-          MOBILE_IOS_RELEASE_VERSION: ${{ github.event.inputs.release_version }}
-          MOBILE_IOS_BUMP_PATCH_VERSION: ${{ github.event.inputs.bump_patch_version }}
+          MOBILE_IOS_RELEASE_VERSION: ${{ inputs.release_version }}
+          MOBILE_IOS_BUMP_PATCH_VERSION: ${{ inputs.bump_patch_version }}
           FASTLANE_SKIP_UPDATE_CHECK: '1'
           FASTLANE_HIDE_CHANGELOG: '1'
         run: bundle exec fastlane ios prepare_release_version version:"$MOBILE_IOS_RELEASE_VERSION" bump_patch:"$MOBILE_IOS_BUMP_PATCH_VERSION"
@@ -98,8 +130,22 @@ jobs:
         working-directory: mobile/ios
         run: bundle exec pod install
 
+      - name: Compile unsigned iOS app
+        if: ${{ inputs.compile_only }}
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -workspace ios/Orca.xcworkspace \
+            -scheme Orca -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/orca-ios-build" \
+            CODE_SIGNING_ALLOWED=NO | xcbeautify
+
       # Import exported distribution .p12 into ephemeral runner keychain: provisioning updates/API key cannot recreate its private key.
       - name: Import distribution certificate
+        if: ${{ !inputs.compile_only }}
         env:
           IOS_DIST_CERT_P12: ${{ secrets.IOS_DIST_CERT_P12 }}
           IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
@@ -125,6 +171,7 @@ jobs:
           rm -f "$CERT_PATH"
 
       - name: Build and upload to TestFlight
+        if: ${{ !inputs.compile_only }}
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
@@ -138,7 +185,7 @@ jobs:
         run: bundle exec fastlane ios build_and_upload
 
       - name: Upload .ipa artifact
-        if: always()
+        if: ${{ always() && github.repository != 'onegaop/orca' && !inputs.compile_only }}
         uses: actions/upload-artifact@v7
         with:
           name: orca-mobile-ipa
@@ -146,16 +193,13 @@ jobs:
           if-no-files-found: ignore
 
   ios-distribute:
+    if: ${{ github.repository != 'onegaop/orca' && !inputs.compile_only }}
     name: Distribute to external TestFlight testers
     needs: ios-build
     runs-on: ubuntu-latest
     # Fastlane's processing wait fails after 20m; this outer bound leaves setup
     # margin without allowing App Store Connect polling to hang for hours.
     timeout-minutes: 30
-
-    env:
-      # Same fastlane as ios-build, or fail before touching App Store Connect.
-      BUNDLE_FROZEN: 'true'
 
     defaults:
       run:
@@ -164,6 +208,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Setup Ruby and fastlane
         uses: ruby/setup-ruby@v1
@@ -177,7 +223,7 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
-          TESTFLIGHT_CHANGELOG: ${{ github.event.inputs.testflight_changelog }}
+          TESTFLIGHT_CHANGELOG: ${{ inputs.testflight_changelog }}
           MOBILE_IOS_RELEASE_VERSION: ${{ needs.ios-build.outputs.release_version }}
           MOBILE_IOS_BUILD_NUMBER: ${{ needs.ios-build.outputs.build_number }}
           FASTLANE_SKIP_UPDATE_CHECK: '1'
@@ -189,3 +235,34 @@ jobs:
             echo "::error::TestFlight $MOBILE_IOS_RELEASE_VERSION ($MOBILE_IOS_BUILD_NUMBER) was uploaded but not distributed to peeps. If App Store Connect is still processing it, rerun only this failed job after the build becomes Ready; otherwise inspect the Fastlane error above."
             exit 1
           fi
+
+  ios-verify-internal:
+    name: Verify Orca Internal distribution
+    if: ${{ github.repository == 'onegaop/orca' && !inputs.compile_only }}
+    needs: ios-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: orca-ios-testflight
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+          working-directory: mobile
+
+      - name: Wait for internal TestFlight availability
+        working-directory: mobile
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+          MOBILE_IOS_RELEASE_VERSION: ${{ needs.ios-build.outputs.release_version }}
+          MOBILE_IOS_BUILD_NUMBER: ${{ needs.ios-build.outputs.build_number }}
+          FASTLANE_SKIP_UPDATE_CHECK: '1'
+          FASTLANE_HIDE_CHANGELOG: '1'
+        run: bundle exec fastlane ios verify_internal_testflight version:"$MOBILE_IOS_RELEASE_VERSION" build_number:"$MOBILE_IOS_BUILD_NUMBER"

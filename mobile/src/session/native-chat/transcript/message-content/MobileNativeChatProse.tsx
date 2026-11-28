@@ -2,7 +2,8 @@ import { useNativeChatMarkdownImageSize } from '../../preferences/native-chat-ma
 import { useNativeChatProseText } from '../../preferences/native-chat-text-settings'
 import { mobileNativeChatMarkdownImageBlock } from './mobile-native-chat-markdown-image-block'
 import { useCallback, useContext, useEffect, useState } from 'react'
-import { Image, Pressable, Text, View } from 'react-native'
+import { Pressable, Text, View } from 'react-native'
+import { MobileNativeChatInlineImage } from './MobileNativeChatInlineImage'
 import { INLINE_TEXT_SELECTION } from '../../../../platform/text-selection/inline-text-selection'
 import { MobileNativeChatMarkdown } from './MobileNativeChatMarkdown'
 import {
@@ -196,16 +197,12 @@ function ImageAttachment({
       accessibilityLabel={label}
       accessibilityHint={t('chat.nativeChatProse.openImageHint', 'Opens the image full size')}
     >
-      <Image
-        source={{ uri }}
+      <MobileNativeChatInlineImage
+        uri={uri}
         style={[styles.imageChrome, frame]}
-        resizeMode="contain"
-        onLoad={({ nativeEvent }) => {
-          if (nativeEvent.source.width > 0 && nativeEvent.source.height > 0) {
-            setAspectState({
-              key: sourceKey,
-              aspect: nativeEvent.source.width / nativeEvent.source.height
-            })
+        onLoad={(width, height) => {
+          if (width > 0 && height > 0) {
+            setAspectState({ key: sourceKey, aspect: width / height })
           }
         }}
       />

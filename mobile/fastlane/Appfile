@@ -1,2 +1,2 @@
-app_identifier(ENV["IOS_BUNDLE_IDENTIFIER"] || "com.stably.orca.mobile")
+app_identifier(ENV["IOS_BUNDLE_IDENTIFIER"].to_s.empty? ? "com.stably.orca.mobile" : ENV.fetch("IOS_BUNDLE_IDENTIFIER"))
 team_id(ENV["APPLE_TEAM_ID"])

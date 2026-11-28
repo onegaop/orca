@@ -2,7 +2,8 @@ import * as z from 'zod'
 import type { AppUpdateCheckResult, AppUpdateSource } from './app-update-source'
 import { isNewerReleaseVersion } from './app-update-source'
 
-const LOOKUP_URL = 'https://itunes.apple.com/lookup?bundleId=com.stably.orca.mobile'
+export const APP_STORE_IOS_BUNDLE_ID = 'com.stably.orca.mobile'
+const LOOKUP_URL = `https://itunes.apple.com/lookup?bundleId=${APP_STORE_IOS_BUNDLE_ID}`
 
 type Fetch = typeof fetch
 

@@ -45,6 +45,8 @@ jobs:
   build-and-release:
     if: github.repository == 'onegaop/orca'
     runs-on: macos-26
+    outputs:
+      ios-version: ${{ steps.meta.outputs.ios_version }}
     timeout-minutes: 60
     env:
       ORCA_BACKGROUND_LAUNCH: '1'
@@ -103,6 +105,7 @@ jobs:
 
           echo "skip=false" >>"$GITHUB_OUTPUT"
           echo "version=$version" >>"$GITHUB_OUTPUT"
+          echo "ios_version=${version%%-*}" >>"$GITHUB_OUTPUT"
           echo "tag=$tag" >>"$GITHUB_OUTPUT"
           echo "prev_tag=$prev_tag" >>"$GITHUB_OUTPUT"
           echo "commit_short=$commit_short" >>"$GITHUB_OUTPUT"
@@ -262,6 +265,20 @@ jobs:
             --mac --arm64 --publish never
           ls -lh "$ORCA_PACKAGE_OUTPUT_DIR"
 
+      - name: Verify packaged mobile web update bundle
+        if: steps.meta.outputs.skip != 'true'
+        shell: bash
+        env:
+          OUT: ${{ runner.temp }}/orca-release-out
+        run: |
+          set -euo pipefail
+          packaged="$OUT/mac-arm64/Orca.app/Contents/Resources/app.asar.unpacked/out/mobile-web"
+          cmp out/mobile-web/manifest.json "$packaged/manifest.json"
+          node -e '
+            const { assertMobileWebBundleBuilt } = require("./config/scripts/desktop-distribution/runtime-verification/verify-packaged-mobile-web-bundle.cjs");
+            assertMobileWebBundleBuilt(process.argv[1]);
+          ' "$packaged"
+
       - name: Verify codesign, bundled CLI, update feed, and SHA-512
         if: steps.meta.outputs.skip != 'true'
         shell: bash
@@ -414,3 +431,20 @@ jobs:
         if: always() && steps.sign.outputs.keychain_path != ''
         shell: bash
         run: security delete-keychain "${{ steps.sign.outputs.keychain_path }}" || true
+
+  ios-testflight:
+    name: Upload iOS to TestFlight
+    needs: build-and-release
+    if: ${{ github.repository == 'onegaop/orca' && inputs.dry_run != true && needs.build-and-release.outputs.ios-version != '' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/mobile-ios-release.yml
+    with:
+      release_version: ${{ needs.build-and-release.outputs.ios-version }}
+    secrets:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      IOS_DIST_CERT_P12: ${{ secrets.DIST_CERT_P12 }}
+      IOS_DIST_CERT_PASSWORD: ${{ secrets.DIST_CERT_PASSWORD }}

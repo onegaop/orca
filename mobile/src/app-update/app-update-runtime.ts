@@ -8,7 +8,7 @@ import {
   saveAppUpdateCheck,
   saveDismissedAppUpdateVersion
 } from '../storage/app-update-preferences'
-import { appStoreUpdateSource } from './app-store-update-source'
+import { APP_STORE_IOS_BUNDLE_ID, appStoreUpdateSource } from './app-store-update-source'
 import { createAppUpdateChecker, type AppUpdateState } from './app-update-checker'
 import type { AppUpdateSource } from './app-update-source'
 import {
@@ -39,7 +39,10 @@ function resolveAppUpdateSource(): AppUpdateSource | null {
       isRetiredGithubAndroidApp ? RETIRED_ANDROID_RELEASE_TAG_PREFIX : ANDROID_RELEASE_TAG_PREFIX
     )
   }
-  if (Platform.OS === 'ios') {
+  if (
+    Platform.OS === 'ios' &&
+    Constants.expoConfig?.ios?.bundleIdentifier === APP_STORE_IOS_BUNDLE_ID
+  ) {
     return appStoreUpdateSource
   }
   return null

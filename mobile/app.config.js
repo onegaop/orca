@@ -10,6 +10,7 @@ module.exports = ({ config }) => ({
   buildCacheProvider: { plugin: './scripts/native-build-cache.cjs' },
   ios: {
     ...config.ios,
+    bundleIdentifier: process.env.IOS_BUNDLE_IDENTIFIER || config.ios?.bundleIdentifier,
     entitlements: { ...config.ios?.entitlements, 'aps-environment': APS_ENVIRONMENT }
   },
   plugins: (config.plugins ?? []).map((plugin) =>
