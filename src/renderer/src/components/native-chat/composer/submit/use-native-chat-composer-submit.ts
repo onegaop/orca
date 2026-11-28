@@ -283,7 +283,8 @@ export function useNativeChatComposerSubmit(args: {
         threadGoal !== undefined,
         args.agent,
         structuredTransport.optionSnapshot,
-        structuredTransport.mcpPanel !== undefined
+        structuredTransport.mcpPanel !== undefined,
+        structuredTransport.swarmBoard?.canOpen === true
       )
     )
   return { send, goalMode, messageDelivery }

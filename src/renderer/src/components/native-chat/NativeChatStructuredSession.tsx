@@ -3,7 +3,7 @@ import {
   NativeChatCrewContext,
   useNativeChatCrewSource
 } from '../orchestration-crew/use-native-chat-crew'
-import { NativeChatUsageLimitActionsProvider } from './usage/NativeChatUsageLimitActions'
+import { NativeChatSwarmBoardPanel } from '@/components/native-chat/swarm/NativeChatSwarmBoardPanel'
 import { useNativeChatHandOff } from './pane/actions/use-native-chat-hand-off'
 import { useNativeChatStructuredPaneNotices } from '@/components/native-chat/messages/notices/use-native-chat-structured-pane-notices'
 import { useRef, useState } from 'react'
@@ -51,7 +51,6 @@ import {
 import { useNativeChatComposerError } from './composer/controls/use-native-chat-composer-notice'
 import { useNativeChatProvisionalLaunch } from './host-access/use-native-chat-provisional-launch'
 import { useNativeChatRewindHost } from './messages/actions/use-native-chat-rewind-host'
-import { NativeChatRowActionsProvider } from './messages/actions/NativeChatRowActionsProvider'
 import { NativeChatQueuedMessageList } from './queue/NativeChatQueuedMessageList'
 import { cancelStructuredPrompt } from './session/structured/writes/native-chat-structured-stop-controls'
 import { useNativeChatBotHome } from './NativeChatBotHomeScope'
@@ -74,12 +73,12 @@ import { BotServerOutageCard } from '@/components/bots/BotServerOutageCard'
 import { useNativeChatHostSendGate } from '@/components/native-chat/host-access/use-native-chat-host-send-gate'
 import { useStructuredAgentSessionStartFailureFacts } from '@/components/native-chat/messages/notices/use-structured-agent-session-start-failure-facts'
 import { pendingPromptsAllUnanswerableHere } from '../../../../shared/agent-session/requests/prompts/agent-session-approval-subject'
-import { NativeChatHostSetupContext } from '@/components/native-chat/host-access/native-chat-host-setup'
 import type { NativeChatComposerHandle } from './composer/native-chat-composer-types'
-import {
-  NativeChatWorkerApprovalTimeline,
-  nativeChatWorkerApprovalParty
-} from './worker-approvals/NativeChatWorkerApprovals'
+import { NativeChatRowActionsProvider } from './messages/actions/NativeChatRowActionsProvider'
+import { NativeChatUsageLimitActionsProvider } from './usage/NativeChatUsageLimitActions'
+import { NativeChatHostSetupContext } from './host-access/native-chat-host-setup'
+import { NativeChatWorkerApprovalTimeline } from './worker-approvals/NativeChatWorkerApprovals'
+import { nativeChatWorkerApprovalParty } from './worker-approvals/NativeChatWorkerApprovals'
 
 export function NativeChatStructuredSession(props: Omit<NativeChatStructuredViewProps, 'mode'>) {
   const { ownerWorktreeId, turnBot, bot: chatBot } = useBotChatOwner(props)
@@ -267,6 +266,17 @@ export function NativeChatStructuredSession(props: Omit<NativeChatStructuredView
               {paneHeader}
               <NativeChatWorkerAutoCloseBanner pane={props} />
               <NativeChatDockTranscript>
+                {transport.swarmBoard ? (
+                  <NativeChatSwarmBoardPanel
+                    board={transport.swarmBoard}
+                    canMention={canMention}
+                    onMention={(name) => {
+                      composerRef.current?.insertTypedText(`@${name} `)
+                      focusComposer()
+                    }}
+                    onCloseFocus={focusComposer}
+                  />
+                ) : null}
                 <NativeChatContextClearFade
                   // A read failure stays in view: no divider may come to end the fade.
                   clearing={controller.contextClear.clearing && viewState.kind !== 'error'}

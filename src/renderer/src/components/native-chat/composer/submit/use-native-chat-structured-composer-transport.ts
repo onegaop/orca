@@ -1,5 +1,6 @@
 import { openNativeChatAccountUsageModal } from '@/components/native-chat/usage/native-chat-account-usage-modal'
 import { useNativeChatMcpTray } from '@/components/native-chat/mcp/use-native-chat-mcp-tray'
+import { useNativeChatSwarmBoard } from '@/components/native-chat/swarm/use-native-chat-swarm-board'
 import { useStructuredAgentSessionHostCapabilityState } from '@/runtime/native-chat/host-capabilities/structured-agent-session-host-capability'
 import { AGENT_SESSION_MCP_RUNTIME_CAPABILITY } from '../../../../../../shared/agent-session/capabilities/agent-session-runtime-capabilities'
 import { useMemo, type Dispatch, type SetStateAction } from 'react'
@@ -128,6 +129,14 @@ export function useNativeChatStructuredComposerTransport(args: {
     hostAgent?.capabilities.mcpServers === true &&
     (props.target.kind === 'local' || remoteManagesMcp)
   const mcpTray = useNativeChatMcpTray(props.sessionId, props.isVisible)
+  const swarmBoard = useNativeChatSwarmBoard({
+    agent: props.agent,
+    sessionId: props.sessionId,
+    target: props.target,
+    isVisible: props.isVisible,
+    isWorking: controller.isWorking,
+    sessionCommands: controller.sessionCommands
+  })
   const { fork, sideChat } = forks
   // Turned off while one shows: the read restarts without asking, and this hides what it held.
   const showsPromptSuggestions = useAppStore((state) =>
@@ -138,6 +147,8 @@ export function useNativeChatStructuredComposerTransport(args: {
     const mcpPanel = managesMcp
       ? { ...mcpTray, agentLabel: structuredAgentLabel(props.agent) }
       : undefined
+    const activeSwarmBoard =
+      swarmBoard.canOpen || swarmBoard.snapshot !== null ? swarmBoard : undefined
     // A held host takes no turn; pausing or clearing a goal starts none.
     const changeThreadGoal = threadGoal?.hostChanges
       ? (change: AgentSessionThreadGoalChange) =>
@@ -159,6 +170,7 @@ export function useNativeChatStructuredComposerTransport(args: {
             }
           : undefined,
       mcpPanel,
+      ...(activeSwarmBoard ? { swarmBoard: activeSwarmBoard } : {}),
       fork: nativeChatForkCommand({ fork, sideChat }, controller.isWorking, props.agent),
       capturePresentation: controller.capturePresentation,
       ...(sideChat ? { sideChat } : {}),
@@ -202,7 +214,8 @@ export function useNativeChatStructuredComposerTransport(args: {
             compactInstructions: controller.compactInstructions,
             runConversationCommand: controller.runConversationCommand,
             ...(changeThreadGoal ? { changeThreadGoal } : {}),
-            ...(mcpPanel ? { openMcpPanel: mcpPanel.open } : {})
+            ...(mcpPanel ? { openMcpPanel: mcpPanel.open } : {}),
+            ...(swarmBoard.canOpen ? { openSwarmBoard: swarmBoard.open } : {})
           },
           onSent
         ).then(localizeStructuredComposerOutcome),
@@ -248,6 +261,7 @@ export function useNativeChatStructuredComposerTransport(args: {
     controller,
     managesMcp,
     mcpTray,
+    swarmBoard,
     fork,
     sideChat,
     worktreeId,
