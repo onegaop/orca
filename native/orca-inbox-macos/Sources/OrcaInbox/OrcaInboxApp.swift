@@ -35,7 +35,6 @@ enum OrcaInboxApp {
 @Observable
 private final class InboxPresentationBridge {
     var filter: InboxFeedFilter = .inbox
-    var focusDispatchTrigger = 0
 }
 
 @MainActor
@@ -52,7 +51,6 @@ private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, N
     private let bridge = InboxPresentationBridge()
     private var statusItem: NSStatusItem?
     private var menuStatus: InboxMenuStatus?
-    private var hotkeyManager: GlobalHotkeyManager?
     private var notifications: InboxNotificationCenter?
     private var pollingTask: Task<Void, Never>?
     private var menuUpdates: Task<Void, Never>?
@@ -79,7 +77,7 @@ private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, N
         item.autosaveName = "Item-0"
         statusItem = item
         item.button?.target = self
-        item.button?.action = #selector(toggleFromMenuBar(_:))
+        item.button?.action = #selector(togglePopover(_:))
         updateMenuButton(InboxMenuStatus(state: store.panelState()))
 
         let notifier = InboxNotificationCenter { [weak self] url in
@@ -89,12 +87,6 @@ private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, N
         store.onAlertEvents = { [weak notifier] events in
             notifier?.post(events)
         }
-
-        let hotkey = GlobalHotkeyManager { [weak self] in
-            self?.triggerGlobalToggle()
-        }
-        _ = hotkey.registerOptionSpace()
-        hotkeyManager = hotkey
 
         menuUpdates = Task { [weak self, store] in
             for await status in Observations({ InboxMenuStatus(state: store.panelState()) }) {
@@ -115,17 +107,9 @@ private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, N
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        hotkeyManager?.unregister()
         pollingTask?.cancel()
         menuUpdates?.cancel()
         clockUpdates?.cancel()
-    }
-
-    private func triggerGlobalToggle() {
-        bridge.focusDispatchTrigger += 1
-        if let button = statusItem?.button {
-            togglePopover(button)
-        }
     }
 
     private func updateMenuButton(_ status: InboxMenuStatus) {
@@ -155,11 +139,7 @@ private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, N
         menuStatus = status
     }
 
-    @objc private func toggleFromMenuBar(_ button: NSStatusBarButton) {
-        togglePopover(button)
-    }
-
-    private func togglePopover(_ button: NSStatusBarButton) {
+    @objc private func togglePopover(_ button: NSStatusBarButton) {
         if popover.isShown {
             popover.performClose(button)
         } else {
@@ -236,7 +216,6 @@ private struct InboxHostContainer: View {
             InboxHubView(
                 state: state,
                 filter: filterBinding,
-                focusDispatchTrigger: bridge.focusDispatchTrigger,
                 onRefresh: { store.requestRefresh() },
                 onSelectHost: { store.selectHost($0) },
                 onArchiveAllDone: { store.archiveAllDone() },

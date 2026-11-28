@@ -8,7 +8,6 @@ public struct InboxQuickDispatchBar: View {
     @Binding public var selectedAgentId: String
     @Binding public var promptText: String
     public let isDispatching: Bool
-    public let focusTrigger: Int
     public let onDispatch: () -> Void
 
     @FocusState private var isPromptFocused: Bool
@@ -24,7 +23,6 @@ public struct InboxQuickDispatchBar: View {
         selectedAgentId: Binding<String>,
         promptText: Binding<String>,
         isDispatching: Bool,
-        focusTrigger: Int = 0,
         onDispatch: @escaping () -> Void
     ) {
         self.workspaces = workspaces
@@ -33,7 +31,6 @@ public struct InboxQuickDispatchBar: View {
         self._selectedAgentId = selectedAgentId
         self._promptText = promptText
         self.isDispatching = isDispatching
-        self.focusTrigger = focusTrigger
         self.onDispatch = onDispatch
     }
 
@@ -192,10 +189,6 @@ public struct InboxQuickDispatchBar: View {
                 .disabled(isDispatching)
 
                 Spacer(minLength: 4)
-
-                Text("⌥Space 随时呼出")
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(.tertiary)
             }
         }
         .padding(.horizontal, InboxMetrics.horizontalPadding)
@@ -205,8 +198,5 @@ public struct InboxQuickDispatchBar: View {
                 ? Color(nsColor: .controlBackgroundColor).opacity(0.5)
                 : Color.primary.opacity(colorScheme == .dark ? 0.035 : 0.025)
         )
-        .onChange(of: focusTrigger) { _, _ in
-            isPromptFocused = true
-        }
     }
 }

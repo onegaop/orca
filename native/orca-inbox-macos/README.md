@@ -1,6 +1,6 @@
 # Orca 任务收件箱（v0.5.1）
 
-macOS 26+ 原生菜单栏 Agent 指挥伴侣（AppKit + SwiftUI Liquid Glass），状态指示直接融合在菜单栏图标内，点击图标或按 **`⌥Space`** 即可展开完整指挥面板。
+macOS 26+ 原生菜单栏 Agent 指挥伴侣（AppKit + SwiftUI Liquid Glass），状态指示直接融合在菜单栏图标内，点击图标即可展开完整指挥面板。
 
 ## 核心能力
 

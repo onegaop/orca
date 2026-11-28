@@ -5,7 +5,6 @@ import InboxCore
 public struct InboxHubView: View {
     public let state: InboxPanelState
     @Binding public var filter: InboxFeedFilter
-    public let focusDispatchTrigger: Int
     public let onRefresh: () -> Void
     public let onSelectHost: (HostTarget) -> Void
     public let onArchiveAllDone: () -> Void
@@ -31,7 +30,6 @@ public struct InboxHubView: View {
     public init(
         state: InboxPanelState,
         filter: Binding<InboxFeedFilter>,
-        focusDispatchTrigger: Int = 0,
         onRefresh: @escaping () -> Void,
         onSelectHost: @escaping (HostTarget) -> Void = { _ in },
         onArchiveAllDone: @escaping () -> Void = {},
@@ -42,7 +40,6 @@ public struct InboxHubView: View {
     ) {
         self.state = state
         self._filter = filter
-        self.focusDispatchTrigger = focusDispatchTrigger
         self.onRefresh = onRefresh
         self.onSelectHost = onSelectHost
         self.onArchiveAllDone = onArchiveAllDone
@@ -81,7 +78,6 @@ public struct InboxHubView: View {
                 selectedAgentId: $selectedAgentId,
                 promptText: $dispatchPrompt,
                 isDispatching: isDispatching,
-                focusTrigger: focusDispatchTrigger,
                 onDispatch: performDispatch
             )
 
