@@ -12,9 +12,14 @@ import {
 import { chatImageAccess } from '@/lib/files/access/local-file-access'
 import { basename } from '@/lib/path'
 import { useTranslate } from '@/i18n/use-translate'
+import { useAppStore } from '@/store'
 import type { LinkAction } from '@/components/link-actions/link-action-request'
 import { jiraImageReference } from '../../../../../../shared/jira/jira-attachment-image'
 import { isBotStickerPath } from '../../../../../../shared/bots/bot-stickers'
+import {
+  nativeChatMarkdownImageClassName,
+  normalizeNativeChatMarkdownImageSize
+} from '../../../../../../shared/native-chat/settings/native-chat-markdown-image-size'
 import { filesystemPathToFileUri } from '../../../../../../shared/file-links/file-uri-path'
 import {
   createNativeChatFileHref,
@@ -80,6 +85,7 @@ export function NativeChatMarkdownImage(props: MarkdownImageProps): React.JSX.El
 
 function NativeChatMarkdownImagePreview({ src, alt }: MarkdownImageProps): React.JSX.Element {
   const t = useTranslate()
+  const imageSize = useAppStore((state) => state.settings?.nativeChatMarkdownImageSize)
   const onLinkClick = useNativeChatLinkClick()
   const owner = useContext(NativeChatMarkdownImageOwnerContext)
   const bot = useContext(NativeChatBotKickoffContext)?.bot
@@ -100,6 +106,7 @@ function NativeChatMarkdownImagePreview({ src, alt }: MarkdownImageProps): React
     route.kind === 'file' ? createNativeChatFileHref(route.pathText, 'literal') : src
   const external = Boolean(src && /^(?:https?|data|blob):/i.test(src))
   const attachment = src ? jiraImageReference(src) !== null : false
+  const columnWidth = !attachment && normalizeNativeChatMarkdownImageSize(imageSize) === 'column'
   const visible = owner?.isVisible ?? true
   const leaseActive = visible && (near || open)
   const media = useNativeChatMediaHref({
@@ -227,8 +234,9 @@ function NativeChatMarkdownImagePreview({ src, alt }: MarkdownImageProps): React
       className={
         isBotSticker
           ? 'max-h-28 max-w-[min(100%,calc(var(--spacing)*28))] rounded-md object-contain'
-          : 'max-h-96 max-w-full rounded-md object-contain outline outline-1 outline-border/70'
+          : nativeChatMarkdownImageClassName(imageSize)
       }
+      triggerClassName={!isBotSticker && columnWidth ? 'native-chat-column-image w-full' : undefined}
       onError={() => setFailedSrc(imageSrc)}
       onLoad={() => {
         const bounds = triggerRef.current?.getBoundingClientRect()
@@ -242,7 +250,13 @@ function NativeChatMarkdownImagePreview({ src, alt }: MarkdownImageProps): React
         'data-native-chat-gallery-item': gallery ? '' : undefined
       }}
       triggerRef={triggerRef}
-      triggerStyle={displaySrc && displaySrc === loadedImageSrc ? undefined : footprint}
+      triggerStyle={
+        displaySrc && displaySrc === loadedImageSrc
+          ? undefined
+          : columnWidth && footprint
+            ? { aspectRatio: footprint.aspectRatio }
+            : footprint
+      }
       onClick={(event) => {
         const modified = event.metaKey || event.ctrlKey || event.shiftKey || event.altKey
         if (!modified && gallery?.tryOpen(event.currentTarget)) {

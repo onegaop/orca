@@ -10,6 +10,7 @@ export function scaledType(size: number, fontScale: number, leading = 6) {
   return { fontSize: size * fontScale, lineHeight: (size + leading) * fontScale }
 }
 export const MONO_SIZE = 12
+const USER_BUBBLE_MAX_WIDTH = '88%'
 
 export const stylesSheet = themedStyleSheet((colors) => ({
   row: {
@@ -24,13 +25,16 @@ export const stylesSheet = themedStyleSheet((colors) => ({
     gap: spacing.sm
   },
   userBubble: {
-    maxWidth: '88%',
+    maxWidth: USER_BUBBLE_MAX_WIDTH,
     backgroundColor: colors.chatUserSurface,
     borderWidth: 1,
     borderColor: colors.chatUserBorder,
     borderRadius: radii.surface,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm
+  },
+  userBubbleColumnWidth: {
+    width: USER_BUBBLE_MAX_WIDTH
   },
   hostNotice: {
     color: colors.textMuted
@@ -111,12 +115,11 @@ export const stylesSheet = themedStyleSheet((colors) => ({
     color: colors.textSecondary,
     fontSize: TEXT_SIZE
   },
-  imageThumb: {
-    width: 200,
-    height: 150,
+  imageChrome: {
     borderRadius: radii.surface,
     backgroundColor: colors.bgRaised,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.borderSubtle
+    borderColor: colors.borderSubtle,
+    overflow: 'hidden'
   }
 }))
