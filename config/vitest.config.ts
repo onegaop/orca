@@ -83,7 +83,11 @@ const transforms = {
         for (const warning of result.warnings) {
           this.warn(warning)
         }
-        return { code: result.code, map: result.map }
+        const map = result.map && {
+          ...result.map,
+          sources: result.map.sources.map((source) => source ?? null)
+        }
+        return { code: result.code, map }
       }
     } satisfies Plugin,
     ...(moduleCachePath ? [moduleCacheResolutionKey()] : []),
