@@ -32,12 +32,15 @@ function startSession() {
     modifiedContent: modified.join(''),
     parseDiffOptions: {}
   })
-  const session: FileDiffMetadata = { ...diff, additionLines: [...diff.additionLines] }
-  delete session.cacheKey
   const renderer = new DiffHunksRenderer({})
-  renderer.beginEditSession(session)
-  const edit = (lines: string[]) =>
-    renderer.applyDocumentChange(new TextDocument('file.ts', lines.join(''), 'typescript'))
+  const session = renderer.startEditSession(diff)
+  const document = new TextDocument('file.ts', modified.join(''), 'typescript')
+  const edit = (...edits: Parameters<typeof document.applyEdits>) => {
+    const change = document.applyEdits(...edits)
+    if (change) {
+      renderer.applyChange(change, document)
+    }
+  }
   return { session, renderer, edit }
 }
 
@@ -47,9 +50,8 @@ const changeBlocks = (diff: FileDiffMetadata) =>
 it('keeps every separated hunk exact after typing on a context line of a large diff', () => {
   const { session, edit } = startSession()
   expect(changeBlocks(session)).toHaveLength(1_100)
-  const lines = [...modified]
-  lines.splice(6_006, 0, 'typed\n')
-  edit(lines)
+  const position = { line: 6_006, character: 0 }
+  edit([{ range: { start: position, end: position }, newText: 'typed\n' }])
   const blocks = changeBlocks(session)
   expect(blocks).toHaveLength(1_101)
   expect(blocks[501]).toMatchObject({ additions: 1, deletions: 0, additionLineIndex: 6_006 })
@@ -63,9 +65,16 @@ it('defers a large edited region to the async diff, then installs its exact hunk
     renderer.onLineDiffResolved = resolve
   })
   edit(
-    modified.map((line, index) =>
-      index >= 100 && index < 700 && index % 50 === 7 ? 'pasted\n' : line
-    )
+    Array.from({ length: 12 }, (_, index) => {
+      const line = 107 + index * 50
+      return {
+        range: {
+          start: { line, character: 0 },
+          end: { line, character: modified[line].length - 1 }
+        },
+        newText: 'pasted'
+      }
+    })
   )
   const pending = changeBlocks(session)
   expect(pending).toHaveLength(1_055)

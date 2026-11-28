@@ -1,4 +1,4 @@
-import { iterateOverDiff, type FileDiffMetadata } from '@pierre/diffs'
+import { DiffRowCursor, type FileDiffMetadata } from '@pierre/diffs'
 import type { DiffSearchMatch } from './pierre-diff-search'
 import type { DiffSearchSide } from './PierreDiffSearchBar'
 
@@ -112,19 +112,22 @@ export function getPierreSearchRanges(
     .filter(Number.isFinite)
   const lineByIndex = new Map<number, number>()
   if (indexes.length) {
-    iterateOverDiff({
+    const first = Math.min(...indexes)
+    const cursor = new DiffRowCursor({
       diff,
       diffStyle: split ? 'split' : 'unified',
       expandedHunks: true,
-      startingLine: Math.min(...indexes),
-      totalLines: Math.max(...indexes) - Math.min(...indexes) + 1,
-      callback: ({ additionLine, deletionLine }) => {
-        const line = side === 'additions' ? additionLine : deletionLine
-        if (line) {
-          lineByIndex.set(split ? line.splitLineIndex : line.unifiedLineIndex, line.lineNumber)
-        }
-      }
+      startingLine: first,
+      totalLines: Math.max(...indexes) - first + 1
     })
+    while (cursor.next()) {
+      const lineIndex = split ? cursor.splitLineIndex : cursor.unifiedLineIndex
+      if (side === 'additions' && cursor.hasAddition) {
+        lineByIndex.set(lineIndex, cursor.additionLineNumber)
+      } else if (side === 'deletions' && cursor.hasDeletion) {
+        lineByIndex.set(lineIndex, cursor.deletionLineNumber)
+      }
+    }
   }
   const result: { matches: Range[]; active: Range[]; activeStart?: Range; activeEnd?: Range } = {
     matches: [],
@@ -185,19 +188,17 @@ export function pierreSearchRevealLine(
   // revealLine is new-file only; +0,0 (fully deleted) is range [1, 1), not 0.
   let modifiedLine = 1
   let found = false
-  iterateOverDiff({
-    diff,
-    diffStyle: 'unified',
-    expandedHunks: true,
-    callback: ({ deletionLine, additionLine }): boolean => {
-      if (additionLine) {
-        modifiedLine = additionLine.lineNumber
-      }
-      if (deletionLine?.lineNumber === lineNumber) {
-        found = true
-      }
-      return found && additionLine != null
+  const cursor = new DiffRowCursor({ diff, diffStyle: 'unified', expandedHunks: true })
+  while (cursor.next()) {
+    if (cursor.hasDeletion && cursor.deletionLineNumber === lineNumber) {
+      found = true
     }
-  })
+    if (cursor.hasAddition) {
+      modifiedLine = cursor.additionLineNumber
+      if (found) {
+        break
+      }
+    }
+  }
   return modifiedLine
 }

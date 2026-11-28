@@ -1,45 +1,61 @@
 import { DiffHunksRenderer, parseDiffFromFile, type ThemedDiffResult } from '@pierre/diffs'
+import { TextDocument } from '@pierre/diffs/edit'
 import type { WorkerPoolManager } from '@pierre/diffs/worker'
 import { expect, it, vi } from 'vitest'
 
-it('starts editing from a worker result and gives the editor its own mutable line array', () => {
+it('starts editing from a worker result without mutating its source rows', () => {
   const options = { theme: 'dark-plus', useTokenTransformer: true }
   const external = {
     ...parseDiffFromFile(null, { name: 'file.ts', contents: 'new\n' }),
     cacheKey: 'external'
   }
-  const session = { ...external, cacheKey: 'session' }
-  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: The cache-adoption seam uses only these worker/result fields; no highlighting or DOM render runs.
-  const result = {
-    code: { additionLines: [{ type: 'element' }], deletionLines: [] }
-  } as unknown as ThemedDiffResult
-  const decode = vi.fn(() => ({ type: 'element' }))
-  Object.defineProperty(result.code.additionLines, 0, {
-    get: decode,
-    configurable: true,
-    enumerable: true
-  })
-  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: The cache-adoption seam uses only these worker/result fields; no highlighting or DOM render runs.
+  const highlighted = {
+    type: 'element' as const,
+    tagName: 'div',
+    properties: {},
+    children: [
+      {
+        type: 'element' as const,
+        tagName: 'span',
+        properties: { 'data-char': 0 },
+        children: [{ type: 'text' as const, value: 'new' }]
+      }
+    ]
+  }
+  const result: ThemedDiffResult = {
+    code: { additionLines: [highlighted], deletionLines: [] },
+    themeStyles: '',
+    baseThemeType: undefined
+  }
+  const decode = vi.fn(() => highlighted)
+  Object.defineProperty(result.code.additionLines, 0, { get: decode })
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: The renderer uses only these worker fields to read the primed cache.
   const worker = {
     isWorkingPool: () => true,
+    shouldHighlightOnMainThread: () => false,
+    cancelLocalThemeRender: () => {},
     getDiffRenderOptions: () => options,
-    getDiffResultCache: vi.fn(() => ({ options, result }))
+    getDiffResultCache: () => ({ options, result })
   } as unknown as WorkerPoolManager
-  const renderer = new DiffHunksRenderer({}, undefined, undefined, worker)
-  renderer.beginEditSession(session, external)
+  const renderer = new DiffHunksRenderer({ disableFileHeader: true }, undefined, undefined, worker)
+  renderer.renderDiff(external)
+  decode.mockClear()
+  const session = renderer.startEditSession(external)
   expect(renderer.editorRenderReady()).toBe(true)
   expect(decode).not.toHaveBeenCalled()
   expect(renderer.diffCache).toBe(session)
-  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: The cache-adoption seam uses only these worker/result fields; no highlighting or DOM render runs.
-  const cache = (renderer as unknown as { renderCache: { result: ThemedDiffResult } }).renderCache
-  expect(cache.result.code.additionLines === result.code.additionLines).toBe(false)
-  cache.result.code.additionLines[0] = { type: 'text', value: 'edited' }
+  const document = new TextDocument('file.ts', 'new\n', 'typescript')
+  const change = document.applyEdits([
+    {
+      range: { start: { line: 0, character: 0 }, end: { line: 0, character: 3 } },
+      newText: 'edited'
+    }
+  ])!
+  renderer.applyChange(change, document, new Map([[0, [[0, '#ffffff', 'edited']]]]))
   expect(decode).not.toHaveBeenCalled()
-  expect(result.code.additionLines[0]).toEqual({ type: 'element' })
-  cache.result.code.additionLines.length = 0
-  renderer.beginEditSession(session, external)
-  expect(cache.result.code.additionLines).toHaveLength(0)
-  expect(result.code.additionLines).toHaveLength(1)
+  expect(session.additionLines).toEqual(['edited\n'])
+  expect(external.additionLines).toEqual(['new\n'])
+  expect(result.code.additionLines[0]).toBe(highlighted)
 })
 
 it('does not adopt a worker result without the editor token transformer', () => {
@@ -57,7 +73,7 @@ it('does not adopt a worker result without the editor token transformer', () => 
     })
   } as unknown as WorkerPoolManager
   const renderer = new DiffHunksRenderer({}, undefined, undefined, worker)
-  renderer.beginEditSession({ ...external, cacheKey: 'session' }, external)
+  renderer.startEditSession(external)
   expect(renderer.editorRenderReady()).toBe(false)
 })
 
@@ -73,7 +89,6 @@ it('updates whitespace-ignoring replacement hunks incrementally until an edit ma
     ),
     cacheKey: 'external'
   }
-  const session = { ...external, additionLines: [...external.additionLines], cacheKey: 'session' }
   const result: ThemedDiffResult = {
     code: { additionLines: [], deletionLines: [] },
     themeStyles: '',
@@ -91,12 +106,25 @@ it('updates whitespace-ignoring replacement hunks incrementally until an edit ma
     undefined,
     worker
   )
-  renderer.beginEditSession(session, external)
+  const session = renderer.startEditSession(external)
   const hunks = session.hunks
-  renderer.updateRenderCache(new Map(), 'dark', false, new Map([[1, 'const current = 45\n']]), 3)
+  const document = new TextDocument('file.ts', modified, 'typescript')
+  const edit = (newText: string) => {
+    const change = document.applyEdits([
+      {
+        range: {
+          start: { line: 1, character: 0 },
+          end: { line: 1, character: document.getLineLength(1) }
+        },
+        newText
+      }
+    ])!
+    renderer.applyChange(change, document)
+  }
+  edit('const current = 45')
   expect(session.hunks).toBe(hunks)
   expect(session.additionLines[1]).toBe('const current = 45\n')
-  renderer.updateRenderCache(new Map(), 'dark', false, new Map([[1, '  const second = 2  \n']]), 3)
+  edit('  const second = 2  ')
   expect(session.hunks).not.toBe(hunks)
   expect(session.hunks.flatMap((hunk) => hunk.hunkContent)).toContainEqual(
     expect.objectContaining({ type: 'context', lines: 1 })

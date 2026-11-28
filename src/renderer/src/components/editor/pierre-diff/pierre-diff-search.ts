@@ -68,6 +68,16 @@ export function searchPierreDiff({
     return { matches: [], truncated: false, errorCode: 'invalid-regex' }
   }
   const document = new TextDocument('diff-search', text)
+  // Pierre stores LF internally; the regex still runs on the original text.
+  let nextCrlf = text.indexOf('\r\n')
+  let removed = 0
+  const positionAt = (offset: number) => {
+    while (nextCrlf !== -1 && nextCrlf < offset) {
+      removed++
+      nextCrlf = text.indexOf('\r\n', nextCrlf + 2)
+    }
+    return document.positionAt(offset - removed)
+  }
   const matches: DiffSearchMatch[] = []
   let replacementCharacters = 0
   let match: RegExpExecArray | null
@@ -86,7 +96,7 @@ export function searchPierreDiff({
       matches.push({
         start,
         end,
-        range: { start: document.positionAt(start), end: document.positionAt(end) },
+        range: { start: positionAt(start), end: positionAt(end) },
         replacement: nextReplacement
       })
     }

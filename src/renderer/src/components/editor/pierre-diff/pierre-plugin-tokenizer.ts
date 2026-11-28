@@ -16,7 +16,7 @@ import {
   type PluginGrammarTokens
 } from '@/lib/monaco-languages/plugin-grammar-protocol'
 
-export class PierrePluginTokenizer implements DiffsEditorTokenizer {
+export class PierrePluginTokenizer implements Omit<DiffsEditorTokenizer, 'flush'> {
   private client: Promise<PluginGrammarWorkerClient | null>
   private controller: AbortController | undefined
   private disposed = false

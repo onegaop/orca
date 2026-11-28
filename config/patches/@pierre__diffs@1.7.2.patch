@@ -1,0 +1,1977 @@
+diff --git a/dist/components/FileDiff.d.ts b/dist/components/FileDiff.d.ts
+index ba1d53d..8709b43 100644
+--- a/dist/components/FileDiff.d.ts
++++ b/dist/components/FileDiff.d.ts
+@@ -42,6 +42,8 @@ interface FileDiffOptions<LAnnotation, Caret> extends Omit<BaseDiffOptions, 'hun
+    * @deprecated Custom hunk separator functions are deprecated and will be
+    * removed in a future version.
+    */ ((hunk: HunkData, instance: FileDiff<LAnnotation, Caret>) => HTMLElement | DocumentFragment | null | undefined);
++  /** Skip canonical recomputation when discarding an instance whose draft is host-owned. */
++  recomputeDiffOnCleanup?: boolean;
+   disableFileHeader?: boolean;
+   renderHeaderPrefix?: RenderHeaderPrefixCallback;
+   renderHeaderFilenameSuffix?: RenderHeaderFilenameSuffixCallback;
+diff --git a/dist/components/FileDiff.js b/dist/components/FileDiff.js
+index 7091e8a..97fcf8f 100644
+--- a/dist/components/FileDiff.js
++++ b/dist/components/FileDiff.js
+@@ -55,6 +55,7 @@ import { getDiffHunksRendererOptions } from "../utils/getDiffHunksRendererOption
+ function canHydrateDiff(fileDiff) {
+ 	return fileDiff.isPartial && (fileDiff.type === "change" || fileDiff.type === "rename-changed" || fileDiff.type === "rename-pure");
+ }
++const comparedOldLines = new WeakMap();
+ function shouldResetUndoState(prevDiff, nextDiff) {
+ 	if (prevDiff.isPartial || nextDiff.isPartial) throw new Error("FileDiff.shouldResetEditorForExternalDiff: diffs must be fully hydrated");
+ 	const prevLanguage = prevDiff.lang ?? getFiletypeFromFileName(prevDiff.name);
+@@ -62,7 +63,12 @@ function shouldResetUndoState(prevDiff, nextDiff) {
+ 	const prevHasOldFile = prevDiff.type !== "new";
+ 	const nextHasOldFile = nextDiff.type !== "new";
+ 	if (prevDiff.name !== nextDiff.name || prevLanguage !== nextLanguage || prevHasOldFile !== nextHasOldFile || prevDiff.deletionLines.length !== nextDiff.deletionLines.length) return true;
+-	return prevDiff.deletionLines.some((line, index) => line !== nextDiff.deletionLines[index]);
++	if (prevDiff.deletionLines === nextDiff.deletionLines) return false;
++    let compared = comparedOldLines.get(prevDiff.deletionLines);
++    if (compared?.lines === nextDiff.deletionLines) return compared.changed;
++    const changed = prevDiff.deletionLines.some((line, index) => line !== nextDiff.deletionLines[index]);
++    comparedOldLines.set(prevDiff.deletionLines, { lines: nextDiff.deletionLines, changed });
++    return changed;
+ }
+ let instanceId = -1;
+ var FileDiff = class {
+@@ -130,6 +136,7 @@ var FileDiff = class {
+ 		this.workerManager = workerManager;
+ 		this.requestOwnerRender = requestOwnerRender;
+ 		this.hunksRenderer = this.createHunksRenderer(options);
++		this.hunksRenderer.onLineDiffResolved = this.handleLineDiffResolved;
+ 		this.resizeManager = new ResizeManager();
+ 		this.scrollSyncManager = new ScrollSyncManager();
+ 		this.interactionManager = new InteractionManager("diff", pluckInteractionOptions(options, this.expandLine, typeof options.hunkSeparators === "function" || (options.hunkSeparators ?? "line-info") === "line-info" || options.hunkSeparators === "line-info-basic" ? this.handleExpandHunk : void 0, this.getLineIndex));
+@@ -142,6 +149,10 @@ var FileDiff = class {
+ 	handleHighlightRender = () => {
+ 		this.rerender();
+ 	};
++	handleLineDiffResolved = () => {
++		if (this.editSession == null) this.hunksRenderer.refreshHighlightedResult();
++		this.escalateEditSessionRender("change");
++	};
+ 	getTheme() {
+ 		return this.workerManager?.getDiffRenderOptions().theme ?? this.options.theme ?? DEFAULT_THEMES;
+ 	}
+@@ -306,7 +317,12 @@ var FileDiff = class {
+ 		editor?.__assertOutsideChangeCallback("FileDiff.cleanUp");
+ 		dequeueRender(this.handleEditSessionRender);
+ 		this.emitPostRender(true);
+-		editor?.cleanUp(recycle ? "recycle" : "discard");
++		this.skipCleanupRecompute = !recycle && this.options.recomputeDiffOnCleanup === false;
++		try {
++			editor?.cleanUp(recycle ? "recycle" : "discard");
++		} finally {
++			this.skipCleanupRecompute = false;
++		}
+ 		if (!recycle) this.editor = void 0;
+ 		this.resizeManager.cleanUp();
+ 		this.interactionManager.cleanUp();
+@@ -354,7 +370,7 @@ var FileDiff = class {
+ 		this.appliedUnsafeCSS = void 0;
+ 		if (recycle) this.hunksRenderer.recycle();
+ 		else {
+-			this.hunksRenderer.cleanUp();
++			this.hunksRenderer.cleanUp(this.options.recomputeDiffOnCleanup === false);
+ 			this.workerManager = void 0;
+ 			this.fileDiff = void 0;
+ 			this.editSession = void 0;
+@@ -685,6 +701,7 @@ var FileDiff = class {
+ 		if (workingDiff.editSessionDirty === true && this.shouldSelfHealEditSession()) {
+ 			finishEditSessionForDiff(workingDiff, this.options.parseDiffOptions);
+ 			this.hunksRenderer.refreshHighlightedResult();
++			this.hunksRenderer.scheduleDeferredLineDiffs(workingDiff);
+ 		}
+ 		if (expandUnchanged) this.loadFilesIfNecessary();
+ 		this.hunksRenderer.setOptions(this.getHunksRendererOptions(this.options));
+@@ -984,7 +1001,7 @@ var FileDiff = class {
+ 	}
+ 	endEditSession() {
+ 		if (this.editSession == null) return;
+-		if (this.hunksRenderer.endEditSession()) this.hunksRenderer.refreshHighlightedResult();
++		if (this.hunksRenderer.endEditSession(this.skipCleanupRecompute)) this.hunksRenderer.refreshHighlightedResult();
+ 		this.escalateEditSessionRender("exit");
+ 	}
+ 	/**
+diff --git a/dist/components/VirtualizedFileDiff.d.ts b/dist/components/VirtualizedFileDiff.d.ts
+index a82fc43..aa2e92b 100644
+--- a/dist/components/VirtualizedFileDiff.d.ts
++++ b/dist/components/VirtualizedFileDiff.d.ts
+@@ -15,6 +15,7 @@ declare class VirtualizedFileDiff<LAnnotation = undefined, Caret = undefined> ex
+   readonly renderType = "virtualized";
+   top: number | undefined;
+   height: number;
++  readonly layoutVersion: number;
+   private metrics;
+   private cache;
+   private highestMeasuredRow;
+@@ -50,6 +51,7 @@ declare class VirtualizedFileDiff<LAnnotation = undefined, Caret = undefined> ex
+   protected renderChange(structural: boolean): void;
+   applyChange(document: TextDocument<'file-diff', LAnnotation>, change: TextDocumentChange, options?: ApplyChangeOptions<'file-diff', LAnnotation>): ApplyChangeResult;
+   updateCodeViewLayout(fileDiff: FileDiffMetadata, top: number, reset?: PendingCodeViewLayoutReset, lineAnnotations?: DiffLineAnnotation<LAnnotation>[]): number;
++  getRenderedLinePositions(targets: { lineNumber: number; side: SelectionSide }[]): Map<string, { top: number; height: number }>;
+   getLinePosition(lineNumber: number, side?: SelectionSide): {
+     top: number;
+     height: number;
+diff --git a/dist/components/VirtualizedFileDiff.js b/dist/components/VirtualizedFileDiff.js
+index 39081f2..075fbdf 100644
+--- a/dist/components/VirtualizedFileDiff.js
++++ b/dist/components/VirtualizedFileDiff.js
+@@ -13,12 +13,66 @@ import { awaitWithTimeout } from "../utils/awaitWithTimeout.js";
+ import { computeEstimatedDiffHeights } from "../utils/computeEstimatedDiffHeights.js";
+ import { getDiffFileInput } from "../utils/getDiffFileInput.js";
+ import { hydratePartialDiff } from "../utils/hydratePartialDiff.js";
++
++import { getHunkSideStartBoundary } from "../utils/getHunkSideBoundaries.js";
+ import { parseDiffFromFile } from "../utils/parseDiffFromFile.js";
+ import { FileDiff } from "./FileDiff.js";
+ //#region src/components/VirtualizedFileDiff.ts
+ const VIRTUALIZED_FILE_DIFF_LAYOUT_CHECKPOINT_INTERVAL = 3e3;
+ const NO_GHOST_TEXT_ROWS = /* @__PURE__ */ new Map();
+ let instanceId = -1;
++/** FileDiff.getLineIndexForDiff for many targets in one sweep over the hunks. */
++function getLineIndexesForTargets(fileDiff, targets) {
++	const indexes = new Map();
++	const lastHunk = fileDiff.hunks.at(-1);
++	for (const side of ["additions", "deletions"]) {
++		const lines = [...new Set(targets.filter((target) => target.side === side).map((target) => target.lineNumber))].sort((a, b) => a - b);
++		let next = 0;
++		const set = (unified, split) => indexes.set(`${side}:${lines[next++]}`, [unified, split]);
++		for (const hunk of fileDiff.hunks) {
++			if (next >= lines.length) break;
++			const hunkStart = side === "deletions" ? hunk.deletionStart : hunk.additionStart;
++			const hunkCount = side === "deletions" ? hunk.deletionCount : hunk.additionCount;
++			const first = getHunkSideStartBoundary(hunkStart, hunkCount) + 1;
++			while (next < lines.length && lines[next] < first) {
++				const difference = first - lines[next];
++				set(Math.max(hunk.unifiedLineStart - difference, 0), Math.max(hunk.splitLineStart - difference, 0));
++			}
++			let current = first;
++			let split = hunk.splitLineStart;
++			let unified = hunk.unifiedLineStart;
++			for (const content of hunk.hunkContent) {
++				if (content.type === "context") {
++					while (next < lines.length && lines[next] < current + content.lines) {
++						const difference = lines[next] - current;
++						set(unified + difference, split + difference);
++					}
++					current += content.lines;
++					split += content.lines;
++					unified += content.lines;
++					continue;
++				}
++				const sideCount = side === "deletions" ? content.deletions : content.additions;
++				while (next < lines.length && lines[next] < current + sideCount) {
++					const difference = lines[next] - current;
++					set(unified + (side === "additions" ? content.deletions : 0) + difference, split + difference);
++				}
++				current += sideCount;
++				split += Math.max(content.deletions, content.additions);
++				unified += content.deletions + content.additions;
++			}
++			if (hunk === lastHunk) while (next < lines.length) {
++				const difference = lines[next] - (first + hunkCount);
++				if (difference < 0) {
++					next++;
++					continue;
++				}
++				set(hunk.unifiedLineStart + hunk.unifiedLineCount + difference, hunk.splitLineStart + hunk.splitLineCount + difference);
++			}
++		}
++	}
++	return indexes;
++}
+ var VirtualizedFileDiff = class extends FileDiff {
+ 	__id = `little-virtualized-file-diff:${++instanceId}`;
+ 	renderType = "virtualized";
+@@ -40,6 +94,7 @@ var VirtualizedFileDiff = class extends FileDiff {
+ 	isVisible = false;
+ 	isSetup = false;
+ 	virtualizer;
++	layoutVersion = 0;
+ 	layoutDirty = true;
+ 	currentCollapsed;
+ 	pendingHydratedDiff;
+@@ -161,6 +216,7 @@ var VirtualizedFileDiff = class extends FileDiff {
+ 		this.highestMeasuredRow = Math.min(this.highestMeasuredRow, rowCount - 1);
+ 	}
+ 	invalidateLayout({ forceSimpleRecompute = false, includeEstimatedHeights = false, resetRenderRange = true } = {}) {
++		this.layoutVersion++;
+ 		this.layoutDirty = true;
+ 		if (this.cache.checkpoints.length > 0) this.cache.checkpoints.length = 0;
+ 		if (this.cache.totalLines !== 0) this.cache.totalLines = 0;
+@@ -301,6 +357,53 @@ var VirtualizedFileDiff = class extends FileDiff {
+ 		this.computeApproximateSize(false, pendingRenderDiff);
+ 		return this.height;
+ 	}
++	/** Resolve overview markers by walking each occupied layout checkpoint once. */
++	getRenderedLinePositions(targets) {
++		const diff = this.getLayoutDiff();
++		const positions = new Map();
++		if (diff == null || this.options.collapsed) return positions;
++		const { disableFileHeader = false, expandUnchanged = false, collapsedContextThreshold = 1 } = this.options;
++		const diffStyle = this.getDiffStyle();
++		const hunkSeparators = this.getHunkSeparatorType();
++		const wanted = [];
++		for (const [key, indexes] of getLineIndexesForTargets(diff, targets)) wanted.push({ key, lineIndex: diffStyle === "split" ? indexes[1] : indexes[0] });
++		wanted.sort((a, b) => a.lineIndex - b.lineIndex);
++		this.approximateLayoutCheckpoints(diff);
++		const headerRegion = getVirtualFileHeaderRegion(this.metrics, disableFileHeader);
++		let next = 0;
++		while (next < wanted.length) {
++			const checkpoint = this.getLayoutCheckpointBeforeLineIndex(wanted[next].lineIndex);
++			let groupEnd = next;
++			while (groupEnd < wanted.length && this.getLayoutCheckpointBeforeLineIndex(wanted[groupEnd].lineIndex) === checkpoint) groupEnd++;
++			let top = checkpoint?.top ?? headerRegion + this.cache.fileAnnotationHeight;
++			const rows = new DiffRowCursor({
++				diff, diffStyle,
++				startingLine: checkpoint?.renderedLineIndex ?? 0,
++				expandedHunks: expandUnchanged ? true : this.pendingExpandedHunks ?? this.hunksRenderer.getExpandedHunksMap(),
++				collapsedContextThreshold,
++				includeTrailingNewline: this.hunksRenderer.includesTrailingNewline()
++			});
++			while (next < groupEnd && rows.next()) {
++				const { hunkIndex, hunk, collapsedBefore, collapsedAfter } = rows;
++				const lineIndex = diffStyle === "split" ? rows.splitLineIndex : rows.unifiedLineIndex;
++				if (collapsedBefore > 0) {
++					const separator = getLeadingHunkSeparatorLayout({ type: hunkSeparators, metrics: this.metrics, hunkIndex, hunkSpecs: hunk?.hunkSpecs });
++					if (separator != null) top += separator.totalHeight;
++				}
++				const height = this.getLineHeight(lineIndex, rows.hasAddition ? rows.additionLineIndex : void 0, this.hasNoNewlineMarker(rows));
++				while (next < groupEnd && wanted[next].lineIndex < lineIndex) next++;
++				while (next < groupEnd && wanted[next].lineIndex === lineIndex) positions.set(wanted[next++].key, { top, height });
++				top += height;
++				if (collapsedAfter > 0) {
++					const separator = getTrailingHunkSeparatorLayout({ type: hunkSeparators, metrics: this.metrics });
++					if (separator != null) top += separator.totalHeight;
++				}
++			}
++			next = groupEnd;
++		}
++		return positions;
++	}
++
+ 	getLinePosition(lineNumber, side = "additions") {
+ 		const fileDiff = this.getLayoutDiff();
+ 		if (fileDiff == null || lineNumber < 1) return;
+diff --git a/dist/editor/editor.d.ts b/dist/editor/editor.d.ts
+index d96904b..044d80d 100644
+--- a/dist/editor/editor.d.ts
++++ b/dist/editor/editor.d.ts
+@@ -1,3 +1,4 @@
++import { EditorTokenizerProps } from "./tokenizer.js";
+ import { DiffsHighlighter } from "../highlighter/DiffsHighlighter.js";
+ import { DiffLineAnnotation, FileContents, FileDiffMetadata, HighlightedToken, LineAnnotation, RenderRange } from "../types.js";
+ import { RetainedDiffSessionSnapshot } from "../model/types.js";
+@@ -34,6 +35,7 @@ interface SyncDiffRenderViewProps<LAnnotation> extends SyncRenderViewBaseProps {
+ type SyncRenderViewProps<EType extends EditorType, LAnnotation> = EType extends 'file' ? SyncFileRenderViewProps<LAnnotation> : SyncDiffRenderViewProps<LAnnotation>;
+ type EditorComponent<EType extends EditorType, LAnnotation, Caret> = EType extends 'file' ? File<LAnnotation, Caret> : FileDiff<LAnnotation, Caret>;
+ interface EditorOptions<EType extends EditorType, LAnnotation, Caret> {
++  createTokenizer?: EditorTokenizerProps["createTokenizer"];
+   /** The maximum number of entries to keep in the undo stack. */
+   historyMaxEntries?: number;
+   /**
+@@ -202,6 +204,7 @@ declare class Editor<EType extends EditorType = EditorType, LAnnotation = undefi
+    */
+   getEditState(): EditState<EType, LAnnotation> | undefined;
+   setViewState({ selections, view }: EditorViewState): void;
++  setDeletedTextSelectionActive(active: boolean): void;
+   setSelections(selections: (Range & {
+     direction: 'none' | 'backward' | 'forward';
+   })[]): void;
+diff --git a/dist/editor/editor.js b/dist/editor/editor.js
+index b88c299..4cba058 100644
+--- a/dist/editor/editor.js
++++ b/dist/editor/editor.js
+@@ -455,6 +455,10 @@ var Editor = class {
+ 		} else if (this.#ownsVerticalViewport) this.#scrollToPrimaryCaret();
+ 		this.#checkpointEditSessionState();
+ 	}
++	setDeletedTextSelectionActive(active) {
++		this.#setDeletedTextSelectionActive(active);
++		if (active && this.#selections !== void 0) this.#updateSelections([]);
++	}
+ 	setSelections(selections) {
+ 		const editSession = this.#editSession;
+ 		if (editSession?.document == null) throw new Error("Editor.setSelections: Text document is not initialized");
+@@ -605,17 +609,36 @@ var Editor = class {
+ 			this.#publishChange = void 0;
+ 		}
+ 	}
+-	#checkpointEditSessionState() {
++    #checkpointDocument;
++    #checkpointVersion;
++    #checkpointHunks;
++    #checkpointDeletions;
++    #checkpointType;
++	#checkpointEditSessionState(captureView = true) {
+ 		const fileInstance = this.#fileInstance;
+ 		const editSession = this.#editSession;
+ 		if (fileInstance == null || editSession == null) return false;
+-		const editorState = this.#isRendering ? this.getViewState() : editSession.editor ?? {};
++		// Render sync preserves the viewport; interaction and teardown still capture live scroll.
++		const editorState = !this.#isRendering ? editSession.editor ?? {} : captureView ? this.getViewState() : {
++			selections: this.#selections,
++			view: editSession.editor?.view
++		};
+ 		const { view } = editorState;
+ 		const hasNonDefaultView = view != null && (view.scrollLeft !== 0 || (view.scrollTop ?? 0) !== 0);
+ 		const hasEditorState = editorState.selections != null || hasNonDefaultView;
+ 		editSession.editor = cloneEditorViewState(editorState);
+ 		if (editSession.type === "file") return false;
+-		const capturedDiffSession = fileInstance.__captureDocumentSessionState();
++		const current = fileInstance.__captureDocumentSessionState(false);
++        const documentVersion = editSession.document?.version;
++        const sameSession = this.#checkpointDocument === editSession.document &&
++            this.#checkpointVersion === documentVersion && this.#checkpointHunks === current?.diffSession.hunks &&
++            this.#checkpointDeletions === current?.diffSession.oldFile?.lines && this.#checkpointType === current?.diffSession.type;
++        const capturedDiffSession = sameSession ? { diffSession: editSession.diffSession, hasChanges: current?.hasChanges } : fileInstance.__captureDocumentSessionState();
++        this.#checkpointDocument = editSession.document;
++        this.#checkpointVersion = documentVersion;
++        this.#checkpointHunks = current?.diffSession.hunks;
++        this.#checkpointDeletions = current?.diffSession.oldFile?.lines;
++        this.#checkpointType = current?.diffSession.type;
+ 		if (capturedDiffSession == null) {
+ 			editSession.diffSession = void 0;
+ 			return false;
+@@ -763,13 +786,12 @@ var Editor = class {
+ 			if (this.#spriteElement !== void 0) shadowRoot.prepend(this.#spriteElement);
+ 		}
+ 		const languageId = fileOrDiff.lang ?? getFiletypeFromFileName(fileOrDiff.name);
+-		const contents = "contents" in fileOrDiff ? fileOrDiff.contents : fileOrDiff.additionLines.join("");
+ 		if (editSession.document == null || editSession.fileInfo == null) {
+ 			this.#cancelEditPrediction(true);
+ 			this.#editPredictionHistory = [];
+ 			this.#invalidateOnAttach();
+ 			const { name, lang } = fileOrDiff;
+-			editSession.document ??= new TextDocument(fileOrDiff.name, contents, languageId, 0, new EditStack({ maxEntries: this.#options.historyMaxEntries }));
++			editSession.document ??= new TextDocument(fileOrDiff.name, "contents" in fileOrDiff ? fileOrDiff.contents : fileOrDiff.additionLines.join(""), languageId, 0, new EditStack({ maxEntries: this.#options.historyMaxEntries }));
+ 			editSession.fileInfo = {
+ 				name,
+ 				lang
+@@ -782,7 +804,7 @@ var Editor = class {
+ 			if (typeof process !== "undefined" && process.env.NODE_ENV === "development" && this.#options.__debug === true) console.log("[diffs/editor] text document initialized from", fileOrDiff.name);
+ 		}
+ 		const textDocument = editSession.document;
+-		if (this.#tokenizer != null && this.#tokenizer.highlighter !== highlighter) {
++		if (this.#tokenizer != null && (this.#tokenizer.highlighter !== highlighter || this.#tokenizer.createTokenizer !== this.#options.createTokenizer)) {
+ 			this.#tokenizer.cleanUp();
+ 			this.#tokenizer = void 0;
+ 		}
+@@ -791,6 +813,7 @@ var Editor = class {
+ 			textDocument,
+ 			codeOptions: this.#fileInstance?.__getEffectiveCodeOptions() ?? {},
+ 			matchBrackets: this.#options.matchBrackets,
++			createTokenizer: this.#options.createTokenizer,
+ 			onDeferTokenize: this.#onDeferTokenize,
+ 			onThemeChange: () => this.#scheduleThemeSelectionRefresh(),
+ 			setStyle: (css) => {
+@@ -847,7 +870,7 @@ var Editor = class {
+ 				const { startingLine, totalLines } = renderRange;
+ 				console.log("[diffs/editor] render file:", fileOrDiff.name, "RenderRange:", startingLine + "-" + (startingLine + totalLines), "of", editSession.document?.lineCount, "lines");
+ 			}
+-			this.#checkpointEditSessionState();
++			this.#checkpointEditSessionState(false);
+ 		} catch (error) {
+ 			this.#restoreEditorStateOnSync = restoreEditorStateOnSync;
+ 			editSession.editor = retainedEditorState;
+diff --git a/dist/editor/pieceTable.js b/dist/editor/pieceTable.js
+index df39825..90f1e20 100644
+--- a/dist/editor/pieceTable.js
++++ b/dist/editor/pieceTable.js
+@@ -82,6 +82,20 @@ var PieceTable = class {
+ 		this.#length = this.#root?.subtreeLength ?? 0;
+ 		this.#lineCount = (this.#root?.subtreeLineBreakCount ?? 0) + 1;
+ 	}
++    compact() {
++        // Nothing to reclaim while the text is still the untouched original buffer.
++        if (this.#add.text.length === 0 && this.#length === this.#original.text.length) return;
++        const text = this.getText();
++        this.#original = new TextBuffer(text);
++        this.#add = new TextBuffer("");
++        const piece = this.#createPiece(Piece.Original, 0, text.length);
++        this.#root = piece.length > 0 ? this.#createNode(piece) : null;
++        this.#invalidateCaches();
++    }
++    get retainedCharacters() {
++        return this.#original.text.length + this.#add.text.length +
++            4 * (this.#original.lineOffsets.length + this.#add.lineOffsets.length);
++    }
+ 	get lineCount() {
+ 		return this.#lineCount;
+ 	}
+@@ -248,9 +262,10 @@ var PieceTable = class {
+ 			const end = clamp(edit.end, start, this.#length);
+ 			this.#replaceRangeIncremental(start, end, edit.text);
+ 		}
+-		this.#invalidateCaches();
+-	}
+-	positionAt(offset) {
++        this.#invalidateCaches();
++        if (this.#add.text.length + 4 * this.#add.lineOffsets.length > Math.max(1_000_000, this.#length * 2)) this.compact();
++    }
++    positionAt(offset) {
+ 		const clampedOffset = clamp(offset, 0, this.#length);
+ 		if (this.#length === 0) return {
+ 			line: 0,
+diff --git a/dist/editor/textDocument.d.ts b/dist/editor/textDocument.d.ts
+index 7d591f9..fbcb7a4 100644
+--- a/dist/editor/textDocument.d.ts
++++ b/dist/editor/textDocument.d.ts
+@@ -43,6 +43,8 @@ declare class TextDocument<EType extends EditorType = EditorType, LAnnotation =
+   get uri(): string;
+   get languageId(): string;
+   get version(): number;
++  compact(): void;
++  readonly retainedCharacters: number;
+   get lineCount(): number;
+   get eol(): LineEnding;
+   get history(): EditHistoryState<EType, LAnnotation>;
+diff --git a/dist/editor/textDocument.js b/dist/editor/textDocument.js
+index 9f89b03..e680b6a 100644
+--- a/dist/editor/textDocument.js
++++ b/dist/editor/textDocument.js
+@@ -40,6 +40,8 @@ var TextDocument = class TextDocument {
+ 	get version() {
+ 		return this.#version;
+ 	}
++    compact() { this.#pieceTable.compact(); }
++    get retainedCharacters() { return this.#pieceTable.retainedCharacters; }
+ 	get lineCount() {
+ 		return this.#pieceTable.lineCount;
+ 	}
+diff --git a/dist/editor/tokenizer.d.ts b/dist/editor/tokenizer.d.ts
+index 0aa7294..5062e20 100644
+--- a/dist/editor/tokenizer.d.ts
++++ b/dist/editor/tokenizer.d.ts
+@@ -1,9 +1,12 @@
++import { DiffsEditorTokenizer } from "../highlighter/DiffsEditorTokenizer.js";
+ import { DiffsHighlighter } from "../highlighter/DiffsHighlighter.js";
+ import { BaseCodeOptions, HighlightedToken, RenderRange } from "../types.js";
+ import { TextDocument, TextDocumentChange } from "./textDocument.js";
+ //#region src/editor/tokenizer.d.ts
++type EditorTokenizerDelegate = Omit<DiffsEditorTokenizer, 'flush'> & Partial<Pick<DiffsEditorTokenizer, 'flush'>>;
+ interface EditorTokenizerProps {
+   highlighter: DiffsHighlighter;
++  createTokenizer?: (options: import("../highlighter/tokenizer-types.js").DiffsEditorTokenizerOptions, highlighter: DiffsHighlighter) => EditorTokenizerDelegate;
+   textDocument: TextDocument;
+   codeOptions: BaseCodeOptions;
+   matchBrackets?: boolean;
+@@ -15,9 +18,10 @@ interface EditorTokenizerProps {
+ /** Applies editor theme CSS and delegates tokenization to the selected backend. */
+ declare class EditorTokenizer {
+   #private;
++  createTokenizer: EditorTokenizerProps["createTokenizer"];
+   get themeType(): 'light' | 'dark';
+   get highlighter(): DiffsHighlighter;
+-  constructor({ codeOptions, highlighter, textDocument, matchBrackets, setStyle, onDeferTokenize, onThemeChange, __debug }: EditorTokenizerProps);
++  constructor({ codeOptions, highlighter, textDocument, matchBrackets, createTokenizer, setStyle, onDeferTokenize, onThemeChange, __debug }: EditorTokenizerProps);
+   syncTheme(codeOptions: BaseCodeOptions): void;
+   applyStyle(): void;
+   cleanUp(): void;
+diff --git a/dist/editor/tokenizer.js b/dist/editor/tokenizer.js
+index 3f7c3a4..729f3cc 100644
+--- a/dist/editor/tokenizer.js
++++ b/dist/editor/tokenizer.js
+@@ -7,6 +7,7 @@ import { colorUtils } from "@pierre/theming/color";
+ var EditorTokenizer = class {
+ 	#highlighter;
+ 	#textDocument;
++	createTokenizer;
+ 	#tokenizer;
+ 	#mediaQueryList;
+ 	#themeType = "dark";
+@@ -22,7 +23,7 @@ var EditorTokenizer = class {
+ 	get highlighter() {
+ 		return this.#highlighter;
+ 	}
+-	constructor({ codeOptions, highlighter, textDocument, matchBrackets, setStyle, onDeferTokenize, onThemeChange, __debug }) {
++	constructor({ codeOptions, highlighter, textDocument, matchBrackets, createTokenizer, setStyle, onDeferTokenize, onThemeChange, __debug }) {
+ 		const { themeType: themeTypeOption = "system", theme = DEFAULT_THEMES, tokenizeMaxLineLength = 1e3 } = codeOptions;
+ 		this.#mediaQueryList = window.matchMedia("(prefers-color-scheme: dark)");
+ 		let themeType;
+@@ -44,19 +45,20 @@ var EditorTokenizer = class {
+ 			}), () => observer.disconnect()];
+ 		}
+ 		this.#followsSystemThemeType = this.#disposes != null;
++		this.createTokenizer = createTokenizer;
+ 		this.#highlighter = highlighter;
+ 		this.#setStyle = setStyle;
+ 		this.#onThemeChange = onThemeChange;
+ 		this.#setTheme(typeof theme === "string" ? theme : theme[themeType], typeof theme === "string" ? void 0 : themeType);
+ 		this.#textDocument = textDocument;
+-		this.#tokenizer = highlighter.createEditorTokenizer({
++		this.#tokenizer = (createTokenizer ?? ((options) => highlighter.createEditorTokenizer(options)))({
+ 			textDocument,
+ 			theme: this.#themeName,
+ 			tokenizeMaxLineLength,
+ 			matchBrackets,
+ 			__debug,
+ 			onDeferTokenize: (lines) => onDeferTokenize(lines, this.#themeType)
+-		});
++		}, highlighter);
+ 	}
+ 	#emitThemeChange(themeName, themeType) {
+ 		if (themeName === this.#themeName && themeType === this.#themeType) return;
+@@ -151,7 +153,7 @@ var EditorTokenizer = class {
+ 			version,
+ 			renderRange
+ 		};
+-		return this.#tokenizer.flush(renderRange);
++		return this.#tokenizer.flush?.(renderRange) ?? new Map();
+ 	}
+ 	pauseBackgroundTokenize() {
+ 		this.#tokenizer.pauseBackgroundTokenize();
+diff --git a/dist/highlighter/backends/shiki.js b/dist/highlighter/backends/shiki.js
+index 85a4cbb..dbcd732 100644
+--- a/dist/highlighter/backends/shiki.js
++++ b/dist/highlighter/backends/shiki.js
+@@ -1,3 +1,4 @@
++import { isWorkerContext } from "../../utils/isWorkerContext.js";
+ import { RegisteredCustomLanguages } from "../languages/constants.js";
+ import { createDiffsThemeResolver } from "../themes/themeResolver.js";
+ import { attachResolvedLanguages } from "../languages/attachResolvedLanguages.js";
+@@ -11,6 +12,7 @@ import { createCssVariablesTheme, createHighlighterCore } from "shiki/core";
+ var ShikiHighlighter = class ShikiHighlighter extends DiffsHighlighter {
+ 	raw;
+ 	loadedThemes = /* @__PURE__ */ new Map();
++	workerLanguages = new Set();
+ 	attachedLanguages = /* @__PURE__ */ new Set(["text", "ansi"]);
+ 	static async create(name) {
+ 		const engine = name === "shiki-wasm" ? (await import("shiki/engine/oniguruma")).createOnigurumaEngine(import("shiki/wasm")) : (await import("shiki/engine/javascript")).createJavaScriptRegexEngine();
+@@ -71,7 +73,15 @@ var ShikiHighlighter = class ShikiHighlighter extends DiffsHighlighter {
+ 			if (this.attachedLanguages.has(lang.name)) continue;
+ 			const grammar = lang.data.find((grammar) => grammar.name === lang.name || grammar.aliases?.includes(lang.name) === true);
+ 			if (grammar == null) throw new Error(`attachResolvedLanguages: No returned grammar declares "${lang.name}" as its name or an alias.`);
+-			this.raw.loadLanguageSync(lang.data);
++			const workerOnly = lang.data.some((grammar) => grammar.workerOnly === true);
++            const inWorker = typeof __DIFFS_WORKER__ !== "undefined" ? __DIFFS_WORKER__ : isWorkerContext();
++            if (workerOnly && !inWorker) {
++                this.workerLanguages.add(lang.name);
++                this.attachedLanguages.add(lang.name);
++                continue;
++            }
++            const data = lang.data;
++            this.raw.loadLanguageSync(data);
+ 			try {
+ 				this.raw.getLanguage(lang.name);
+ 			} catch {
+@@ -80,13 +90,18 @@ var ShikiHighlighter = class ShikiHighlighter extends DiffsHighlighter {
+ 			this.attachedLanguages.add(lang.name);
+ 		}
+ 	}
++	forgetWorkerLanguage(lang) {
++        if (this.workerLanguages.delete(lang)) this.attachedLanguages.delete(lang);
++    }
+ 	releaseResources() {
++        this.workerLanguages.clear();
+ 		this.loadedThemes.clear();
+ 		this.attachedLanguages.clear();
+ 		this.raw.dispose();
+ 	}
+ 	resolveOptions({ theme, themes, ...options }) {
+ 		this.assertNotDisposed();
++        if (this.workerLanguages.has(options.lang)) options = { ...options, lang: "text" };
+ 		if (theme != null) {
+ 			this.getTheme(theme);
+ 			return {
+diff --git a/dist/highlighter/languages/attachResolvedLanguages.js b/dist/highlighter/languages/attachResolvedLanguages.js
+index 8956f78..b6d8fd6 100644
+--- a/dist/highlighter/languages/attachResolvedLanguages.js
++++ b/dist/highlighter/languages/attachResolvedLanguages.js
+@@ -1,11 +1,13 @@
+-import { AttachedLanguages, ResolvedHighlightsLanguages, ResolvedLanguages } from "./constants.js";
++import { isWorkerContext } from "../../utils/isWorkerContext.js";
++import { AttachedLanguages, ResolvedHighlightsLanguages, ResolvedLanguages, RegisteredCustomLanguages } from "./constants.js";
+ //#region src/highlighter/languages/attachResolvedLanguages.ts
+ /**
+ * Record resolved grammars in the shared language cache and attach them to a
+ * highlighter. Highlights attaches only the lexers registered for it.
+ */
+ function attachResolvedLanguages(resolvedLanguages, highlighter) {
+-	const languages = Array.isArray(resolvedLanguages) ? resolvedLanguages : [resolvedLanguages];
++	const inWorker = typeof __DIFFS_WORKER__ !== "undefined" ? __DIFFS_WORKER__ : isWorkerContext();
++	const languages = (Array.isArray(resolvedLanguages) ? resolvedLanguages : [resolvedLanguages]).filter((language) => inWorker || language.highlights != null || RegisteredCustomLanguages.has(language.name) || !language.data.some((grammar) => grammar.workerOnly));
+ 	if (languages.length > 1 && highlighter.name !== "highlights") {
+ 		for (const language of languages) {
+ 			const lang = cacheResolvedLanguage(language);
+diff --git a/dist/highlighter/languages/registerCustomLanguage.d.ts b/dist/highlighter/languages/registerCustomLanguage.d.ts
+index 3c5e472..779ff09 100644
+--- a/dist/highlighter/languages/registerCustomLanguage.d.ts
++++ b/dist/highlighter/languages/registerCustomLanguage.d.ts
+@@ -13,5 +13,6 @@ declare function registerCustomLanguage(lang: string, loader: () => Promise<{
+ }>, extensionsOrFilenames: string[] | undefined, type: 'highlights'): void;
+ declare function registerCustomLanguage(lang: string, loader: DynamicImportLanguageRegistration, extensionsOrFilenames?: string[], type?: 'textmate'): void;
+ //#endregion
+-export { registerCustomLanguage };
++declare function unregisterCustomLanguage(lang: string): void;
++export { registerCustomLanguage, unregisterCustomLanguage };
+ //# sourceMappingURL=registerCustomLanguage.d.ts.map
+\ No newline at end of file
+diff --git a/dist/highlighter/languages/registerCustomLanguage.js b/dist/highlighter/languages/registerCustomLanguage.js
+index d4f5e28..e6b79aa 100644
+--- a/dist/highlighter/languages/registerCustomLanguage.js
++++ b/dist/highlighter/languages/registerCustomLanguage.js
+@@ -1,4 +1,5 @@
+-import { RegisteredCustomLanguages, RegisteredHighlightsLanguages } from "./constants.js";
++import { getHighlighterIfLoaded } from "../shared_highlighter.js";
++import { AttachedLanguages, ResolvedLanguages, ResolvingLanguages, RegisteredCustomLanguages, RegisteredHighlightsLanguages } from "./constants.js";
+ import { setCustomExtension } from "../../utils/getFiletypeFromFileName.js";
+ //#region src/highlighter/languages/registerCustomLanguage.ts
+ function registerCustomLanguage(lang, loader, extensionsOrFilenames = [], type = "textmate") {
+@@ -12,6 +13,13 @@ function registerCustomLanguage(lang, loader, extensionsOrFilenames = [], type =
+ 	for (const extension of extensionsOrFilenames) setCustomExtension(extension, lang);
+ }
+ //#endregion
+-export { registerCustomLanguage };
++function unregisterCustomLanguage(lang) {
++ RegisteredCustomLanguages.delete(lang);
++ ResolvedLanguages.delete(lang);
++ ResolvingLanguages.delete(lang);
++ AttachedLanguages.delete(lang);
++ getHighlighterIfLoaded()?.forgetWorkerLanguage?.(lang);
++}
++export { registerCustomLanguage, unregisterCustomLanguage };
+ 
+ //# sourceMappingURL=registerCustomLanguage.js.map
+\ No newline at end of file
+diff --git a/dist/highlighter/languages/resolveLanguage.js b/dist/highlighter/languages/resolveLanguage.js
+index 460a3ca..21e3a6e 100644
+--- a/dist/highlighter/languages/resolveLanguage.js
++++ b/dist/highlighter/languages/resolveLanguage.js
+@@ -21,7 +21,7 @@ async function resolveLanguage(lang) {
+ 				repository: {}
+ 			}] : (await loader()).default
+ 		};
+-		if (!ResolvedLanguages.has(lang)) ResolvedLanguages.set(lang, resolvedLang);
++		if (!ResolvedLanguages.has(lang) && (RegisteredCustomLanguages.get(lang) === loader || !resolvedLang.data.some((grammar) => grammar.workerOnly))) ResolvedLanguages.set(lang, resolvedLang);
+ 		return resolvedLang;
+ 	})();
+ 	ResolvingLanguages.set(lang, resolver);
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+index 85c694e..04fffbc 100644
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -42,7 +42,7 @@ import { AttachedLanguages, RegisteredCustomLanguages, RegisteredHighlightsLangu
+ import { getResolvedLanguages } from "./highlighter/languages/getResolvedLanguages.js";
+ import { getResolvedOrResolveLanguage } from "./highlighter/languages/getResolvedOrResolveLanguage.js";
+ import { hasResolvedLanguages } from "./highlighter/languages/hasResolvedLanguages.js";
+-import { registerCustomLanguage } from "./highlighter/languages/registerCustomLanguage.js";
++import { registerCustomLanguage, unregisterCustomLanguage } from "./highlighter/languages/registerCustomLanguage.js";
+ import { resolveLanguage } from "./highlighter/languages/resolveLanguage.js";
+ import { resolveLanguages } from "./highlighter/languages/resolveLanguages.js";
+ import { HighlighterOptions, createHighlighter, disposeHighlighter, getHighlighterIfLoaded, getSharedHighlighter, isHighlighterLoaded, isHighlighterLoading, isHighlighterNull, preloadHighlighter } from "./highlighter/shared_highlighter.js";
+@@ -130,7 +130,7 @@ import { hydratePartialDiff } from "./utils/hydratePartialDiff.js";
+ import { isDefaultRenderRange } from "./utils/isDefaultRenderRange.js";
+ import { isWorkerContext } from "./utils/isWorkerContext.js";
+ import { createDiffSpanDecoration, pushOrJoinSpan } from "./utils/parseDiffDecorations.js";
+-import { parseDiffFromFile } from "./utils/parseDiffFromFile.js";
++import { LineDiffChange, LineDiffProvider, LineDiffResult, parseDiffFromFile, setLineDiffProvider } from "./utils/parseDiffFromFile.js";
+ import { ParsedLine, parseLineType } from "./utils/parseLineType.js";
+ import { parsePatchFiles, processFile, processPatch } from "./utils/parsePatchFiles.js";
+ import { prefersReducedMotion } from "./utils/prefersReducedMotion.js";
+@@ -146,4 +146,6 @@ import { setPreNodeProperties } from "./utils/setWrapperNodeProps.js";
+ import { tokenStyle } from "./utils/tokenStyle.js";
+ import { tokensToHtml } from "./utils/tokensToHtml.js";
+ import { trimPatchContext } from "./utils/trimPatchContext.js";
+-export { type AnnotationLineMap, type AnnotationSide, type AnnotationSpan, type AppliedThemeStyleCache, AttachedLanguages, BACKGROUND_TASK_BUDGET_MS, BackgroundTask, type BaseCodeOptions, type BaseDiffOptions, type BaseDiffOptionsWithDefaults, CODE_VIEW_DIFF_OPTION_KEYS, CODE_VIEW_FILE_OPTION_KEYS, CODE_VIEW_FOOTER_ATTRIBUTE, CODE_VIEW_HEADER_ATTRIBUTE, CODE_VIEW_SEARCH_CARRIAGE_RETURN_LOOKAHEAD, CODE_VIEW_SEARCH_CLOCK_CHECK_CHARACTERS, COMMIT_METADATA_SPLIT, CORE_CSS_ATTRIBUTE, type CSSVariablesThemeOptions, CUSTOM_HEADER_SLOT_ID, type ChangeContent, type ChangeTypes, type CodeColumnType, CodeColumns, type CodeToHtmlOptions, CodeToTokenTransformStream, CodeToTokenTransformStreamOptions, type CodeToTokensOptions, CodeView, CodeViewContextItem, CodeViewCoordinator, CodeViewCreateEditorOptions, type CodeViewDiffItem, CodeViewDiffItemContext, type CodeViewFileItem, type CodeViewItem, CodeViewItemEditCompleteEventMap, CodeViewItemEditCompleteHandler, type CodeViewItemScrollTarget, type CodeViewLayout, type CodeViewLineScrollTarget, CodeViewLineSelection, CodeViewMode, CodeViewModeItemMap, CodeViewOpenSearchOptions, CodeViewOptions, type CodeViewPositionScrollTarget, type CodeViewRangeScrollTarget, CodeViewRenderedDiffItem, CodeViewRenderedFileItem, CodeViewRenderedItem, type CodeViewScrollBehavior, CodeViewScrollListener, type CodeViewScrollTarget, CodeViewSearchDiff, CodeViewSearchDiffCursor, CodeViewSearchFile, CodeViewSearchItem, CodeViewSearchItemProgress, CodeViewSearchItemProvider, CodeViewSearchLineMetadata, CodeViewSearchLineSpan, CodeViewSearchLineVisitor, CodeViewSearchMatch, CodeViewSearchMatchEntry, CodeViewSearchOptions, CodeViewSearchPositionRange, CodeViewSearchScan, CodeViewSearchScope, CodeViewSearchTextCursor, CodeViewSlotSnapshot, CollapsedDiffRenderResult, CollapsedFileRenderResult, Column, ColumnReconciler, type ConflictResolverTypes, type ContextContent, CreateFileHeaderElementProps, type CreatePatchOptions, type CreatePatchOptionsNonabortable, type CustomPreProperties, type CustomThemeLoader, DEFAULT_CODE_VIEW_FILE_METRICS, DEFAULT_CODE_VIEW_LAYOUT, DEFAULT_COLLAPSED_CONTEXT_THRESHOLD, DEFAULT_EXPANDED_REGION, DEFAULT_HIGHLIGHTER, DEFAULT_LOCALE, DEFAULT_MESSAGES, DEFAULT_RENDER_RANGE, DEFAULT_SMOOTH_SCROLL_SETTINGS, DEFAULT_THEMES, DEFAULT_TOKENIZE_MAX_LENGTH, DEFAULT_VIRTUAL_FILE_METRICS, DIFFS_SCROLLBAR_GUTTER_MEASURED_PROPERTY, DIFFS_SCROLLBAR_MEASURE_ATTRIBUTE, DIFFS_TAG_NAME, type DecorationItem, type DiffAcceptRejectHunkConfig, type DiffAcceptRejectHunkType, type DiffFileInput, DiffHunksRenderer, DiffHunksRendererOptions, DiffHunksRendererOptionsWithDefaults, type DiffIndicators, DiffLayout, DiffLayoutInput, DiffLayoutOptions, DiffLayoutResult, type DiffLib, type DiffLineAnnotation, type DiffLineEventBaseProps, DiffLineMetadata, DiffModel, type DiffModelChange, DiffRowCursor, DiffRowCursorOptions, type DiffSide, type DiffTokenEventBaseProps, type DiffsEditorTokenizer, type DiffsEditorTokenizerOptions, type DiffsHighlighter, type DiffsI18nConfig, type DiffsMessageKey, type DiffsMessages, type DiffsStreamTokenizer, type DiffsTheme, type DiffsThemeNames, type DocumentLineChange, type DocumentLineEdit, type DocumentLines, EMPTY_LINE_ANNOTATIONS, EXTENSION_TO_FILE_FORMAT, type ExpandedHunksMap, type ExpansionDirections, type ExtensionFormatMap, FILENAME_HEADER_REGEX, FILE_CONTEXT_BLOB, File, type FileContents, FileDiff, type FileDiffContentsLoader, FileDiffEditChangeHandler, type FileDiffEditCompleteEvent, FileDiffEditCompleteHandler, FileDiffHydrationProps, type FileDiffLoadedChangedFiles, type FileDiffLoadedFiles, type FileDiffLoadedPureRenamedFile, type FileDiffMetadata, FileDiffOptions, FileDiffRenderBaseProps, FileDiffRenderData, FileDiffRenderInput, FileDiffRenderProps, FileDiffType, FileEditChangeHandler, type FileEditCompleteEvent, FileEditCompleteHandler, type FileHeaderRenderMode, FileHydrateProps, FileLayout, FileLayoutInput, FileLayoutResult, FileModel, FileModelChange, FileOptions, FileRenderData, FileRenderInput, FileRenderProps, FileRenderResult, FileRenderer, FileRendererOptions, FileStream, FileStreamOptions, type ForceDiffPlainTextOptions, type ForceFilePlainTextOptions, GIT_DIFF_FILE_BREAK_REGEX, type GapSpan, GetHoveredLineResult, GetLineIndexUtility, HEADER_FILENAME_SUFFIX_SLOT_ID, HEADER_METADATA_SLOT_ID, HEADER_PREFIX_SLOT_ID, HUNK_HEADER, HighlightRows, type HighlightedToken, HighlighterDisposedError, HighlighterOptions, type HighlighterTypes, type Hunk, type HunkBlock, type HunkData, type HunkExpansionRegion, type HunkLineType, type HunkSeparators, HunksRenderResult, INDEX_LINE_METADATA, InjectedRow, InteractionManager, InteractionManagerBaseOptions, InteractionManagerMode, InteractionManagerOptions, LayoutColumns, LineAnchor, type LineAnnotation, LineAnnotationPosition, LineCuts, LineDecoration, LineDiffRangeCache, type LineDiffTypes, LineEnding, type LineEventBaseProps, LineExpansion, type LineInfo, LineKey, LineMap, type LinePosition, LineScrollPosition, type LineSpans, type LineTypes, LogTypes, MAX_SEARCH_MATCHES, MERGE_CONFLICT_BASE_MARKER_REGEX, MERGE_CONFLICT_END_MARKER_REGEX, MERGE_CONFLICT_SEPARATOR_MARKER_REGEX, MERGE_CONFLICT_START_MARKER_REGEX, MatchRange, type MaybeDiffFileInput, type MergeConflictActionPayload, MergeConflictActionTarget, MergeConflictActionsTypeOption, type MergeConflictMarkerRow, type MergeConflictMarkerRowType, type MergeConflictRegion, type MergeConflictResolution, MessagesSubscriber, ModelSessionState, type NumericScrollLineAnchor, type ObservedAnnotationNodes, type ObservedGridNodes, OnDiffLineClickProps, OnDiffLineEnterLeaveProps, OnLineClickProps, OnLineEnterLeaveProps, OnTokenEventProps, type ParseDiffOptions, type ParsePatchOptions, ParsedLine, type ParsedPatch, type PendingCodeViewLayoutReset, PendingLineTarget, type PostRenderPhase, type PrePropertiesConfig, type ProcessFileConflictData, type RecallToken, ReconcileResult, RegisteredCustomLanguages, RegisteredHighlightsLanguages, type RenderDiffFilesResult, type RenderDiffOptions, type RenderDiffResult, type RenderFileMetadata, type RenderFileOptions, type RenderFileResult, type RenderHeaderFilenameSuffixCallback, type RenderHeaderMetadataCallback, type RenderHeaderPrefixCallback, RenderMergeConflictActions, type RenderRange, RenderTokenLinesOptions, type RenderWindow, type RenderedDiffASTCache, type RenderedFileASTCache, RenderedLineContext, ReplacementDocument, ResizeManager, ResizeManagerColumnVariableMode, ResizeManagerSetupOptions, ResolvedHighlightsLanguages, ResolvedLanguages, ResolvingLanguages, type RetainedDiffSessionSnapshot, RowCells, RowKey, RowSource, RowSpec, SPLIT_WITH_NEWLINES, SVGSpriteNames, SVGSpriteSheet, ScrollAnchor, type ScrollRequestResult, ScrollSyncManager, SearchLineCuts, SearchMatchVisitor, SearchOptionDefaults, SearchPanelMode, SearchPanelState, SearchParams, SearchPosition, SearchableDocument, type SelectedLineRange, type SelectionPoint, type SelectionSide, SelectionWriteOptions, type SharedRenderState, type SmoothScrollSettings, SpanScrollRequest, SplitInjectedRow, SplitInjectedRowPlacement, SplitLineDecorationProps, StartSessionOptions, type StickySpecs, type SupportedLanguages, THEME_CSS_ATTRIBUTE, type ThemeTypes, type ThemedDiffResult, type ThemedFileResult, type ThemedToken, type ThemesType, type TokenEventBase, type TokensResult, UNIFIED_DIFF_FILE_BREAK_REGEX, UNSAFE_CSS_ATTRIBUTE, UnifiedInjectedRowPlacement, UnifiedLineDecorationProps, UnresolvedFile, UnresolvedFileHydrationProps, UnresolvedFileOptions, UnresolvedFileRenderData, UnresolvedFileRenderInput, UnresolvedFileRenderProps, VIRTUALIZED_FILE_DIFF_LAYOUT_CHECKPOINT_INTERVAL, type VirtualFileMetrics, type VirtualWindowSpecs, VirtualizedFile, VirtualizedFileDiff, Virtualizer, VirtualizerConfig, VirtualizerScrollOptions, areCodeViewSearchMatchesEqual, areDiffLineAnnotationsEqual, areDiffRenderOptionsEqual, areDiffTargetsEqual, areFileRenderOptionsEqual, areFilesEqual, areGhostTextRowsEqual, areHunkDataEqual, areLanguagesAttached, areLineAnnotationsEqual, areObjectsEqual, areOptionalCodeViewSearchMatchesEqual, areOptionsEqual, arePrePropertiesEqual, areRenderRangesEqual, areSelectionsEqual, areThemesAttached, areThemesEqual, areVirtualWindowSpecsEqual, areWorkerStatsEqual, attachResolvedLanguages, attachResolvedThemes, attributeFor, buildSearchReplacementText, canUseWASM, cleanLastNewline, cleanUpResolvedLanguages, cleanUpResolvedThemes, clearRenderQueue, cloneFileDiffMetadata, cloneHunks, columnCells, compileSearchQuery, createAnnotationElement, createAnnotationWrapperNode, createCSSVariablesTheme, createColumn, createCoreStyleElement, createDiffSpanDecoration, createEmptyRowBuffer, createFileHeaderElement, createGutterGap, createGutterItem, createGutterUtilityContentNode, createGutterUtilityElement, createGutterWrapper, createHastElement, createHighlighter, createIconElement, createNoNewlineElement, createPlainRow, createPreElement, createPreWrapperProperties, createRowNodes, createSeparator, createSpanFromToken, createStyleElement, createTextNodeElement, createThemeStyleElement, createTokenRow, createUnsafeCSSStyleNode, createWindowFromScrollPosition, cutLineLength, dequeueBackgroundTask, dequeueRender, detachString, diffAcceptRejectHunk, disposeHighlighter, endsWithNewline, findCodeElement, formatCSSVariablePrefix, getCustomExtensionsMap, getCustomExtensionsVersion, getDefaultWorkerPoolSize, getFiletypeFromFileName, getHighlighterIfLoaded, getHighlighterOptions, getHighlighterThemeStyles, getHighlighterType, getHunkSeparatorSlotName, getIconForType, getLineAnnotationName, getLineAnnotationSource, getLineEndingType, getLineIndexForDiff, getLineNodes, getOrCreateCodeNode, getResolvedLanguages, getResolvedOrResolveLanguage, getResolvedOrResolveTheme, getResolvedThemes, getSharedHighlighter, getSingularPatch, getThemes, getTotalLineCountFromHunks, getUnresolvedDiffHunksRendererOptions, hasResolvedLanguages, hasResolvedThemes, hastToHtml, hydratePartialDiff, i18n, isDefaultRenderRange, isDiffAnnotation, isDiffAnnotationCollection, isFileAnnotation, isFileAnnotationCollection, isHighlighterLoaded, isHighlighterLoading, isHighlighterNull, isLineKey, isWorkerContext, lineDiffRangesFor, lineEndingOf, markRow, matchSearchLine, normalizeLineBreaks, parseDiffFromFile, parseLineType, parsePatchFiles, patchScrollbarGutterSize, pluckInteractionOptions, prefersReducedMotion, preloadHighlighter, prerenderHTMLIfNecessary, processFile, processLine, processPatch, pushOrJoinSpan, pushRow, queueBackgroundTask, queueRender, readAllLines, readChangedLines, readOnly, recordLineAnnotationSource, registerCustomCSSVariableTheme, registerCustomLanguage, registerCustomTheme, releaseStringDetachBuffer, renderDiffWithHighlighter, renderFileWithHighlighter, renderTokenLines, replaceCustomExtensions, resolveConflict, resolveLanguage, resolveLanguages, resolveRegion, resolveTheme, resolveThemes, runBackgroundTask, searchDocument, setCustomExtension, setLanguageOverride, setPreNodeProperties, tokenStyle, tokensToHtml, trimPatchContext, uniformLineEndings, wrapCoreCSS, wrapThemeCSS, wrapUnsafeCSS };
+\ No newline at end of file
++export { type AnnotationLineMap, type AnnotationSide, type AnnotationSpan, type AppliedThemeStyleCache, AttachedLanguages, BACKGROUND_TASK_BUDGET_MS, BackgroundTask, type BaseCodeOptions, type BaseDiffOptions, type BaseDiffOptionsWithDefaults, CODE_VIEW_DIFF_OPTION_KEYS, CODE_VIEW_FILE_OPTION_KEYS, CODE_VIEW_FOOTER_ATTRIBUTE, CODE_VIEW_HEADER_ATTRIBUTE, CODE_VIEW_SEARCH_CARRIAGE_RETURN_LOOKAHEAD, CODE_VIEW_SEARCH_CLOCK_CHECK_CHARACTERS, COMMIT_METADATA_SPLIT, CORE_CSS_ATTRIBUTE, type CSSVariablesThemeOptions, CUSTOM_HEADER_SLOT_ID, type ChangeContent, type ChangeTypes, type CodeColumnType, CodeColumns, type CodeToHtmlOptions, CodeToTokenTransformStream, CodeToTokenTransformStreamOptions, type CodeToTokensOptions, CodeView, CodeViewContextItem, CodeViewCoordinator, CodeViewCreateEditorOptions, type CodeViewDiffItem, CodeViewDiffItemContext, type CodeViewFileItem, type CodeViewItem, CodeViewItemEditCompleteEventMap, CodeViewItemEditCompleteHandler, type CodeViewItemScrollTarget, type CodeViewLayout, type CodeViewLineScrollTarget, CodeViewLineSelection, CodeViewMode, CodeViewModeItemMap, CodeViewOpenSearchOptions, CodeViewOptions, type CodeViewPositionScrollTarget, type CodeViewRangeScrollTarget, CodeViewRenderedDiffItem, CodeViewRenderedFileItem, CodeViewRenderedItem, type CodeViewScrollBehavior, CodeViewScrollListener, type CodeViewScrollTarget, CodeViewSearchDiff, CodeViewSearchDiffCursor, CodeViewSearchFile, CodeViewSearchItem, CodeViewSearchItemProgress, CodeViewSearchItemProvider, CodeViewSearchLineMetadata, CodeViewSearchLineSpan, CodeViewSearchLineVisitor, CodeViewSearchMatch, CodeViewSearchMatchEntry, CodeViewSearchOptions, CodeViewSearchPositionRange, CodeViewSearchScan, CodeViewSearchScope, CodeViewSearchTextCursor, CodeViewSlotSnapshot, CollapsedDiffRenderResult, CollapsedFileRenderResult, Column, ColumnReconciler, type ConflictResolverTypes, type ContextContent, CreateFileHeaderElementProps, type CreatePatchOptions, type CreatePatchOptionsNonabortable, type CustomPreProperties, type CustomThemeLoader, DEFAULT_CODE_VIEW_FILE_METRICS, DEFAULT_CODE_VIEW_LAYOUT, DEFAULT_COLLAPSED_CONTEXT_THRESHOLD, DEFAULT_EXPANDED_REGION, DEFAULT_HIGHLIGHTER, DEFAULT_LOCALE, DEFAULT_MESSAGES, DEFAULT_RENDER_RANGE, DEFAULT_SMOOTH_SCROLL_SETTINGS, DEFAULT_THEMES, DEFAULT_TOKENIZE_MAX_LENGTH, DEFAULT_VIRTUAL_FILE_METRICS, DIFFS_SCROLLBAR_GUTTER_MEASURED_PROPERTY, DIFFS_SCROLLBAR_MEASURE_ATTRIBUTE, DIFFS_TAG_NAME, type DecorationItem, type DiffAcceptRejectHunkConfig, type DiffAcceptRejectHunkType, type DiffFileInput, DiffHunksRenderer, DiffHunksRendererOptions, DiffHunksRendererOptionsWithDefaults, type DiffIndicators, DiffLayout, DiffLayoutInput, DiffLayoutOptions, DiffLayoutResult, type DiffLib, type DiffLineAnnotation, type DiffLineEventBaseProps, DiffLineMetadata, DiffModel, type DiffModelChange, DiffRowCursor, DiffRowCursorOptions, type DiffSide, type DiffTokenEventBaseProps, type DiffsEditorTokenizer, type DiffsEditorTokenizerOptions, type DiffsHighlighter, type DiffsI18nConfig, type DiffsMessageKey, type DiffsMessages, type DiffsStreamTokenizer, type DiffsTheme, type DiffsThemeNames, type DocumentLineChange, type DocumentLineEdit, type DocumentLines, EMPTY_LINE_ANNOTATIONS, EXTENSION_TO_FILE_FORMAT, type ExpandedHunksMap, type ExpansionDirections, type ExtensionFormatMap, FILENAME_HEADER_REGEX, FILE_CONTEXT_BLOB, File, type FileContents, FileDiff, type FileDiffContentsLoader, FileDiffEditChangeHandler, type FileDiffEditCompleteEvent, FileDiffEditCompleteHandler, FileDiffHydrationProps, type FileDiffLoadedChangedFiles, type FileDiffLoadedFiles, type FileDiffLoadedPureRenamedFile, type FileDiffMetadata, FileDiffOptions, FileDiffRenderBaseProps, FileDiffRenderData, FileDiffRenderInput, FileDiffRenderProps, FileDiffType, FileEditChangeHandler, type FileEditCompleteEvent, FileEditCompleteHandler, type FileHeaderRenderMode, FileHydrateProps, FileLayout, FileLayoutInput, FileLayoutResult, FileModel, FileModelChange, FileOptions, FileRenderData, FileRenderInput, FileRenderProps, FileRenderResult, FileRenderer, FileRendererOptions, FileStream, FileStreamOptions, type ForceDiffPlainTextOptions, type ForceFilePlainTextOptions, GIT_DIFF_FILE_BREAK_REGEX, type GapSpan, GetHoveredLineResult, GetLineIndexUtility, HEADER_FILENAME_SUFFIX_SLOT_ID, HEADER_METADATA_SLOT_ID, HEADER_PREFIX_SLOT_ID, HUNK_HEADER, HighlightRows, type HighlightedToken, HighlighterDisposedError, HighlighterOptions, type HighlighterTypes, type Hunk, type HunkBlock, type HunkData, type HunkExpansionRegion, type HunkLineType, type HunkSeparators, HunksRenderResult, INDEX_LINE_METADATA, InjectedRow, InteractionManager, InteractionManagerBaseOptions, InteractionManagerMode, InteractionManagerOptions, LayoutColumns, LineAnchor, type LineAnnotation, LineAnnotationPosition, LineCuts, LineDecoration, LineDiffRangeCache, type LineDiffTypes, LineEnding, type LineEventBaseProps, LineExpansion, type LineInfo, LineKey, LineMap, type LinePosition, LineScrollPosition, type LineSpans, type LineTypes, LogTypes, MAX_SEARCH_MATCHES, MERGE_CONFLICT_BASE_MARKER_REGEX, MERGE_CONFLICT_END_MARKER_REGEX, MERGE_CONFLICT_SEPARATOR_MARKER_REGEX, MERGE_CONFLICT_START_MARKER_REGEX, MatchRange, type MaybeDiffFileInput, type MergeConflictActionPayload, MergeConflictActionTarget, MergeConflictActionsTypeOption, type MergeConflictMarkerRow, type MergeConflictMarkerRowType, type MergeConflictRegion, type MergeConflictResolution, MessagesSubscriber, ModelSessionState, type NumericScrollLineAnchor, type ObservedAnnotationNodes, type ObservedGridNodes, OnDiffLineClickProps, OnDiffLineEnterLeaveProps, OnLineClickProps, OnLineEnterLeaveProps, OnTokenEventProps, type ParseDiffOptions, type ParsePatchOptions, ParsedLine, type ParsedPatch, type PendingCodeViewLayoutReset, PendingLineTarget, type PostRenderPhase, type PrePropertiesConfig, type ProcessFileConflictData, type RecallToken, ReconcileResult, RegisteredCustomLanguages, RegisteredHighlightsLanguages, type RenderDiffFilesResult, type RenderDiffOptions, type RenderDiffResult, type RenderFileMetadata, type RenderFileOptions, type RenderFileResult, type RenderHeaderFilenameSuffixCallback, type RenderHeaderMetadataCallback, type RenderHeaderPrefixCallback, RenderMergeConflictActions, type RenderRange, RenderTokenLinesOptions, type RenderWindow, type RenderedDiffASTCache, type RenderedFileASTCache, RenderedLineContext, ReplacementDocument, ResizeManager, ResizeManagerColumnVariableMode, ResizeManagerSetupOptions, ResolvedHighlightsLanguages, ResolvedLanguages, ResolvingLanguages, type RetainedDiffSessionSnapshot, RowCells, RowKey, RowSource, RowSpec, SPLIT_WITH_NEWLINES, SVGSpriteNames, SVGSpriteSheet, ScrollAnchor, type ScrollRequestResult, ScrollSyncManager, SearchLineCuts, SearchMatchVisitor, SearchOptionDefaults, SearchPanelMode, SearchPanelState, SearchParams, SearchPosition, SearchableDocument, type SelectedLineRange, type SelectionPoint, type SelectionSide, SelectionWriteOptions, type SharedRenderState, type SmoothScrollSettings, SpanScrollRequest, SplitInjectedRow, SplitInjectedRowPlacement, SplitLineDecorationProps, StartSessionOptions, type StickySpecs, type SupportedLanguages, THEME_CSS_ATTRIBUTE, type ThemeTypes, type ThemedDiffResult, type ThemedFileResult, type ThemedToken, type ThemesType, type TokenEventBase, type TokensResult, UNIFIED_DIFF_FILE_BREAK_REGEX, UNSAFE_CSS_ATTRIBUTE, UnifiedInjectedRowPlacement, UnifiedLineDecorationProps, UnresolvedFile, UnresolvedFileHydrationProps, UnresolvedFileOptions, UnresolvedFileRenderData, UnresolvedFileRenderInput, UnresolvedFileRenderProps, VIRTUALIZED_FILE_DIFF_LAYOUT_CHECKPOINT_INTERVAL, type VirtualFileMetrics, type VirtualWindowSpecs, VirtualizedFile, VirtualizedFileDiff, Virtualizer, VirtualizerConfig, VirtualizerScrollOptions, areCodeViewSearchMatchesEqual, areDiffLineAnnotationsEqual, areDiffRenderOptionsEqual, areDiffTargetsEqual, areFileRenderOptionsEqual, areFilesEqual, areGhostTextRowsEqual, areHunkDataEqual, areLanguagesAttached, areLineAnnotationsEqual, areObjectsEqual, areOptionalCodeViewSearchMatchesEqual, areOptionsEqual, arePrePropertiesEqual, areRenderRangesEqual, areSelectionsEqual, areThemesAttached, areThemesEqual, areVirtualWindowSpecsEqual, areWorkerStatsEqual, attachResolvedLanguages, attachResolvedThemes, attributeFor, buildSearchReplacementText, canUseWASM, cleanLastNewline, cleanUpResolvedLanguages, cleanUpResolvedThemes, clearRenderQueue, cloneFileDiffMetadata, cloneHunks, columnCells, compileSearchQuery, createAnnotationElement, createAnnotationWrapperNode, createCSSVariablesTheme, createColumn, createCoreStyleElement, createDiffSpanDecoration, createEmptyRowBuffer, createFileHeaderElement, createGutterGap, createGutterItem, createGutterUtilityContentNode, createGutterUtilityElement, createGutterWrapper, createHastElement, createHighlighter, createIconElement, createNoNewlineElement, createPlainRow, createPreElement, createPreWrapperProperties, createRowNodes, createSeparator, createSpanFromToken, createStyleElement, createTextNodeElement, createThemeStyleElement, createTokenRow, createUnsafeCSSStyleNode, createWindowFromScrollPosition, cutLineLength, dequeueBackgroundTask, dequeueRender, detachString, diffAcceptRejectHunk, disposeHighlighter, endsWithNewline, findCodeElement, formatCSSVariablePrefix, getCustomExtensionsMap, getCustomExtensionsVersion, getDefaultWorkerPoolSize, getFiletypeFromFileName, getHighlighterIfLoaded, getHighlighterOptions, getHighlighterThemeStyles, getHighlighterType, getHunkSeparatorSlotName, getIconForType, getLineAnnotationName, getLineAnnotationSource, getLineEndingType, getLineIndexForDiff, getLineNodes, getOrCreateCodeNode, getResolvedLanguages, getResolvedOrResolveLanguage, getResolvedOrResolveTheme, getResolvedThemes, getSharedHighlighter, getSingularPatch, getThemes, getTotalLineCountFromHunks, getUnresolvedDiffHunksRendererOptions, hasResolvedLanguages, hasResolvedThemes, hastToHtml, hydratePartialDiff, i18n, isDefaultRenderRange, isDiffAnnotation, isDiffAnnotationCollection, isFileAnnotation, isFileAnnotationCollection, isHighlighterLoaded, isHighlighterLoading, isHighlighterNull, isLineKey, isWorkerContext, lineDiffRangesFor, lineEndingOf, markRow, matchSearchLine, normalizeLineBreaks, parseDiffFromFile, parseLineType, parsePatchFiles, patchScrollbarGutterSize, pluckInteractionOptions, prefersReducedMotion, preloadHighlighter, prerenderHTMLIfNecessary, processFile, processLine, processPatch, pushOrJoinSpan, pushRow, queueBackgroundTask, queueRender, readAllLines, readChangedLines, readOnly, recordLineAnnotationSource, registerCustomCSSVariableTheme, registerCustomLanguage, registerCustomTheme, releaseStringDetachBuffer, renderDiffWithHighlighter, renderFileWithHighlighter, renderTokenLines, replaceCustomExtensions, resolveConflict, resolveLanguage, resolveLanguages, resolveRegion, resolveTheme, resolveThemes, runBackgroundTask, searchDocument, setCustomExtension, setLanguageOverride, setPreNodeProperties, tokenStyle, tokensToHtml, trimPatchContext, uniformLineEndings, wrapCoreCSS, wrapThemeCSS, wrapUnsafeCSS };
++export { setLineDiffProvider, unregisterCustomLanguage };
++export type { LineDiffChange, LineDiffProvider, LineDiffResult };
+diff --git a/dist/index.js b/dist/index.js
+index f6cf54a..0e9542b 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -77,7 +77,7 @@ import { cloneFileDiffMetadata, cloneHunks } from "./utils/cloneFileDiffMetadata
+ import { hydratePartialDiff } from "./utils/hydratePartialDiff.js";
+ import { detachString, releaseStringDetachBuffer } from "./utils/detachString.js";
+ import { parsePatchFiles, processFile, processPatch } from "./utils/parsePatchFiles.js";
+-import { parseDiffFromFile } from "./utils/parseDiffFromFile.js";
++import { parseDiffFromFile, setLineDiffProvider } from "./utils/parseDiffFromFile.js";
+ import { ScrollSyncManager } from "./managers/ScrollSyncManager.js";
+ import { createDiffSpanDecoration, pushOrJoinSpan } from "./utils/parseDiffDecorations.js";
+ import { LineDiffRangeCache, lineDiffRangesFor } from "./rows/lineDiffRanges.js";
+@@ -110,7 +110,7 @@ import { getResolvedLanguages } from "./highlighter/languages/getResolvedLanguag
+ import { resolveLanguage } from "./highlighter/languages/resolveLanguage.js";
+ import { getResolvedOrResolveLanguage } from "./highlighter/languages/getResolvedOrResolveLanguage.js";
+ import { hasResolvedLanguages } from "./highlighter/languages/hasResolvedLanguages.js";
+-import { registerCustomLanguage } from "./highlighter/languages/registerCustomLanguage.js";
++import { registerCustomLanguage, unregisterCustomLanguage } from "./highlighter/languages/registerCustomLanguage.js";
+ import { resolveLanguages } from "./highlighter/languages/resolveLanguages.js";
+ import { attachResolvedThemes } from "./highlighter/themes/attachResolvedThemes.js";
+ import { createCSSVariablesTheme } from "./highlighter/themes/createCSSVariablesTheme.js";
+@@ -136,3 +136,4 @@ import { setLanguageOverride } from "./utils/setLanguageOverride.js";
+ import { tokensToHtml } from "./utils/tokensToHtml.js";
+ import { trimPatchContext } from "./utils/trimPatchContext.js";
+ export { AttachedLanguages, BACKGROUND_TASK_BUDGET_MS, CODE_VIEW_DIFF_OPTION_KEYS, CODE_VIEW_FILE_OPTION_KEYS, CODE_VIEW_FOOTER_ATTRIBUTE, CODE_VIEW_HEADER_ATTRIBUTE, CODE_VIEW_SEARCH_CARRIAGE_RETURN_LOOKAHEAD, CODE_VIEW_SEARCH_CLOCK_CHECK_CHARACTERS, COMMIT_METADATA_SPLIT, CORE_CSS_ATTRIBUTE, CUSTOM_HEADER_SLOT_ID, CodeColumns, CodeToTokenTransformStream, CodeView, CodeViewSearchDiffCursor, CodeViewSearchScan, CodeViewSearchTextCursor, ColumnReconciler, DEFAULT_CODE_VIEW_FILE_METRICS, DEFAULT_CODE_VIEW_LAYOUT, DEFAULT_COLLAPSED_CONTEXT_THRESHOLD, DEFAULT_EXPANDED_REGION, DEFAULT_HIGHLIGHTER, DEFAULT_LOCALE, DEFAULT_MESSAGES, DEFAULT_RENDER_RANGE, DEFAULT_SMOOTH_SCROLL_SETTINGS, DEFAULT_THEMES, DEFAULT_TOKENIZE_MAX_LENGTH, DEFAULT_VIRTUAL_FILE_METRICS, DIFFS_SCROLLBAR_GUTTER_MEASURED_PROPERTY, DIFFS_SCROLLBAR_MEASURE_ATTRIBUTE, DIFFS_TAG_NAME, DiffHunksRenderer, DiffLayout, DiffModel, DiffRowCursor, EMPTY_LINE_ANNOTATIONS, EXTENSION_TO_FILE_FORMAT, FILENAME_HEADER_REGEX, FILE_CONTEXT_BLOB, File, FileDiff, FileLayout, FileModel, FileRenderer, FileStream, GIT_DIFF_FILE_BREAK_REGEX, HEADER_FILENAME_SUFFIX_SLOT_ID, HEADER_METADATA_SLOT_ID, HEADER_PREFIX_SLOT_ID, HUNK_HEADER, HighlighterDisposedError, INDEX_LINE_METADATA, InteractionManager, LineCuts, LineDiffRangeCache, LineMap, MAX_SEARCH_MATCHES, MERGE_CONFLICT_BASE_MARKER_REGEX, MERGE_CONFLICT_END_MARKER_REGEX, MERGE_CONFLICT_SEPARATOR_MARKER_REGEX, MERGE_CONFLICT_START_MARKER_REGEX, RegisteredCustomLanguages, RegisteredHighlightsLanguages, ResizeManager, ResolvedHighlightsLanguages, ResolvedLanguages, ResolvingLanguages, RowCells, RowSource, SPLIT_WITH_NEWLINES, SVGSpriteSheet, ScrollSyncManager, THEME_CSS_ATTRIBUTE, UNIFIED_DIFF_FILE_BREAK_REGEX, UNSAFE_CSS_ATTRIBUTE, UnresolvedFile, VIRTUALIZED_FILE_DIFF_LAYOUT_CHECKPOINT_INTERVAL, VirtualizedFile, VirtualizedFileDiff, Virtualizer, areCodeViewSearchMatchesEqual, areDiffLineAnnotationsEqual, areDiffRenderOptionsEqual, areDiffTargetsEqual, areFileRenderOptionsEqual, areFilesEqual, areGhostTextRowsEqual, areHunkDataEqual, areLanguagesAttached, areLineAnnotationsEqual, areObjectsEqual, areOptionalCodeViewSearchMatchesEqual, areOptionsEqual, arePrePropertiesEqual, areRenderRangesEqual, areSelectionsEqual, areThemesAttached, areThemesEqual, areVirtualWindowSpecsEqual, areWorkerStatsEqual, attachResolvedLanguages, attachResolvedThemes, attributeFor, buildSearchReplacementText, canUseWASM, cleanLastNewline, cleanUpResolvedLanguages, cleanUpResolvedThemes, clearRenderQueue, cloneFileDiffMetadata, cloneHunks, columnCells, compileSearchQuery, createAnnotationElement, createAnnotationWrapperNode, createCSSVariablesTheme, createColumn, createCoreStyleElement, createDiffSpanDecoration, createEmptyRowBuffer, createFileHeaderElement, createGutterGap, createGutterItem, createGutterUtilityContentNode, createGutterUtilityElement, createGutterWrapper, createHastElement, createHighlighter, createIconElement, createNoNewlineElement, createPlainRow, createPreElement, createPreWrapperProperties, createRowNodes, createSeparator, createSpanFromToken, createStyleElement, createTextNodeElement, createThemeStyleElement, createTokenRow, createUnsafeCSSStyleNode, createWindowFromScrollPosition, cutLineLength, dequeueBackgroundTask, dequeueRender, detachString, diffAcceptRejectHunk, disposeHighlighter, endsWithNewline, findCodeElement, formatCSSVariablePrefix, getCustomExtensionsMap, getCustomExtensionsVersion, getDefaultWorkerPoolSize, getFiletypeFromFileName, getHighlighterIfLoaded, getHighlighterOptions, getHighlighterThemeStyles, getHighlighterType, getHunkSeparatorSlotName, getIconForType, getLineAnnotationName, getLineAnnotationSource, getLineEndingType, getLineIndexForDiff, getLineNodes, getOrCreateCodeNode, getResolvedLanguages, getResolvedOrResolveLanguage, getResolvedOrResolveTheme, getResolvedThemes, getSharedHighlighter, getSingularPatch, getThemes, getTotalLineCountFromHunks, getUnresolvedDiffHunksRendererOptions, hasResolvedLanguages, hasResolvedThemes, hastToHtml, hydratePartialDiff, i18n, isDefaultRenderRange, isDiffAnnotation, isDiffAnnotationCollection, isFileAnnotation, isFileAnnotationCollection, isHighlighterLoaded, isHighlighterLoading, isHighlighterNull, isLineKey, isWorkerContext, lineDiffRangesFor, lineEndingOf, markRow, matchSearchLine, normalizeLineBreaks, parseDiffFromFile, parseLineType, parsePatchFiles, patchScrollbarGutterSize, pluckInteractionOptions, prefersReducedMotion, preloadHighlighter, prerenderHTMLIfNecessary, processFile, processLine, processPatch, pushOrJoinSpan, pushRow, queueBackgroundTask, queueRender, readAllLines, readChangedLines, readOnly, recordLineAnnotationSource, registerCustomCSSVariableTheme, registerCustomLanguage, registerCustomTheme, releaseStringDetachBuffer, renderDiffWithHighlighter, renderFileWithHighlighter, renderTokenLines, replaceCustomExtensions, resolveConflict, resolveLanguage, resolveLanguages, resolveRegion, resolveTheme, resolveThemes, runBackgroundTask, searchDocument, setCustomExtension, setLanguageOverride, setPreNodeProperties, tokenStyle, tokensToHtml, trimPatchContext, uniformLineEndings, wrapCoreCSS, wrapThemeCSS, wrapUnsafeCSS };
++export { setLineDiffProvider, unregisterCustomLanguage };
+diff --git a/dist/managers/InteractionManager.d.ts b/dist/managers/InteractionManager.d.ts
+index c7fa387..d8e877a 100644
+--- a/dist/managers/InteractionManager.d.ts
++++ b/dist/managers/InteractionManager.d.ts
+@@ -43,6 +43,8 @@ interface InteractionManagerBaseOptions<TMode extends InteractionManagerMode> {
+   lineHoverHighlight?: 'disabled' | 'both' | 'number' | 'line';
+   enableTokenInteractionsOnWhitespace?: boolean;
+   enableGutterUtility?: boolean;
++  canUseGutterUtility?(range: SelectedLineRange): boolean;
++  gutterUtilityLabel?: string;
+   onGutterUtilityClick?(range: SelectedLineRange): unknown;
+   onLineClick?(props: EventClickProps<TMode>): unknown;
+   onLineNumberClick?(props: EventClickProps<TMode>): unknown;
+diff --git a/dist/managers/InteractionManager.js b/dist/managers/InteractionManager.js
+index d05e433..c3a4db1 100644
+--- a/dist/managers/InteractionManager.js
++++ b/dist/managers/InteractionManager.js
+@@ -466,7 +466,7 @@ var InteractionManager = class {
+ 					this.updateSelection(point.lineNumber, point.side);
+ 				}
+ 				const completedRange = this.buildSelectedLineRange(session.anchor, session.current);
+-				onGutterUtilityClick?.({ ...completedRange });
++				if (this.options.canUseGutterUtility?.(completedRange) !== false) onGutterUtilityClick?.({ ...completedRange });
+ 				this.selectionAnchor = void 0;
+ 				this.notifySelectionEnd(completedRange);
+ 				this.notifySelectionCommitted(completedRange);
+@@ -589,6 +589,25 @@ var InteractionManager = class {
+ 	showUtilityOnLine(line) {
+ 		const { gutterUtilityContainer } = this;
+ 		if (gutterUtilityContainer == null) return;
++		const range = this.getCurrentSelectionRange() ?? {
++			start: line.lineNumber,
++			end: line.lineNumber,
++			side: line.type === "diff-line" ? line.annotationSide : undefined
++		};
++		if (this.options.canUseGutterUtility?.(range) === false) {
++			this.hideUtility();
++			return;
++		}
++		if (this.gutterUtilityButton != null) {
++			const label = this.options.gutterUtilityLabel;
++			if (label != null) {
++				this.gutterUtilityButton.setAttribute("aria-label", label);
++				this.gutterUtilityButton.title = label;
++			} else {
++				this.gutterUtilityButton.removeAttribute("aria-label");
++				this.gutterUtilityButton.removeAttribute("title");
++			}
++		}
+ 		this.gutterUtilityLine = line;
+ 		gutterUtilityContainer.style.visibility = "";
+ 		if (gutterUtilityContainer.parentNode !== line.numberElement) line.numberElement.appendChild(gutterUtilityContainer);
+@@ -1128,7 +1147,7 @@ var InteractionManager = class {
+ 		if (!split) return lineIndexes[0];
+ 	}
+ };
+-function pluckInteractionOptions({ enableTokenInteractionsOnWhitespace, enableGutterUtility, lineHoverHighlight, onGutterUtilityClick, onLineClick, onLineEnter, onLineLeave, onLineNumberClick, onTokenClick, onTokenEnter, onTokenLeave, renderGutterUtility, __debugPointerEvents, enableLineSelection, controlledSelection, onLineSelected, onLineSelectionStart, onLineSelectionChange, onLineSelectionEnd }, onLineExpand, onHunkExpand, getLineIndex, onMergeConflictActionClick) {
++function pluckInteractionOptions({ enableTokenInteractionsOnWhitespace, enableGutterUtility, canUseGutterUtility, gutterUtilityLabel, lineHoverHighlight, onGutterUtilityClick, onLineClick, onLineEnter, onLineLeave, onLineNumberClick, onTokenClick, onTokenEnter, onTokenLeave, renderGutterUtility, __debugPointerEvents, enableLineSelection, controlledSelection, onLineSelected, onLineSelectionStart, onLineSelectionChange, onLineSelectionEnd }, onLineExpand, onHunkExpand, getLineIndex, onMergeConflictActionClick) {
+ 	return {
+ 		enableTokenInteractionsOnWhitespace,
+ 		enableGutterUtility: resolveEnableGutterUtilityOption({
+@@ -1140,6 +1159,8 @@ function pluckInteractionOptions({ enableTokenInteractionsOnWhitespace, enableGu
+ 		lineHoverHighlight,
+ 		onGutterUtilityClick,
+ 		onLineExpand,
++		canUseGutterUtility,
++		gutterUtilityLabel,
+ 		onHunkExpand,
+ 		onMergeConflictActionClick,
+ 		onLineClick,
+diff --git a/dist/model/DiffModel.d.ts b/dist/model/DiffModel.d.ts
+index d9e6b9d..e1e86ee 100644
+--- a/dist/model/DiffModel.d.ts
++++ b/dist/model/DiffModel.d.ts
+@@ -1,6 +1,13 @@
+ import { ExpandedHunksMap, FileContents, FileDiffMetadata, ParseDiffOptions } from "../types.js";
+ import { DiffModelChange, DiffSide, DocumentLineChange, DocumentLines, HunkBlock, RetainedDiffSessionSnapshot } from "./types.js";
++import { LineDiffResult } from "../utils/parseDiffFromFile.js";
+ //#region src/model/DiffModel.d.ts
++interface DeferredLineRegion {
++  deletionStart: number;
++  deletionEnd: number;
++  additionStart: number;
++  additionEnd: number;
++}
+ /** What the renderer hands the model with each change and when editing ends. */
+ interface ModelSessionState {
+   /** Options for recomputing hunks. */
+@@ -84,6 +91,8 @@ declare class DiffModel {
+    * rebuild the session regions.
+    */
+   applyChange(change: DocumentLineChange, document: DocumentLines, session?: ModelSessionState): DiffModelChange;
++  /** Update live block lookups after an asynchronous region changes the hunks. */
++  applyDeferredRegion(region: DeferredLineRegion, result: LineDiffResult | undefined, parseDiffOptions: ParseDiffOptions | undefined, sessionActive: boolean): boolean;
+   /** The id of every line, in line order. */
+   lineIds(): number[];
+   /** The state another session needs to resume this one's draft. */
+diff --git a/dist/model/DiffModel.js b/dist/model/DiffModel.js
+index 54e9873..e5d74d8 100644
+--- a/dist/model/DiffModel.js
++++ b/dist/model/DiffModel.js
+@@ -5,7 +5,7 @@ import { LineMap } from "./LineMap.js";
+ import { cloneHunks } from "../utils/cloneFileDiffMetadata.js";
+ import { splitFileContents } from "../utils/splitFileContents.js";
+ import { recomputeDiffRenderLineCounts, recomputeEmptyDocumentDiff, recomputeTopAlignedAdditionDiff, shouldTopAlignAdditionRecompute } from "../utils/updateDiffHunks.js";
+-import { applySessionChangedLines, captureExpansionAnchors, finishEditSessionForDiff, rebuildExpansionFromAnchors, rebuildSessionHunks, remapExpandedHunksForRegionChange } from "../utils/editSessionHunks.js";
++import { applyDeferredLineDiff, applySessionChangedLines, captureExpansionAnchors, finishEditSessionForDiff, getSessionEditSpan, rebuildExpansionFromAnchors, rebuildSessionHunks, remapExpandedHunksForRegionChange } from "../utils/editSessionHunks.js";
+ //#region src/model/DiffModel.ts
+ /**
+ * The diff a component renders: the old lines, the new lines, and the hunks
+@@ -34,14 +34,15 @@ var DiffModel = class DiffModel {
+ 	static startEditSession(inputDiff, options = {}) {
+ 		const { document, snapshot, parseDiffOptions } = options;
+ 		if (inputDiff.isPartial) throw new Error("DiffModel.startEditSession: the diff must not be partial");
+-		const inputContents = uniformLineEndings(inputDiff.additionLines.join(""));
++		const rawInputContents = inputDiff.additionLines.join("");
++		const inputContents = uniformLineEndings(rawInputContents);
+ 		const documentContents = document == null ? void 0 : uniformLineEndings(document.contents);
+ 		const restoresSnapshot = snapshot != null && canRestoreSnapshot(snapshot, inputDiff);
+ 		if (snapshot != null && !restoresSnapshot) throw new Error("DiffModel.startEditSession: the retained session was diffed against a different old file");
+ 		if (documentContents != null && documentContents !== inputContents && !restoresSnapshot) throw new Error("DiffModel.startEditSession: retained edits are missing their diff session state");
+ 		const diff = { ...inputDiff };
+ 		delete diff.cacheKey;
+-		if (inputContents !== inputDiff.additionLines.join("")) {
++		if (inputContents !== rawInputContents) {
+ 			diff.additionLines = splitFileContents(inputContents);
+ 			diff.additionCharacterCount = inputContents.length;
+ 			rebuildSessionHunks(diff, parseDiffOptions);
+@@ -53,7 +54,7 @@ var DiffModel = class DiffModel {
+ 			diff.lang = document.lang;
+ 		}
+ 		if (restoresSnapshot && snapshot != null && documentContents != null) {
+-			diff.additionLines = splitFileContents(documentContents);
++			if (documentContents !== inputContents) diff.additionLines = splitFileContents(documentContents);
+ 			diff.additionCharacterCount = documentContents.length;
+ 			diff.type = snapshot.type;
+ 			diff.hunks = snapshot.hunks;
+@@ -187,7 +188,9 @@ var DiffModel = class DiffModel {
+ 					this.#applyRecompute(recomputeTopAlignedAdditionDiff(diff, diff.additionLines, diff.additionCharacterCount, parseDiffOptions));
+ 					regionsChanged = true;
+ 				} else if (diff.additionLines.length !== lineCount) {
+-					const regionChange = rebuildSessionHunks(diff, parseDiffOptions, (index) => previousTexts.has(index) ? previousTexts.get(index) : diff.additionLines[index]);
++					const previousLines = diff.additionLines.slice(0, lineCount);
++					for (const [index, text] of previousTexts) if (index < lineCount) previousLines[index] = text;
++					const regionChange = rebuildSessionHunks(diff, parseDiffOptions, (index) => previousLines[index], getSessionEditSpan(previousLines, diff.additionLines));
+ 					expandedHunks = remapExpansion(expandedHunks, regionChange);
+ 					regionsChanged = regionChange != null;
+ 				} else {
+@@ -204,7 +207,7 @@ var DiffModel = class DiffModel {
+ 			diff.additionCharacterCount = characterCount;
+ 			if (isEmptyDocument(diff)) this.#applyRecompute(recomputeEmptyDocumentDiff(diff, parseDiffOptions));
+ 			else if (shouldTopAlignAdditionRecompute(diff, nextLines)) this.#applyRecompute(recomputeTopAlignedAdditionDiff(diff, nextLines, characterCount, parseDiffOptions));
+-			else expandedHunks = remapExpansion(expandedHunks, rebuildSessionHunks(diff, parseDiffOptions, (index) => previousLines[index]));
++			else expandedHunks = remapExpansion(expandedHunks, rebuildSessionHunks(diff, parseDiffOptions, (index) => previousLines[index], getSessionEditSpan(previousLines, nextLines)));
+ 			regionsChanged = true;
+ 			changedLines = [];
+ 			for (const [start, end] of change.changedLineRanges) {
+@@ -222,6 +225,12 @@ var DiffModel = class DiffModel {
+ 			expandedHunks
+ 		};
+ 	}
++	/** Update live block lookups after an asynchronous region changes the hunks. */
++	applyDeferredRegion(region, result, parseDiffOptions, sessionActive) {
++		if (!applyDeferredLineDiff(this.diff, region, result, parseDiffOptions, sessionActive)) return false;
++		this.#blockIndex = void 0;
++		return true;
++	}
+ 	/** The id of every line, in line order. */
+ 	lineIds() {
+ 		return this.#lines?.ids() ?? Array.from({ length: this.lineCount }, (_, line) => line);
+diff --git a/dist/react/utils/renderDiffChildren.js b/dist/react/utils/renderDiffChildren.js
+index 69e852e..93a9181 100644
+--- a/dist/react/utils/renderDiffChildren.js
++++ b/dist/react/utils/renderDiffChildren.js
+@@ -28,10 +28,10 @@ function renderDiffChildren({ fileDiff, actions, renderCustomHeader, renderHeade
+ 				children: metadata
+ 			})
+ 		] }),
+-		renderAnnotation != null && lineAnnotations?.map((annotation, index) => /* @__PURE__ */ jsx("div", {
+-			slot: getAnnotationSlotName(annotation),
+-			children: renderAnnotation(annotation, fileDiff)
+-		}, index)),
++		renderAnnotation != null && lineAnnotations?.map((annotation, index) => {
++            const child = renderAnnotation(annotation, fileDiff);
++            return jsx("div", { slot: getAnnotationSlotName(annotation), children: child }, child?.key ?? index);
++        }),
+ 		actions != null && renderMergeConflictUtility != null && getInstance != null && actions.map((action) => {
+ 			if (action == null) return;
+ 			const slot = getSlotName(action, fileDiff);
+diff --git a/dist/renderers/DiffHunksRenderer.d.ts b/dist/renderers/DiffHunksRenderer.d.ts
+index 2910306..e303ee7 100644
+--- a/dist/renderers/DiffHunksRenderer.d.ts
++++ b/dist/renderers/DiffHunksRenderer.d.ts
+@@ -65,7 +65,8 @@ declare class DiffHunksRenderer<LAnnotation = undefined> {
+   private model;
+   private editSessionActive;
+   constructor(options?: DiffHunksRendererOptions, annotationSlotName?: (annotation: DiffLineAnnotation<LAnnotation>) => string, onRenderUpdate?: (() => unknown) | undefined, workerManager?: WorkerPoolManager | undefined);
+-  cleanUp(): void;
++  onLineDiffResolved?: () => void;
++  cleanUp(skipRecompute?: boolean): void;
+   recycle(): void;
+   /**
+    * Starts editing `inputDiff`'s new file and returns the diff being edited,
+@@ -101,7 +102,8 @@ declare class DiffHunksRenderer<LAnnotation = undefined> {
+    * edit mode. The rows stay until another diff renders. Returns whether the
+    * hunks changed.
+    */
+-  endEditSession(): boolean;
++  endEditSession(skipRecompute?: boolean): boolean;
++  scheduleDeferredLineDiffs(diff?: FileDiffMetadata): void;
+   private requireSession;
+   private editSessionRows;
+   /**
+diff --git a/dist/renderers/DiffHunksRenderer.js b/dist/renderers/DiffHunksRenderer.js
+index e530d6c..c2d25d6 100644
+--- a/dist/renderers/DiffHunksRenderer.js
++++ b/dist/renderers/DiffHunksRenderer.js
+@@ -24,6 +24,9 @@ import { getLineAnnotationName } from "../utils/getLineAnnotationName.js";
+ import { isDefaultRenderRange } from "../utils/isDefaultRenderRange.js";
+ import { reportEditWithoutTokenTransformer } from "../utils/reportEditWithoutTokenTransformer.js";
+ import { isHandledWorkerPoolError } from "../worker/errors.js";
++import { captureExpansionAnchors, findDeferredLineRegion, rebuildExpansionFromAnchors } from "../utils/editSessionHunks.js";
++import { getLineDiffProvider } from "../utils/parseDiffFromFile.js";
++import { areObjectsEqual } from "../utils/areObjectsEqual.js";
+ import { areDiffTargetsEqual } from "../utils/areDiffTargetsEqual.js";
+ import { DiffLayout } from "../layout/DiffLayout.js";
+ import { DiffModel } from "../model/DiffModel.js";
+@@ -51,14 +54,19 @@ var DiffHunksRenderer = class {
+ 	rowSource;
+ 	model;
+ 	editSessionActive = false;
++	lineDiffGeneration = 0;
++	lineDiffInFlight = false;
++	lineDiffDisposed = false;
++	onLineDiffResolved;
+ 	constructor(options = { theme: DEFAULT_THEMES }, annotationSlotName = getLineAnnotationName, onRenderUpdate, workerManager) {
+ 		this.options = options;
+ 		this.annotationSlotName = annotationSlotName;
+ 		this.onRenderUpdate = onRenderUpdate;
+ 		this.workerManager = workerManager;
+ 	}
+-	cleanUp() {
+-		this.endEditSession();
++	cleanUp(skipRecompute = false) {
++		this.lineDiffDisposed = true;
++		this.endEditSession(skipRecompute);
+ 		this.recycle();
+ 		this.lineCuts.clear();
+ 		this.expandedHunks.clear();
+@@ -90,12 +98,13 @@ var DiffHunksRenderer = class {
+ 		});
+ 		const { rowSource } = this;
+ 		const renderCache = this.promoteReadyResult(inputDiff) ?? this.renderCache;
++		this.lineDiffGeneration++;
+ 		this.editSessionActive = true;
+ 		this.model = model;
+ 		this.diff = model.diff;
+ 		this.pendingHighlightResult = void 0;
+ 		const { options: renderOptions } = this.getRenderOptions(model.diff);
+-		if (renderCache?.result != null && renderCache.highlighted && model.diff.additionLines === inputDiff.additionLines && areDiffTargetsEqual(renderCache.diff, inputDiff) && areDiffRenderOptionsEqual(renderCache.options, renderOptions)) {
++		if (renderCache?.result != null && renderCache.highlighted && canAdoptInputRows(model.diff, inputDiff) && areDiffTargetsEqual(renderCache.diff, inputDiff) && areDiffRenderOptionsEqual(renderCache.options, renderOptions)) {
+ 			const { result } = renderCache;
+ 			const lines = {
+ 				ids: model.lineIds(),
+@@ -124,6 +133,7 @@ var DiffHunksRenderer = class {
+ 			this.renderCache = void 0;
+ 			this.rowSource = void 0;
+ 		}
++		this.scheduleDeferredLineDiffs(model.diff);
+ 		return model.diff;
+ 	}
+ 	promoteReadyResult(diff) {
+@@ -154,6 +164,8 @@ var DiffHunksRenderer = class {
+ 		if (result.lineDelta !== 0 || result.removedLineIds.length > 0 || result.regionsChanged || result.hunksChanged) this.layout?.invalidateLines();
+ 		else this.layout?.markLines(result.changedLines);
+ 		if (tokens != null) this.setTokens(tokens);
++		this.lineDiffGeneration++;
++		if (result.hunksChanged || this.lineDiffInFlight) this.scheduleDeferredLineDiffs(model.diff);
+ 		return result;
+ 	}
+ 	/**
+@@ -191,10 +203,40 @@ var DiffHunksRenderer = class {
+ 	* edit mode. The rows stay until another diff renders. Returns whether the
+ 	* hunks changed.
+ 	*/
+-	endEditSession() {
++	/**
++	* Install only answers for the current edit generation and fallback block.
++	* A superseded answer yields to the latest renderable diff.
++	*/
++	scheduleDeferredLineDiffs(diff = this.diff ?? this.renderCache?.diff) {
++		const provider = getLineDiffProvider();
++		if (provider == null || diff == null || diff.isPartial || this.lineDiffInFlight || this.lineDiffDisposed) return;
++		const region = findDeferredLineRegion(diff);
++		if (region == null) return;
++		const generation = this.lineDiffGeneration;
++		const { parseDiffOptions } = this.options;
++		const { collapsedContextThreshold } = this.getOptionsWithDefaults();
++		const current = () => (this.editSessionActive ? this.model?.diff : this.diff ?? this.renderCache?.diff);
++		const settle = (result) => {
++			if (provider !== getLineDiffProvider() || current() !== diff || generation !== this.lineDiffGeneration || this.lineDiffDisposed) return;
++			const model = this.model?.diff === diff ? this.model : DiffModel.fromDiff(diff);
++			const anchors = captureExpansionAnchors(diff, this.expandedHunks, collapsedContextThreshold);
++			if (!model.applyDeferredRegion(region, result, parseDiffOptions, this.editSessionActive)) return;
++			this.expandedHunks = rebuildExpansionFromAnchors(diff, anchors);
++			this.layout?.invalidateLines();
++			this.onLineDiffResolved?.();
++		};
++		const oldLines = diff.deletionLines.slice(region.deletionStart, region.deletionEnd);
++		const newLines = diff.additionLines.slice(region.additionStart, region.additionEnd);
++		this.lineDiffInFlight = true;
++		Promise.resolve().then(() => provider.computeAsync(oldLines, newLines, parseDiffOptions)).then(settle, () => settle(void 0)).finally(() => {
++			this.lineDiffInFlight = false;
++			this.scheduleDeferredLineDiffs(current());
++		});
++	}
++	endEditSession(skipRecompute = false) {
+ 		const model = this.editSessionActive ? this.model : void 0;
+ 		let changed = false;
+-		if (model != null) {
++		if (model != null && !skipRecompute) {
+ 			const { collapsedContextThreshold } = this.getOptionsWithDefaults();
+ 			const finished = model.finish(collapsedContextThreshold, {
+ 				parseDiffOptions: this.options.parseDiffOptions,
+@@ -206,6 +248,7 @@ var DiffHunksRenderer = class {
+ 		this.editSessionActive = false;
+ 		this.pendingHighlightResult = void 0;
+ 		if (this.diff == null) this.clearRenderCache();
++		if (!skipRecompute) this.scheduleDeferredLineDiffs();
+ 		return changed;
+ 	}
+ 	requireSession() {
+@@ -916,6 +959,14 @@ var DiffHunksRenderer = class {
+ 		});
+ 	}
+ };
++function canAdoptInputRows(diff, inputDiff) {
++	if (diff.additionLines !== inputDiff.additionLines || diff.type !== inputDiff.type || diff.name !== inputDiff.name || diff.lang !== inputDiff.lang) return false;
++	if (diff.hunks === inputDiff.hunks) return true;
++	return diff.hunks.length === inputDiff.hunks.length && diff.hunks.every((hunk, index) => {
++		const other = inputDiff.hunks[index];
++		return areObjectsEqual(hunk, other, ["hunkSpecs", "hunkContent"]) && hunk.hunkContent.length === other.hunkContent.length && hunk.hunkContent.every((block, blockIndex) => areObjectsEqual(block, other.hunkContent[blockIndex]));
++	});
++}
+ function addPlainRows(current, window) {
+ 	addMissingRows(current.code.deletionLines, window.code.deletionLines);
+ 	addMissingRows(current.code.additionLines, window.code.additionLines);
+diff --git a/dist/rows/RowSource.js b/dist/rows/RowSource.js
+index 0e1cb35..6679496 100644
+--- a/dist/rows/RowSource.js
++++ b/dist/rows/RowSource.js
+@@ -24,21 +24,18 @@ var RowSource = class {
+ 	/** Binds the rows of a highlight result, keeping the editor's tokens. */
+ 	setHighlightRows({ deletionRows, additionRows, additionLines, lineIds }) {
+ 		this.#deletionRows = deletionRows;
++		this.#additionRows = additionRows;
+ 		if (lineIds != null) {
+ 			const rowsById = /* @__PURE__ */ new Map();
+-			for (let line = 0; line < additionLines.length; line++) {
+-				const row = additionRows[line];
+-				if (row?.type === "element") rowsById.set(lineIds[line], {
+-					row,
+-					text: additionLines[line]
+-				});
+-			}
++			// Preserve the worker's lazy row getters until a line actually renders.
++			for (let line = 0; line < additionLines.length; line++) rowsById.set(lineIds[line], {
++				line,
++				text: additionLines[line]
++			});
+ 			this.#rowsById = rowsById;
+-			this.#additionRows = [];
+ 			this.#additionLines = [];
+ 		} else {
+ 			this.#rowsById = void 0;
+-			this.#additionRows = additionRows;
+ 			this.#additionLines = additionLines;
+ 		}
+ 	}
+@@ -108,7 +105,10 @@ var RowSource = class {
+ 		const rowsById = this.#rowsById;
+ 		if (rowsById != null) {
+ 			const original = rowsById.get(lineId);
+-			if (original != null && original.text === text) return original.row;
++			if (original != null && original.text === text) {
++				const row = this.#additionRows[original.line];
++				if (row?.type === "element") return row;
++			}
+ 		} else {
+ 			const row = this.#additionRows[lineIndex];
+ 			if (row?.type === "element" && this.#additionLines[lineIndex] === text) return row;
+diff --git a/dist/utils/editSessionHunks.js b/dist/utils/editSessionHunks.js
+index 1413e48..7c26a52 100644
+--- a/dist/utils/editSessionHunks.js
++++ b/dist/utils/editSessionHunks.js
+@@ -1,8 +1,8 @@
+ import { getHunkSideStartBoundary } from "./getHunkSideBoundaries.js";
+ import { getExpandedRegion, getTrailingExpandedRegion } from "./virtualDiffLayout.js";
+ import { slideBlankBoundaryBlocksUp } from "./realignChangeContent.js";
+-import { parseDiffFromFile } from "./parseDiffFromFile.js";
+-import { offsetHunkContent, recomputeDiffHunks, recomputeDiffHunksForEdit, recomputeDiffRenderLineCounts, recomputeHunkRenderLineCounts, syncHunkNoEOFCRFromFullFile } from "./updateDiffHunks.js";
++import { getLineDiffProvider, parseDiffFromFile } from "./parseDiffFromFile.js";
++import { offsetHunkContent, recomputeDiffHunks, recomputeDiffHunksForEdit, recomputeDiffRenderLineCounts, recomputeHunkRenderLineCounts, shouldTopAlignAdditionRecompute, syncHunkNoEOFCRFromFullFile } from "./updateDiffHunks.js";
+ //#region src/utils/editSessionHunks.ts
+ const deletionLineSetCache = /* @__PURE__ */ new WeakMap();
+ /**
+@@ -32,9 +32,9 @@ function findDivergenceCore(deletionLines, additionLines) {
+ * sliding new or edited blank changes up for the live editor. Previous line text
+ * distinguishes edits to an insertion from untouched blocks of the same size.
+ */
+-function rebuildSessionHunks(diff, parseDiffOptions, getPreviousAdditionLine) {
++function rebuildSessionHunks(diff, parseDiffOptions, getPreviousAdditionLine, editSpan) {
+ 	const previousHunks = diff.hunks;
+-	const plans = buildRegionPlans(previousHunks, parseSessionChangeBlocks(diff, parseDiffOptions, getPreviousAdditionLine), diff.deletionLines.length);
++	const plans = buildRegionPlans(previousHunks, parseSessionChangeBlocks(diff, parseDiffOptions, getPreviousAdditionLine, editSpan), diff.deletionLines.length);
+ 	diff.hunks = buildRegionHunks(diff, plans);
+ 	diff.editSessionDirty = true;
+ 	finalizeSessionHunks(diff);
+@@ -50,6 +50,7 @@ function applySessionChangedLines(diff, changedAdditionLineIndexes, parseDiffOpt
+ 	const lines = Array.from(changedLines).filter((line) => line >= 0 && line < diff.additionLines.length).sort((a, b) => a - b);
+ 	if (lines.length === 0) return;
+ 	const getPreviousAdditionLine = (index) => changedLines.has(index) ? previousAdditionLines?.get(index) : diff.additionLines[index];
++	const editSpan = getChangedLinesSpan(diff.additionLines.length, lines);
+ 	const { hunks } = diff;
+ 	let regionIndex;
+ 	let hunkIndex = 0;
+@@ -61,7 +62,7 @@ function applySessionChangedLines(diff, changedAdditionLineIndexes, parseDiffOpt
+ 		}
+ 		const hunk = hunks[hunkIndex];
+ 		const start = hunk == null ? void 0 : getHunkAdditionStart(hunk);
+-		if (start == null || line < start || regionIndex != null && regionIndex !== hunkIndex) return rebuildSessionHunks(diff, parseDiffOptions, getPreviousAdditionLine);
++		if (start == null || line < start || regionIndex != null && regionIndex !== hunkIndex) return rebuildSessionHunks(diff, parseDiffOptions, getPreviousAdditionLine, editSpan);
+ 		regionIndex = hunkIndex;
+ 	}
+ 	if (regionIndex == null) return;
+@@ -69,17 +70,18 @@ function applySessionChangedLines(diff, changedAdditionLineIndexes, parseDiffOpt
+ 		diff.editSessionDirty = true;
+ 		return;
+ 	}
+-	return rebuildSessionHunks(diff, parseDiffOptions, getPreviousAdditionLine);
++	return rebuildSessionHunks(diff, parseDiffOptions, getPreviousAdditionLine, editSpan);
+ }
+ function canRetainCanonicalBlocks(diff, changedLines, regionIndex, previousAdditionLines, parseDiffOptions) {
+-	if (previousAdditionLines == null || parseDiffOptions?.ignoreWhitespace === true || parseDiffOptions?.stripTrailingCr === true) return false;
+-	const deletionLineSet = getDeletionLineSet(diff);
++	if (previousAdditionLines == null || parseDiffOptions?.stripTrailingCr === true || parseDiffOptions?.ignoreCase === true || parseDiffOptions?.newlineIsToken === true || parseDiffOptions?.ignoreNewlineAtEof === true || parseDiffOptions?.comparator != null) return false;
++	const ignoreWhitespace = parseDiffOptions?.ignoreWhitespace === true;
++	const deletionLineSet = getDeletionLineSet(diff, ignoreWhitespace);
+ 	const hunk = diff.hunks[regionIndex];
+ 	if (hunk.hunkContent.some(isPureChange)) return false;
+ 	for (const line of changedLines) {
+ 		const previousLine = previousAdditionLines.get(line);
+ 		const additionLine = diff.additionLines[line];
+-		if (previousLine == null || additionLine == null || deletionLineSet.has(previousLine) || deletionLineSet.has(additionLine)) return false;
++		if (previousLine == null || additionLine == null || deletionLineSet.has(ignoreWhitespace ? previousLine.trim() : previousLine) || deletionLineSet.has(ignoreWhitespace ? additionLine.trim() : additionLine)) return false;
+ 		let insideBalancedChange = false;
+ 		for (const content of hunk.hunkContent) if (content.type === "change" && content.additions === content.deletions && line >= content.additionLineIndex && line < content.additionLineIndex + content.additions) {
+ 			insideBalancedChange = true;
+@@ -89,14 +91,15 @@ function canRetainCanonicalBlocks(diff, changedLines, regionIndex, previousAddit
+ 	}
+ 	return true;
+ }
+-function getDeletionLineSet(diff) {
++function getDeletionLineSet(diff, ignoreWhitespace) {
+ 	const { deletionLines } = diff;
+-	let set = deletionLineSetCache.get(deletionLines);
+-	if (set == null) {
+-		set = new Set(deletionLines);
+-		deletionLineSetCache.set(deletionLines, set);
++	let cached = deletionLineSetCache.get(deletionLines);
++	if (cached == null) {
++		cached = {};
++		deletionLineSetCache.set(deletionLines, cached);
+ 	}
+-	return set;
++	const key = ignoreWhitespace ? "trimmed" : "exact";
++	return cached[key] ??= new Set(ignoreWhitespace ? deletionLines.map((line) => line.trim()) : deletionLines);
+ }
+ function isPureChange(content) {
+ 	return content?.type === "change" && (content.additions === 0 || content.deletions === 0);
+@@ -192,19 +195,37 @@ function rebuildExpansionFromAnchors(diff, anchors) {
+ function finishEditSessionForDiff(diff, parseDiffOptions) {
+ 	if (diff.editSessionDirty !== true) return false;
+ 	delete diff.editSessionDirty;
+-	Object.assign(diff, diff.additionLines.length <= 1 && diff.additionLines.join("") === "" ? recomputeDiffHunks(diff, parseDiffOptions) : recomputeDiffHunksForEdit(diff, parseDiffOptions));
++	if (diff.additionLines.length <= 1 && diff.additionLines.join("") === "") Object.assign(diff, recomputeDiffHunks(diff, parseDiffOptions));
++	else if (getLineDiffProvider() != null && !shouldTopAlignAdditionRecompute(diff, diff.additionLines)) Object.assign(diff, recomputeFromChangeBlocks(diff, collectChangeBlocks(diff.hunks, diff.additionLines.length), parseDiffOptions));
++	else Object.assign(diff, recomputeDiffHunksForEdit(diff, parseDiffOptions));
+ 	return true;
+ }
+-function parseSessionChangeBlocks(diff, parseDiffOptions, getPreviousAdditionLine) {
+-	if (findDivergenceCore(diff.deletionLines, diff.additionLines) == null) return [];
++function parseSessionChangeBlocks(diff, parseDiffOptions, getPreviousAdditionLine, editSpan) {
++	if (getLineDiffProvider() != null && editSpan != null) return parseSessionRegionBlocks(diff, parseDiffOptions, getPreviousAdditionLine, editSpan);
++	const core = findDivergenceCore(diff.deletionLines, diff.additionLines);
++	if (core == null) return [];
++	// Retain boundary context for the existing blank-line alignment rules.
++	const start = Math.max(0, core.start - 4);
++	const deletionEnd = Math.min(diff.deletionLines.length, core.deletionEnd + 4);
++	const additionEnd = Math.min(diff.additionLines.length, core.additionEnd + 4);
+ 	const parsed = parseDiffFromFile({
+ 		name: diff.prevName ?? diff.name,
+-		contents: diff.deletionLines.join("")
++		contents: diff.deletionLines.slice(start, deletionEnd).join("")
+ 	}, {
+ 		name: diff.name,
+-		contents: diff.additionLines.join(""),
++		contents: diff.additionLines.slice(start, additionEnd).join(""),
+ 		lang: diff.lang
+-	}, parseDiffOptions);
++	}, { ...parseDiffOptions, maxEditLength: 2048 });
++	return extractSessionBlocks(diff, parsed, start, start, getPreviousAdditionLine);
++}
++function extractSessionBlocks(diff, parsed, additionStart, deletionStart, getPreviousAdditionLine) {
++	parsed.deletionLines = diff.deletionLines;
++	parsed.additionLines = diff.additionLines;
++	for (const hunk of parsed.hunks) {
++		hunk.deletionLineIndex += deletionStart;
++		hunk.additionLineIndex += additionStart;
++		hunk.hunkContent = hunk.hunkContent.map(content => offsetHunkContent(content, additionStart, deletionStart));
++	}
+ 	let previousBlocks;
+ 	const resolveSlide = (block, maxSlide) => {
+ 		previousBlocks ??= collectPureChangeBlocks(diff.hunks);
+@@ -219,8 +240,8 @@ function parseSessionChangeBlocks(diff, parseDiffOptions, getPreviousAdditionLin
+ 		return maxSlide;
+ 	};
+ 	const blocks = [];
+-	let coveredAdditions = 0;
+-	let coveredDeletions = 0;
++	let coveredAdditions = additionStart;
++	let coveredDeletions = deletionStart;
+ 	for (const hunk of parsed.hunks) {
+ 		slideBlankBoundaryBlocksUp(hunk, parsed, resolveSlide);
+ 		const contextLines = hunk.additionCount > 0 ? hunk.additionLineIndex - coveredAdditions : hunk.deletionLineIndex - coveredDeletions;
+@@ -242,6 +263,219 @@ function parseSessionChangeBlocks(diff, parseDiffOptions, getPreviousAdditionLin
+ 	}
+ 	return blocks;
+ }
++const SESSION_REGION_CONTEXT = 4;
++/** Change blocks of every hunk in canonical file coordinates. */
++function collectChangeBlocks(hunks, additionLineCount) {
++	const blocks = [];
++	for (const hunk of hunks) for (const content of hunk.hunkContent) {
++		if (content.type !== "change") continue;
++		const additions = Math.max(0, Math.min(content.additions, additionLineCount - content.additionLineIndex));
++		if (additions === 0 && content.deletions === 0) continue;
++		blocks.push(additions === content.additions ? { ...content } : { ...content, additions });
++	}
++	return blocks;
++}
++/** Canonical previous/current span an edit replaced, from whole editor line arrays. */
++function getSessionEditSpan(previousLines, currentLines) {
++	const previousEnd = previousLines.length;
++	const currentEnd = currentLines.length;
++	const max = Math.min(previousEnd, currentEnd);
++	let start = 0;
++	while (start < max && previousLines[start] === currentLines[start]) start++;
++	let previous = previousEnd;
++	let current = currentEnd;
++	while (previous > start && current > start && previousLines[previous - 1] === currentLines[current - 1]) {
++		previous--;
++		current--;
++	}
++	return {
++		start,
++		previousEnd: previous,
++		currentEnd: current
++	};
++}
++function getChangedLinesSpan(lineCount, changedLines) {
++	const end = Math.min(changedLines[changedLines.length - 1] + 1, lineCount);
++	return { start: changedLines[0], previousEnd: end, currentEnd: end };
++}
++/**
++* Grow the edited span to the previous blocks it touches plus up to four aligned
++* context lines, never into an untouched block, so only that region is re-diffed.
++*/
++function resolveSessionEditRegion(blocks, span, previousLength) {
++	const { start, previousEnd } = span;
++	let first = 0;
++	let offset = 0;
++	while (first < blocks.length && blocks[first].additionLineIndex + blocks[first].additions < start) {
++		offset += blocks[first].deletions - blocks[first].additions;
++		first++;
++	}
++	let last = first;
++	let through = offset;
++	while (last < blocks.length && blocks[last].additionLineIndex <= previousEnd) {
++		through += blocks[last].deletions - blocks[last].additions;
++		last++;
++	}
++	const firstTouched = last > first ? blocks[first] : void 0;
++	const lastTouched = last > first ? blocks[last - 1] : void 0;
++	let additionStart = start;
++	let deletionStart = start + offset;
++	if (firstTouched != null && firstTouched.additionLineIndex < start) {
++		additionStart = firstTouched.additionLineIndex;
++		deletionStart = firstTouched.deletionLineIndex;
++	}
++	let additionEnd = previousEnd;
++	let deletionEnd = previousEnd + through;
++	if (lastTouched != null && lastTouched.additionLineIndex + lastTouched.additions > previousEnd) {
++		additionEnd = lastTouched.additionLineIndex + lastTouched.additions;
++		deletionEnd = lastTouched.deletionLineIndex + lastTouched.deletions;
++	}
++	const before = first > 0 ? blocks[first - 1].additionLineIndex + blocks[first - 1].additions : 0;
++	const after = last < blocks.length ? blocks[last].additionLineIndex : previousLength;
++	const lead = Math.max(0, Math.min(SESSION_REGION_CONTEXT, additionStart - before));
++	const trail = Math.max(0, Math.min(SESSION_REGION_CONTEXT, after - additionEnd));
++	return {
++		first,
++		last,
++		deletionStart: deletionStart - lead,
++		deletionEnd: deletionEnd + trail,
++		additionStart: additionStart - lead,
++		additionEnd: additionEnd + trail + span.currentEnd - span.previousEnd
++	};
++}
++/**
++* Diff one region with the host provider. Too large for the UI thread: show its
++* trimmed replacement now and flag it for the provider's asynchronous answer.
++*/
++function diffSessionRegion(diff, region, parseDiffOptions, getPreviousAdditionLine, computed) {
++	const provider = getLineDiffProvider();
++	if (computed == null && region.deletionEnd - region.deletionStart + region.additionEnd - region.additionStart > provider.syncLineLimit) return deferredReplacementBlock(diff, region, parseDiffOptions);
++	const oldLines = diff.deletionLines.slice(region.deletionStart, region.deletionEnd);
++	const newLines = diff.additionLines.slice(region.additionStart, region.additionEnd);
++	const result = computed ?? provider.computeSync(oldLines, newLines, parseDiffOptions);
++	if (result == null) return deferredReplacementBlock(diff, region, parseDiffOptions);
++	if (result.changes.length === 0) return [];
++	const oldName = diff.prevName ?? diff.name;
++	const parsed = parseDiffFromFile({
++		name: oldName,
++		contents: oldLines.join("")
++	}, {
++		name: diff.name,
++		contents: newLines.join(""),
++		lang: diff.lang
++	}, parseDiffOptions, false, provider.formatPatch(oldName, diff.name, oldLines, newLines, result.changes));
++	return extractSessionBlocks(diff, parsed, region.additionStart, region.deletionStart, getPreviousAdditionLine);
++}
++function deferredReplacementBlock(diff, region, parseDiffOptions) {
++	const equal = parseDiffOptions?.ignoreWhitespace ? (a, b) => a.trim() === b.trim() : (a, b) => a === b;
++	const { deletionLines, additionLines } = diff;
++	let deletionStart = region.deletionStart;
++	let additionStart = region.additionStart;
++	let { deletionEnd, additionEnd } = region;
++	while (deletionStart < deletionEnd && additionStart < additionEnd && equal(deletionLines[deletionStart], additionLines[additionStart])) {
++		deletionStart++;
++		additionStart++;
++	}
++	while (deletionEnd > deletionStart && additionEnd > additionStart && equal(deletionLines[deletionEnd - 1], additionLines[additionEnd - 1])) {
++		deletionEnd--;
++		additionEnd--;
++	}
++	if (deletionStart === deletionEnd && additionStart === additionEnd) return [];
++	return [{
++		type: "change",
++		additions: additionEnd - additionStart,
++		deletions: deletionEnd - deletionStart,
++		additionLineIndex: additionStart,
++		deletionLineIndex: deletionStart,
++		deferredLineDiff: true
++	}];
++}
++function parseSessionRegionBlocks(diff, parseDiffOptions, getPreviousAdditionLine, editSpan) {
++	const delta = editSpan.currentEnd - editSpan.previousEnd;
++	const blocks = collectChangeBlocks(diff.hunks, diff.additionLines.length - delta);
++	const region = resolveSessionEditRegion(blocks, editSpan, diff.additionLines.length - delta);
++	return [
++		...blocks.slice(0, region.first),
++		...diffSessionRegion(diff, region, parseDiffOptions, getPreviousAdditionLine),
++		...blocks.slice(region.last).map((block) => ({
++			...block,
++			additionLineIndex: block.additionLineIndex + delta
++		}))
++	];
++}
++/** Recompute-shaped hunks from exact change blocks, without re-diffing the file. */
++function recomputeFromChangeBlocks(diff, blocks, parseDiffOptions) {
++	const { additionLines } = diff;
++	const oldName = diff.prevName ?? diff.name;
++	const patch = getLineDiffProvider().formatPatch(oldName, diff.name, diff.deletionLines, additionLines, blocks.map((block) => ({
++		oldStart: block.deletionLineIndex,
++		oldEnd: block.deletionLineIndex + block.deletions,
++		newStart: block.additionLineIndex,
++		newEnd: block.additionLineIndex + block.additions
++	})));
++	const recomputed = parseDiffFromFile({
++		name: oldName,
++		contents: diff.deletionLines.join("")
++	}, {
++		name: diff.name,
++		contents: additionLines.join(""),
++		lang: diff.lang
++	}, parseDiffOptions, false, patch);
++	const deferred = blocks.filter((block) => block.deferredLineDiff === true);
++	if (deferred.length > 0) for (const hunk of recomputed.hunks) for (const content of hunk.hunkContent) {
++		if (content.type === "change" && deferred.some((block) => content.deletionLineIndex < block.deletionLineIndex + Math.max(block.deletions, 1) && block.deletionLineIndex < content.deletionLineIndex + Math.max(content.deletions, 1) || content.additionLineIndex < block.additionLineIndex + Math.max(block.additions, 1) && block.additionLineIndex < content.additionLineIndex + Math.max(content.additions, 1))) content.deferredLineDiff = true;
++	}
++	const result = {
++		hunks: recomputed.hunks,
++		splitLineCount: recomputed.splitLineCount,
++		unifiedLineCount: recomputed.unifiedLineCount,
++		additionLines: recomputed.additionLines,
++		deletionLines: recomputed.deletionLines,
++		additionCharacterCount: recomputed.additionCharacterCount,
++		deletionCharacterCount: recomputed.deletionCharacterCount,
++		type: recomputed.type
++	};
++	return result;
++}
++function findDeferredLineRegion(diff) {
++	const blocks = collectChangeBlocks(diff.hunks, diff.additionLines.length);
++	const block = blocks.find((entry) => entry.deferredLineDiff === true);
++	if (block == null) return;
++	return {
++		deletionStart: block.deletionLineIndex,
++		deletionEnd: block.deletionLineIndex + block.deletions,
++		additionStart: block.additionLineIndex,
++		additionEnd: block.additionLineIndex + block.additions
++	};
++}
++/**
++* Install the provider's answer for a deferred region if that fallback block is
++* still current; a failed answer (result undefined) keeps the fallback as final.
++*/
++function applyDeferredLineDiff(diff, region, result, parseDiffOptions, sessionActive) {
++	const { additionLines } = diff;
++	const blocks = collectChangeBlocks(diff.hunks, additionLines.length);
++	const index = blocks.findIndex((block) => block.deferredLineDiff === true && block.deletionLineIndex === region.deletionStart && block.deletions === region.deletionEnd - region.deletionStart && block.additionLineIndex === region.additionStart && block.additions === region.additionEnd - region.additionStart);
++	if (index === -1) return false;
++	const canonicalDiff = {
++		...diff,
++		additionLines
++	};
++	const exact = result == null ? [{ ...blocks[index], deferredLineDiff: false }] : diffSessionRegion(canonicalDiff, region, parseDiffOptions, (line) => additionLines[line], result);
++	const { type } = diff;
++	const recomputed = recomputeFromChangeBlocks(diff, [
++		...blocks.slice(0, index),
++		...exact,
++		...blocks.slice(index + 1)
++	], parseDiffOptions);
++	const { hunks, splitLineCount, unifiedLineCount } = recomputed;
++	Object.assign(diff, { hunks, splitLineCount, unifiedLineCount, type: recomputed.type });
++	if (sessionActive) {
++		diff.type = type;
++		diff.editSessionDirty = true;
++	}
++	return true;
++}
+ function collectPureChangeBlocks(hunks) {
+ 	const blocks = /* @__PURE__ */ new Map();
+ 	for (const hunk of hunks) for (const content of hunk.hunkContent) if (content.type === "change" && (content.additions === 0 || content.deletions === 0)) blocks.set(content.deletionLineIndex, content);
+@@ -438,6 +672,6 @@ function finalizeSessionHunks(diff) {
+ 	for (let index = 0; index < diff.hunks.length; index++) syncHunkNoEOFCRFromFullFile(diff, index);
+ }
+ //#endregion
+-export { applySessionChangedLines, captureExpansionAnchors, findDivergenceCore, finishEditSessionForDiff, rebuildExpansionFromAnchors, rebuildSessionHunks, remapExpandedHunksForRegionChange };
++export { applyDeferredLineDiff, applySessionChangedLines, captureExpansionAnchors, findDeferredLineRegion, findDivergenceCore, finishEditSessionForDiff, getSessionEditSpan, rebuildExpansionFromAnchors, rebuildSessionHunks, remapExpandedHunksForRegionChange };
+ 
+ //# sourceMappingURL=editSessionHunks.js.map
+\ No newline at end of file
+diff --git a/dist/utils/parseDiffFromFile.d.ts b/dist/utils/parseDiffFromFile.d.ts
+index 48f0f9f..8a740a9 100644
+--- a/dist/utils/parseDiffFromFile.d.ts
++++ b/dist/utils/parseDiffFromFile.d.ts
+@@ -6,7 +6,28 @@ import { FileContents, FileDiffMetadata, ParseDiffOptions } from "../types.js";
+  * If both `oldFile` and `newFile` have a `cacheKey`, the resulting diff gets a
+  * collision-safe key derived from both values and the line-matching mode.
+  */
+-declare function parseDiffFromFile(oldFile: FileContents | null, newFile: FileContents | null, { preferredDiffLib, disableLineMatching, ...diffOptions }?: ParseDiffOptions, throwOnError?: boolean): FileDiffMetadata;
++declare function parseDiffFromFile(oldFile: FileContents | null, newFile: FileContents | null, { preferredDiffLib, disableLineMatching, ...diffOptions }?: ParseDiffOptions, throwOnError?: boolean, precomputedPatch?: string): FileDiffMetadata;
++/** Zero-based line ranges with exclusive ends over lines that keep their newline. */
++interface LineDiffChange {
++  oldStart: number;
++  oldEnd: number;
++  newStart: number;
++  newEnd: number;
++}
++interface LineDiffResult {
++  changes: LineDiffChange[];
++  timedOut: boolean;
++}
++interface LineDiffProvider {
++  /** Regions above this many old plus new lines are diffed asynchronously. */
++  syncLineLimit: number;
++  /** Synchronous result, or undefined when the input is too large for the UI thread. */
++  computeSync(oldLines: readonly string[], newLines: readonly string[], options?: ParseDiffOptions): LineDiffResult | undefined;
++  computeAsync(oldLines: readonly string[], newLines: readonly string[], options?: ParseDiffOptions): Promise<LineDiffResult>;
++  formatPatch(oldName: string, newName: string, oldLines: readonly string[], newLines: readonly string[], changes: readonly LineDiffChange[]): string;
++}
++declare function setLineDiffProvider(provider: LineDiffProvider | undefined): void;
++declare function getLineDiffProvider(): LineDiffProvider | undefined;
+ //#endregion
+-export { parseDiffFromFile };
++export { type LineDiffChange, type LineDiffProvider, type LineDiffResult, getLineDiffProvider, parseDiffFromFile, setLineDiffProvider };
+ //# sourceMappingURL=parseDiffFromFile.d.ts.map
+\ No newline at end of file
+diff --git a/dist/utils/parseDiffFromFile.js b/dist/utils/parseDiffFromFile.js
+index 9e98531..0946781 100644
+--- a/dist/utils/parseDiffFromFile.js
++++ b/dist/utils/parseDiffFromFile.js
+@@ -1,6 +1,9 @@
+ import { composeCacheKey } from "./composeCacheKey.js";
+ import { diffLibs, resolveDiffLib } from "./diffLibs.js";
+ import { processFile } from "./parsePatchFiles.js";
++
++import { formatPatch } from "diff";
++import { splitFileContents } from "./splitFileContents.js";
+ //#region src/utils/parseDiffFromFile.ts
+ const MISSING_FILE_NAME = "/dev/null";
+ /**
+@@ -9,7 +12,7 @@ const MISSING_FILE_NAME = "/dev/null";
+ * If both `oldFile` and `newFile` have a `cacheKey`, the resulting diff gets a
+ * collision-safe key derived from both values and the line-matching mode.
+ */
+-function parseDiffFromFile(oldFile, newFile, { preferredDiffLib = "jsdiff", disableLineMatching, ...diffOptions } = {}, throwOnError = false) {
++function parseDiffFromFile(oldFile, newFile, { preferredDiffLib = "jsdiff", disableLineMatching, ...diffOptions } = {}, throwOnError = false, precomputedPatch) {
+ 	if (oldFile === null && newFile === null) throw new Error("parseDiffFromFile: You must pass oldFile, newFile, or both");
+ 	const resolvedOldFile = oldFile ?? createMissingFile();
+ 	const resolvedNewFile = newFile ?? createMissingFile();
+@@ -20,17 +23,18 @@ function parseDiffFromFile(oldFile, newFile, { preferredDiffLib = "jsdiff", disa
+ 		resolvedNewFile.contents,
+ 		resolvedOldFile.header,
+ 		resolvedNewFile.header,
+-		diffOptions
++		{ ...diffOptions, maxEditLength: diffOptions.maxEditLength ?? 2048, timeout: diffOptions.timeout ?? 50 }
+ 	];
+ 	const diffLib = throwOnError ? preferredDiffLib : resolveDiffLib(preferredDiffLib);
+-	let patch;
+-	try {
++	let patch = precomputedPatch;
++	if (patch == null) try {
+ 		patch = diffLibs[diffLib].createTwoFilesPatch(...patchArgs);
+ 	} catch (error) {
+ 		if (throwOnError || diffLib === "jsdiff") throw error;
+ 		console.error(error);
+ 		patch = diffLibs.jsdiff.createTwoFilesPatch(...patchArgs);
+ 	}
++	patch ??= replacementPatch(resolvedOldFile, resolvedNewFile, diffOptions);
+ 	const fileData = processFile(patch, {
+ 		cacheKey: (() => {
+ 			const oldCacheKey = oldFile?.cacheKey;
+@@ -54,13 +58,50 @@ function parseDiffFromFile(oldFile, newFile, { preferredDiffLib = "jsdiff", disa
+ 	if (language != null) fileData.lang = language;
+ 	return fileData;
+ }
++// Bound both worker parses and synchronous edit recomputes with the same fallback.
++function replacementPatch(oldFile, newFile, options) {
++    const equal = options?.ignoreWhitespace ? (a, b) => a.trim() === b.trim() : (a, b) => a === b;
++	const oldLines = splitFileContents(oldFile.contents);
++	const newLines = splitFileContents(newFile.contents);
++	let start = 0;
++	while (start < oldLines.length && start < newLines.length && equal(oldLines[start], newLines[start])) start++;
++	let oldEnd = oldLines.length;
++	let newEnd = newLines.length;
++	while (oldEnd > start && newEnd > start && equal(oldLines[oldEnd - 1], newLines[newEnd - 1])) {
++		oldEnd--;
++		newEnd--;
++	}
++	const oldCount = oldEnd - start;
++	const newCount = newEnd - start;
++	const lines = [];
++	const append = (entries, end, prefix) => {
++		for (let index = start; index < end; index++) {
++			const line = entries[index];
++			lines.push(prefix + (line.endsWith("\n") ? line.slice(0, -1) : line));
++			if (!line.endsWith("\n")) lines.push("\\ No newline at end of file");
++		}
++	};
++	append(oldLines, oldEnd, "-");
++	append(newLines, newEnd, "+");
++	return formatPatch({ oldFileName: oldFile.name, newFileName: newFile.name, oldHeader: oldFile.header, newHeader: newFile.header,
++		hunks: oldCount === 0 && newCount === 0 ? [] : [{ oldStart: start + 1, oldLines: oldCount, newStart: start + 1, newLines: newCount, lines }]
++	});
++}
+ function createMissingFile() {
+ 	return {
+ 		name: MISSING_FILE_NAME,
+ 		contents: ""
+ 	};
+ }
++// Host-supplied line diff for edit sessions; jsdiff remains the default without one.
++let lineDiffProvider;
++function setLineDiffProvider(provider) {
++	lineDiffProvider = provider;
++}
++function getLineDiffProvider() {
++	return lineDiffProvider;
++}
+ //#endregion
+-export { parseDiffFromFile };
++export { getLineDiffProvider, parseDiffFromFile, setLineDiffProvider };
+ 
+ //# sourceMappingURL=parseDiffFromFile.js.map
+\ No newline at end of file
+diff --git a/dist/worker/WorkerPoolManager.d.ts b/dist/worker/WorkerPoolManager.d.ts
+index 19044f2..40c7c40 100644
+--- a/dist/worker/WorkerPoolManager.d.ts
++++ b/dist/worker/WorkerPoolManager.d.ts
+@@ -99,15 +99,14 @@ declare class WorkerPoolManager {
+   private postWorkerSetup;
+   private cancelWorkerSetup;
+   private retireWorker;
++  private replaceReadyWorker;
+   private failWorkerAttempt;
+   private failWorkerSlot;
+   private settleWorkerStartup;
+   private rejectInitialization;
+   private rejectAllQueuedRenderTasks;
+   /**
+-   * Pass browser errors to onWorkerError, or log them if no callback is set.
+-   * Only startup errors interrupt the current request. A ready worker can
+-   * still acknowledge its work after an unrelated error event.
++   * Report browser errors and replace a worker that may no longer respond.
+    */
+   private handleWorkerError;
+   private drainQueue;
+@@ -128,6 +127,7 @@ declare class WorkerPoolManager {
+   private queueInitialization;
+   private removeAllQueuedRenderTasks;
+   getStats(): WorkerStats;
++  private canRetryRenderWorkers;
+   private submitTask;
+   private submitCacheTask;
+   private enqueueRenderTask;
+@@ -137,6 +137,7 @@ declare class WorkerPoolManager {
+   private _queuedDrain;
+   private queueDrain;
+   private assignWorkerToTask;
++  retireLanguage(lang: string): void;
+   private cleanWorkerAndTask;
+   private executeTask;
+   private maybeAttachCustomExtensions;
+diff --git a/dist/worker/WorkerPoolManager.js b/dist/worker/WorkerPoolManager.js
+index 097572b..42558fc 100644
+--- a/dist/worker/WorkerPoolManager.js
++++ b/dist/worker/WorkerPoolManager.js
+@@ -28,6 +28,7 @@ import LRUMapPkg from "lru_map";
+ //#region src/worker/WorkerPoolManager.ts
+ const IGNORE_RESPONSE = Symbol("IGNORE_RESPONSE");
+ const DEFAULT_WORKER_INITIALIZATION_TIMEOUT = 5e3;
++const RENDER_EXECUTION_TIMEOUT = 3e4;
+ var WorkerPoolManager = class {
+ 	options;
+ 	preferredHighlighter;
+@@ -78,7 +79,7 @@ var WorkerPoolManager = class {
+ 	}
+ 	shouldUseLocalFallback() {
+ 		const { initialization } = this;
+-		return initialization?.state === "failed" || initialization?.state === "succeeded" && this.readyWorkerCount === 0;
++		return initialization?.state === "failed" || this.workerSlotsExhausted;
+ 	}
+ 	/**
+ 	* @internal Returns true if the view must wait for the local theme. When
+@@ -330,15 +331,18 @@ var WorkerPoolManager = class {
+ 	async initialize(languages) {
+ 		const { initialization: current } = this;
+ 		if (current?.state === "succeeded") {
++			const retry = this.retryFailedWorkers();
+ 			if (getHighlighterIfLoaded({ theme: this.renderOptions.theme }) == null) await this.preloadLocalHighlighter(languages ?? []);
++			await retry;
+ 			return;
+ 		}
+ 		if (current?.state === "pending") return current.promise;
+ 		if (current?.state === "failed") {
+-			if (current.reason === "workers") throw current.error;
++			if (this.configuredWorkers === 0) throw current.error;
+ 			languages ??= current.languages;
+ 		}
+ 		this.terminated = false;
++		this.workerSlotsExhausted = false;
+ 		const initialization = this.initialization = {
+ 			state: "pending",
+ 			promise: Promise.resolve(),
+@@ -349,8 +353,11 @@ var WorkerPoolManager = class {
+ 			initialization.resolve = resolve;
+ 			initialization.reject = reject;
+ 		});
+-		this.workerSlots = Array.from({ length: this.configuredWorkers }, () => ({ state: "starting" }));
+-		this.startPool(initialization, languages ?? []);
++		if (current?.state === "failed" && current.reason === "workers") void this.retryFailedWorkers();
++		else {
++			this.workerSlots = Array.from({ length: this.configuredWorkers }, () => ({ state: "starting" }));
++			this.startPool(initialization, languages ?? []);
++		}
+ 		this.queueBroadcastStateChanges();
+ 		return initialization.promise;
+ 	}
+@@ -371,7 +378,7 @@ var WorkerPoolManager = class {
+ 			const resolving = this.resolveWorkerLanguages(languages);
+ 			const resolvedLanguages = Array.isArray(resolving) ? resolving : await resolving;
+ 			if (this.initialization !== initialization) return;
+-			this.resolvedWorkerLanguages = resolvedLanguages;
++			this.resolvedWorkerLanguages = initialization.retiredLanguages == null ? resolvedLanguages : resolvedLanguages.filter(({ name }) => !initialization.retiredLanguages.has(name));
+ 			if (this.workerSlots.length === 0) {
+ 				const error = new WorkerPoolWorkerError("WorkerPoolManager: no workers configured");
+ 				this.workerSlotsExhausted = true;
+@@ -422,7 +429,10 @@ var WorkerPoolManager = class {
+ 	*/
+ 	async retryFailedWorkers() {
+ 		const failedSlots = this.workerSlots.filter((slot) => slot.state === "failed");
+-		if (failedSlots.length > 0) await Promise.all(this.startWorkerAttempts(failedSlots, "retrying"));
++		if (failedSlots.length > 0) {
++			this.workerSlotsExhausted = false;
++			await Promise.all(this.startWorkerAttempts(failedSlots, "retrying"));
++		}
+ 		return this.getStats();
+ 	}
+ 	startWorkerAttempts(slots, state) {
+@@ -431,8 +441,10 @@ var WorkerPoolManager = class {
+ 			slot.startup = startup;
+ 			slot.state = state;
+ 			slot.error = void 0;
+-			this.startWorkerAttempt(slot, startup);
+ 		}));
++		for (const slot of slots) {
++			if (slot.startup != null) this.startWorkerAttempt(slot, slot.startup);
++		}
+ 		this.queueBroadcastStateChanges();
+ 		return settlements;
+ 	}
+@@ -480,6 +492,12 @@ var WorkerPoolManager = class {
+ 			});
+ 			while (slot.startup === startup && managedWorker.renderOptionsVersion !== this.renderOptionsVersion) await this.setRenderOptionsOnWorker(managedWorker, this.resolvedWorkerThemes);
+ 			if (slot.startup !== startup) return;
++			if (managedWorker.retireWhenIdle) {
++				clearTimeout(startup.timeout);
++				this.retireWorker(slot);
++				void this.startWorkerAttempt(slot, startup);
++				return;
++			}
+ 			slot.state = "ready";
+ 			this.settleWorkerStartup(slot);
+ 			this.readyWorkerCount++;
+@@ -516,6 +534,26 @@ var WorkerPoolManager = class {
+ 		this.cancelWorkerSetup(worker, error);
+ 		worker.worker.terminate();
+ 	}
++	replaceReadyWorker(slot, error) {
++		const { worker } = slot;
++		if (slot.state !== "ready" || worker == null) return;
++		const task = this.activeTaskById.get(worker.requestId);
++		const { lifecycleGeneration } = this;
++		this.readyWorkerCount--;
++		slot.state = "retrying";
++		this.retireWorker(slot, error);
++		try {
++			if (isRenderTask(task) && error != null) {
++				this.rejectRenderTaskCallbacks(task, error);
++				this.notifyHighlightError(task, error);
++			}
++		} catch (callbackError) {
++			console.error(callbackError);
++		} finally {
++			this.cleanWorkerAndTask(worker, task);
++			if (this.isCurrentLifecycle(lifecycleGeneration)) this.startWorkerAttempts([slot], "retrying");
++		}
++	}
+ 	failWorkerAttempt(slot, startup, cause) {
+ 		if (slot.startup !== startup) return;
+ 		const error = normalizeWorkerStartupError(cause);
+@@ -541,10 +579,7 @@ var WorkerPoolManager = class {
+ 		this.queueBroadcastStateChanges();
+ 		if (this.readyWorkerCount > 0 || this.workerSlotsExhausted) return;
+ 		const errors = this.workerSlots.map(({ error }) => error);
+-		if (!errors.every((error) => error != null)) {
+-			if (wasReady) this.rejectAllQueuedRenderTasks(slot.error);
+-			return;
+-		}
++		if (!errors.every((error) => error != null)) return;
+ 		this.workerSlotsExhausted = true;
+ 		const poolError = errors.length === 1 ? slot.error : new WorkerPoolWorkerError(`WorkerPoolManager: all ${errors.length} worker slots failed`, { cause: new AggregateError(errors, "Worker slot failures") });
+ 		if (errors.length > 1 && errors.every(isHandledWorkerPoolError)) markWorkerErrorReported(poolError);
+@@ -584,9 +619,7 @@ var WorkerPoolManager = class {
+ 		}
+ 	}
+ 	/**
+-	* Pass browser errors to onWorkerError, or log them if no callback is set.
+-	* Only startup errors interrupt the current request. A ready worker can
+-	* still acknowledge its work after an unrelated error event.
++	* Report browser errors and replace a worker that may no longer respond.
+ 	*/
+ 	handleWorkerError(slot, managedWorker, event) {
+ 		const { onWorkerError } = this.options;
+@@ -596,18 +629,17 @@ var WorkerPoolManager = class {
+ 			console.error("WorkerPoolManager: onWorkerError threw:", hookError);
+ 		}
+ 		else console.error("Worker error:", event, managedWorker);
+-		const { pendingSetupRequestId } = managedWorker;
+-		if (slot.startup == null || pendingSetupRequestId == null) return;
+-		const task = this.activeTaskById.get(pendingSetupRequestId);
+-		if (task == null || !("reject" in task)) return;
++		if (slot.worker !== managedWorker) return;
+ 		const error = errorFromWorkerErrorEvent(event);
+ 		if (onWorkerError != null) markWorkerErrorReported(error);
+-		this.cleanWorkerAndTask(managedWorker, task);
+-		task.reject(error);
++		if (slot.startup != null) this.failWorkerAttempt(slot, slot.startup, error);
++		else this.replaceReadyWorker(slot, error);
+ 	}
+ 	drainQueue = () => {
+ 		this._queuedDrain = void 0;
+-		if (this.readyWorkerCount === 0 || this.queuedTasks.length === 0) return;
++		if (this.queuedTasks.length === 0) return;
++		if (this.initialization?.state === "succeeded" && this.workerSlots.some((slot) => slot.state === "failed")) void this.retryFailedWorkers();
++		if (this.readyWorkerCount === 0) return;
+ 		for (let i = 0; i < this.queuedTasks.length;) {
+ 			const task = this.queuedTasks[i];
+ 			if (this.hasActiveRequest(task)) {
+@@ -632,7 +664,7 @@ var WorkerPoolManager = class {
+ 		});
+ 	}
+ 	primeFileHighlightCache(file) {
+-		if (!this.isWorkingPool()) return Promise.reject(/* @__PURE__ */ new Error("WorkerPoolManager.primeFileHighlightCache: worker pool is not working"));
++		if (!this.isWorkingPool() && !this.canRetryRenderWorkers()) return Promise.reject(/* @__PURE__ */ new Error("WorkerPoolManager.primeFileHighlightCache: worker pool is not working"));
+ 		if (!this.shouldPrimeFileHighlightCache(file)) return Promise.resolve();
+ 		if (this.shouldHighlightOnMainThread(file)) {
+ 			const options = this.getFileRenderOptions();
+@@ -694,7 +726,7 @@ var WorkerPoolManager = class {
+ 		});
+ 	}
+ 	primeDiffHighlightCache(diff) {
+-		if (!this.isWorkingPool()) return Promise.reject(/* @__PURE__ */ new Error("WorkerPoolManager.primeDiffHighlightCache: worker pool is not working"));
++		if (!this.isWorkingPool() && !this.canRetryRenderWorkers()) return Promise.reject(/* @__PURE__ */ new Error("WorkerPoolManager.primeDiffHighlightCache: worker pool is not working"));
+ 		if (!this.shouldPrimeDiffHighlightCache(diff)) return Promise.resolve();
+ 		if (this.shouldHighlightOnMainThread(diff)) {
+ 			const options = this.getDiffRenderOptions();
+@@ -782,8 +814,13 @@ var WorkerPoolManager = class {
+ 		this.resolvedWorkerThemes.length = 0;
+ 		this.resolvedWorkerLanguages.length = 0;
+ 		for (const task of this.removeAllQueuedRenderTasks()) this.rejectRenderTaskCallbacks(task, error);
+-		for (const task of this.activeTaskById.values()) if ("reject" in task) task.reject(error);
+-		else if (isRenderTask(task)) this.rejectRenderTaskCallbacks(task, error);
++		for (const task of this.activeTaskById.values()) {
++			if ("reject" in task) task.reject(error);
++			else if (isRenderTask(task)) {
++				clearTimeout(task.executionTimeout);
++				this.rejectRenderTaskCallbacks(task, error);
++			}
++		}
+ 		this.fileCache.clear();
+ 		this.diffCache.clear();
+ 		this.failedHighlightKeys.clear();
+@@ -846,8 +883,11 @@ var WorkerPoolManager = class {
+ 			diffCacheSize: this.diffCache.size
+ 		};
+ 	}
++	canRetryRenderWorkers() {
++		return !this.terminated && this.initialization?.state === "succeeded" && this.workerSlotsExhausted;
++	}
+ 	submitTask(instance, request) {
+-		if (this.shouldUseLocalFallback()) return;
++		if (this.shouldUseLocalFallback() && !this.canRetryRenderWorkers()) return;
+ 		this.initializeIfNeeded();
+ 		const highlightKey = this.getHighlightKeyForRequest(request);
+ 		const existingTask = highlightKey != null ? this.getTaskByHighlightKey(highlightKey) : void 0;
+@@ -967,6 +1007,7 @@ var WorkerPoolManager = class {
+ 			}
+ 			this.executeTask(availableWorker, task);
+ 		} catch (error) {
++			if (this.activeTaskById.get(task.id) !== task) return;
+ 			this.notifyHighlightError(task, error);
+ 			this.rejectRenderTaskCallbacks(task, normalizeWorkerError(error));
+ 			this.cleanWorkerAndTask(availableWorker, task);
+@@ -1059,23 +1100,49 @@ var WorkerPoolManager = class {
+ 		this.trackInstanceRequests(task);
+ 		this.activeTaskById.set(task.id, task);
+ 	}
++	retireLanguage(lang) {
++		const { initialization } = this;
++		if (initialization?.state === "pending") {
++			initialization.retiredLanguages ??= /* @__PURE__ */ new Set();
++			initialization.retiredLanguages.add(lang);
++		}
++		this.resolvedWorkerLanguages = this.resolvedWorkerLanguages.filter(({ name }) => name !== lang);
++		for (const slot of this.workerSlots) {
++			const { worker } = slot;
++			if (worker == null) continue;
++			const task = this.activeTaskById.get(worker.requestId);
++			if (!worker.langs.has(lang) && !(isRenderTask(task) && getLangsFromRequest(task.request).includes(lang))) continue;
++			worker.retireWhenIdle = true;
++			if (worker.requestId == null && worker.pendingSetupRequestId == null) this.replaceReadyWorker(slot);
++		}
++	}
+ 	cleanWorkerAndTask(managedWorker, task, requestId = task?.id) {
+ 		if (managedWorker.requestId === requestId) managedWorker.requestId = void 0;
+ 		if (managedWorker.pendingSetupRequestId === requestId) managedWorker.pendingSetupRequestId = void 0;
+ 		if (task != null) {
+ 			if (isRenderTask(task)) {
++				clearTimeout(task.executionTimeout);
+ 				this.rejectRenderTaskCallbacks(task, new WorkerPoolTaskCanceledError());
+ 				this.clearInstanceRequests(task);
+ 				this.clearHighlightKey(task);
+ 			}
+ 			this.activeTaskById.delete(task.id);
+ 		}
++		if (managedWorker.retireWhenIdle && managedWorker.requestId == null && managedWorker.pendingSetupRequestId == null) {
++			const slot = this.workerSlots.find((slot) => slot.worker === managedWorker);
++			if (slot != null) this.replaceReadyWorker(slot);
++		}
+ 	}
+ 	executeTask(managedWorker, task) {
+ 		if (shouldSyncCustomExtensions(task.request)) this.maybeAttachCustomExtensions(managedWorker, task.request);
+ 		try {
+ 			if (task.type === "file") task.cacheKeyAtDispatch = task.request.file.cacheKey;
+ 			else if (task.type === "diff") task.cacheKeyAtDispatch = task.request.diff.cacheKey;
++			if (isRenderTask(task)) task.executionTimeout = setTimeout(() => {
++				if (this.activeTaskById.get(task.id) !== task) return;
++				const slot = this.workerSlots.find((slot) => slot.worker === managedWorker);
++				if (slot != null) this.replaceReadyWorker(slot, new WorkerPoolWorkerError("Diff highlighting worker timed out. Retry this file."));
++			}, RENDER_EXECUTION_TIMEOUT);
+ 			managedWorker.worker.postMessage(task.request);
+ 		} catch (error) {
+ 			console.error("Failed to post message to worker:", error);
+@@ -1102,7 +1169,7 @@ var WorkerPoolManager = class {
+ 	getAvailableWorker(langs) {
+ 		let worker;
+ 		for (const { state, worker: managedWorker } of this.workerSlots) {
+-			if (state !== "ready" || managedWorker == null || managedWorker.requestId != null || managedWorker.pendingSetupRequestId != null || managedWorker.renderOptionsVersion !== this.renderOptionsVersion) continue;
++			if (state !== "ready" || managedWorker == null || managedWorker.retireWhenIdle || managedWorker.requestId != null || managedWorker.pendingSetupRequestId != null || managedWorker.renderOptionsVersion !== this.renderOptionsVersion) continue;
+ 			worker = managedWorker;
+ 			if (langs.length === 0) break;
+ 			let hasEveryLang = true;
+@@ -1157,10 +1224,15 @@ var WorkerPoolManager = class {
+ 		this.clearHighlightKey(task);
+ 	}
+ 	removeActiveTask(task) {
+-		this.rejectRenderTaskCallbacks(task, new WorkerPoolTaskCanceledError());
+-		this.clearInstanceRequests(task);
+-		this.clearHighlightKey(task);
+-		this.activeTaskById.delete(task.id);
++		const slot = this.workerSlots.find(({ worker }) => worker?.requestId === task.id);
++		if (slot != null) this.replaceReadyWorker(slot);
++		else {
++			clearTimeout(task.executionTimeout);
++			this.rejectRenderTaskCallbacks(task, new WorkerPoolTaskCanceledError());
++			this.clearInstanceRequests(task);
++			this.clearHighlightKey(task);
++			this.activeTaskById.delete(task.id);
++		}
+ 	}
+ 	createRenderTaskCallbacks(task) {
+ 		return new Promise((resolve, reject) => {
+diff --git a/dist/worker/types.d.ts b/dist/worker/types.d.ts
+index 7d6cd69..fe68e0f 100644
+--- a/dist/worker/types.d.ts
++++ b/dist/worker/types.d.ts
+@@ -179,6 +179,7 @@ interface RenderFileTask {
+   request: RenderFileRequest;
+   /** Cache key included in the payload when it was dispatched to the worker. */
+   cacheKeyAtDispatch?: string;
++  executionTimeout?: ReturnType<typeof setTimeout>;
+   instances: Set<FileRendererInstance>;
+   primeCache: boolean;
+   highlightKey?: string;
+@@ -192,6 +193,7 @@ interface RenderDiffTask {
+   request: RenderDiffRequest;
+   /** Cache key included in the payload when it was dispatched to the worker. */
+   cacheKeyAtDispatch?: string;
++  executionTimeout?: ReturnType<typeof setTimeout>;
+   instances: Set<DiffRendererInstance>;
+   primeCache: boolean;
+   highlightKey?: string;

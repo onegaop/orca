@@ -38,7 +38,7 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-async function setup(silentWorkerIndex?: number, allowStartupFailure = false) {
+async function setup(silentWorkerIndices: number[] = [], allowStartupFailure = false) {
   const workers: HighlightWorker[] = []
   const manager = new WorkerPoolManager(
     {
@@ -46,7 +46,7 @@ async function setup(silentWorkerIndex?: number, allowStartupFailure = false) {
       workerInitializationTimeout: 100,
       workerFactory: () => {
         const worker = new HighlightWorker()
-        worker.initialize = workers.length !== silentWorkerIndex
+        worker.initialize = !silentWorkerIndices.includes(workers.length)
         workers.push(worker)
         return worker
       },
@@ -64,7 +64,12 @@ async function setup(silentWorkerIndex?: number, allowStartupFailure = false) {
     ...parseDiffFromFile(null, { name: 'file.ts', contents: 'const value = 1\n' }),
     cacheKey: 'file'
   }
-  const instance = () => ({ __id: 'test', onHighlightSuccess: vi.fn(), onHighlightError: vi.fn() })
+  const instance = () => ({
+    __id: 'test',
+    onHighlightSuccess: vi.fn(),
+    onHighlightError: vi.fn(),
+    onLocalFallback: vi.fn()
+  })
   const workerAt = (index: number) =>
     vi.waitFor(() => {
       const worker = workers[index]
@@ -150,7 +155,7 @@ it('reports a runtime crash and completes the next request on a replacement work
 
 it('bounds replacement startup and lets a later request retry a failed replacement', async () => {
   vi.spyOn(console, 'error').mockImplementation(() => {})
-  const { manager, diff, instance, workerAt, requestFrom, complete } = await setup(1)
+  const { manager, diff, instance, workerAt, requestFrom, complete } = await setup([1])
   const first = instance()
   manager.highlightDiffAST(first, diff)
   await requestFrom(await workerAt(0))
@@ -161,8 +166,8 @@ it('bounds replacement startup and lets a later request retry a failed replaceme
   manager.highlightDiffAST(waiting, diff)
   manager.highlightDiffAST(shared, diff)
   await vi.waitFor(() => expect(silent.terminated).toBe(true))
-  expect(waiting.onHighlightError).toHaveBeenCalledTimes(1)
-  expect(shared.onHighlightError).toHaveBeenCalledTimes(1)
+  expect(waiting.onLocalFallback).toHaveBeenCalledTimes(1)
+  expect(shared.onLocalFallback).toHaveBeenCalledTimes(1)
   expect(manager.getStats()).toMatchObject({ queuedTasks: 0, activeTasks: 0 })
   const successor = instance()
   manager.highlightDiffAST(successor, diff)
@@ -203,14 +208,14 @@ it('fails a silently hung shared job and gives queued work a fresh worker', asyn
 
 it('accepts a fresh initialization after a failed startup', async () => {
   vi.spyOn(console, 'error').mockImplementation(() => {})
-  const { manager, diff, instance, workerAt, requestFrom, complete } = await setup(0, true)
+  const { manager, diff, instance, workerAt, requestFrom, complete } = await setup([0, 1], true)
   expect(manager.isWorkingPool()).toBe(false)
   const retry = manager.initialize()
   expect(manager.isWorkingPool()).toBe(true)
   await retry
   const successor = instance()
   manager.highlightDiffAST(successor, diff)
-  const replacement = await workerAt(1)
+  const replacement = await workerAt(2)
   complete(replacement, (await requestFrom(replacement)).id)
   expect(successor.onHighlightSuccess).toHaveBeenCalledTimes(1)
 })

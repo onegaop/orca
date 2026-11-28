@@ -65,7 +65,9 @@ export function preparePierreDiffHighlight(
       __id: `orca-highlight:${diff.cacheKey}`,
       // The pool releases successful requests after notifying all shared consumers.
       onHighlightSuccess: () => finish(undefined, false),
-      onHighlightError: (error: unknown) => finish(error)
+      onHighlightError: (error: unknown) => finish(error),
+      onLocalFallback: () =>
+        finish(new Error('Diff highlighting worker is unavailable. Retry this file.'))
     }
     unsubscribeTheme = pool.subscribeToThemeChanges({
       onThemeChange: () => {
