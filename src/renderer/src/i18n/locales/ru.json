@@ -1020,7 +1020,19 @@
         "messageStyle": "Стиль сообщений",
         "messageStyleDefault": "По умолчанию",
         "messageStyleMessaging": "Мессенджер",
-        "messageStyleDescription": "Облачка сообщений в личных чатах с ботами. Чаты для программирования сохраняют стандартный вид."
+        "messageStyleDescription": "Облачка сообщений в личных чатах с ботами. Чаты для программирования сохраняют стандартный вид.",
+        "backgroundImage": "Фоновое изображение",
+        "backgroundImageChoose": "Выбрать…",
+        "backgroundImageChange": "Изменить…",
+        "backgroundImageRemove": "Убрать",
+        "backgroundImageFailed": "Не удалось использовать это изображение.",
+        "backgroundKeywordPhoto": "фото",
+        "backgroundKeywordWallpaper": "обои",
+        "backgroundVisibility": "Видимость фона",
+        "glassMessages": "Стеклянные сообщения",
+        "glassKeywordTransparency": "прозрачность",
+        "glassKeywordBlur": "размытие",
+        "glassKeywordBubble": "пузырь"
       },
       "editorTheme": {
         "light": "Светлая тема редактора",

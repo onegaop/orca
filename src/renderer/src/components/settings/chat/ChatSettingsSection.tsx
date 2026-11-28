@@ -92,6 +92,7 @@ export function ChatSettingsSection({
               <AppearanceChatSection
                 settings={settings}
                 updateSettings={updateSettings}
+                showDesktopOnlySettings={showDesktopOnlySettings}
                 fontSuggestions={fontSuggestions}
                 onRequestFontSuggestions={onRequestFontSuggestions}
                 forceVisiblePrimary={matchesSettingsSearch(query, [

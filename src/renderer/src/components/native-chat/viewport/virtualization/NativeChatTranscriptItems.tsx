@@ -12,6 +12,7 @@ import {
   nativeChatSlotJoinsActivityAbove,
   nativeChatSlotJoinsMessageAbove
 } from '../../conversation/slots/native-chat-activity-row-joins'
+import { nativeChatAnswerCardAt } from '../../conversation/slots/native-chat-answer-card'
 import {
   useNativeChatTimedRows,
   type NativeChatTimedRow
@@ -53,6 +54,20 @@ export function NativeChatTranscriptItems({
     [context, placed]
   )
   const { sizerRef, virtualItems, scrollMargin, measureRow, totalSize } = window
+  const newRowsMarkerBelow = (index: number): boolean =>
+    newRowsMarker?.place === 'above-row' && rowKeys[index + 1] === newRowsMarker.key
+  const joinsActivityAbove = (index: number): boolean => {
+    const slot = slots[index]
+    return slot
+      ? nativeChatSlotJoinsActivityAbove({
+          slot,
+          previous: slots[index - 1],
+          timedRowsAfter: placed?.afterMessage,
+          markerKey: newRowsMarker?.key,
+          leavesWhole: nativeChatSlotLeavesWhole(slot)
+        })
+      : false
+  }
   return (
     <NativeChatReplyRevealsContext.Provider value={replyReveals}>
       <NativeChatHeldTextSessionContext.Provider value={context.heldTextSession}>
@@ -93,16 +108,11 @@ export function NativeChatTranscriptItems({
                         newRowsMarker={
                           rowKeys[item.index] === newRowsMarker?.key ? newRowsMarker : undefined
                         }
-                        newRowsMarkerBelow={
-                          newRowsMarker?.place === 'above-row' &&
-                          rowKeys[item.index + 1] === newRowsMarker.key
-                        }
-                        joinsActivityAbove={nativeChatSlotJoinsActivityAbove({
-                          slot,
-                          previous: slots[item.index - 1],
-                          timedRowsAfter: placed?.afterMessage,
-                          markerKey: newRowsMarker?.key,
-                          leavesWhole
+                        newRowsMarkerBelow={newRowsMarkerBelow(item.index)}
+                        joinsActivityAbove={joinsActivityAbove(item.index)}
+                        answerCard={nativeChatAnswerCardAt(slots, item.index, {
+                          joinsActivityAbove,
+                          newRowsMarkerBelow
                         })}
                       />
                     </div>
@@ -140,6 +150,18 @@ export function NativeChatWaitingTranscriptItems({
   /** Ends with other agents' waiting mail; rows stacked outside a conversation have none. */
   agentMail?: boolean
 }): React.JSX.Element {
+  const joinsActivityAbove = (index: number): boolean => {
+    const slot = slots[index]
+    return slot
+      ? nativeChatSlotJoinsActivityAbove({
+          slot,
+          previous: slots[index - 1],
+          timedRowsAfter: context.timedRows,
+          markerKey: undefined,
+          leavesWhole: nativeChatSlotLeavesWhole(slot)
+        })
+      : false
+  }
   return (
     <>
       {slots.map((slot, index) => {
@@ -160,12 +182,10 @@ export function NativeChatWaitingTranscriptItems({
                 markerKey: undefined,
                 leavesWhole
               })}
-              joinsActivityAbove={nativeChatSlotJoinsActivityAbove({
-                slot,
-                previous: slots[index - 1],
-                timedRowsAfter: context.timedRows,
-                markerKey: undefined,
-                leavesWhole
+              joinsActivityAbove={joinsActivityAbove(index)}
+              answerCard={nativeChatAnswerCardAt(slots, index, {
+                joinsActivityAbove,
+                newRowsMarkerBelow: () => false
               })}
             />
           </div>

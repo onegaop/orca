@@ -973,7 +973,19 @@
         "messageStyle": "Message style",
         "messageStyleDefault": "Default",
         "messageStyleMessaging": "Messaging",
-        "messageStyleDescription": "Bubble layout for one-to-one bot chats. Coding chats keep the default layout."
+        "messageStyleDescription": "Bubble layout for one-to-one bot chats. Coding chats keep the default layout.",
+        "backgroundImage": "Background image",
+        "backgroundImageChoose": "Choose…",
+        "backgroundImageChange": "Change…",
+        "backgroundImageRemove": "Remove",
+        "backgroundImageFailed": "Could not use that image.",
+        "backgroundKeywordPhoto": "photo",
+        "backgroundKeywordWallpaper": "wallpaper",
+        "backgroundVisibility": "Background visibility",
+        "glassMessages": "Glass messages",
+        "glassKeywordTransparency": "transparency",
+        "glassKeywordBlur": "blur",
+        "glassKeywordBubble": "bubble"
       },
       "editorTheme": {
         "light": "Light editor theme",

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { cn } from '@/lib/class-names'
 import { LinkActionPopover } from '@/components/link-actions/LinkActionPopover'
 import { NATIVE_CHAT_APPEARANCE_ROOT_CLASS } from './appearance/native-chat-appearance-style'
+import { useNativeChatBackdrop } from './appearance/use-native-chat-backdrop'
 import { NativeChatFindBar } from './viewport/find/NativeChatFindBar'
 import { NativeChatFindQueryContext } from './viewport/find/native-chat-find-query'
 import { NativeChatSessionHistoryScopeContext } from './native-chat-session-history-scope'
@@ -34,6 +35,7 @@ export function NativeChatSurface({
     linkActionRequest,
     closeLinkActions
   } = surface
+  const backdrop = useNativeChatBackdrop(appearance)
   return (
     <div
       ref={rootRef}
@@ -47,7 +49,7 @@ export function NativeChatSurface({
         'flex h-full min-h-0 w-full flex-col focus:outline-none',
         className
       )}
-      style={appearance}
+      {...backdrop}
       data-native-chat-scheme={appearance.colorScheme}
     >
       <NativeChatLinkClickContext value={onLinkClick}>

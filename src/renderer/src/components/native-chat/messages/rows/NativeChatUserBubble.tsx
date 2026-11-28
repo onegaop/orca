@@ -13,7 +13,7 @@ export function NativeChatUserBubble({
   return (
     <div
       className={cn(
-        'max-w-[80%] rounded-xl border border-chat-user-border bg-chat-user-surface px-3.5 py-2.5 text-sm text-chat-foreground-strong has-[.native-chat-column-image]:w-full',
+        'native-chat-user-bubble max-w-[80%] rounded-xl border border-chat-user-border bg-chat-user-surface px-3.5 py-2.5 text-sm text-chat-foreground-strong has-[.native-chat-column-image]:w-full',
         variant === 'messaging' &&
           'rounded-2xl rounded-br-md border-transparent bg-chat-messaging-user-surface',
         className

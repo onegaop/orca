@@ -34,6 +34,7 @@ import { registerLazyWorkspacePortHandlers } from '../ports/lazy-workspace-ports
 import { registerLazyAutomationHandlers } from '../lazy-automations-handlers'
 import { registerLazyKeybindingHandlers } from '../lazy-keybindings-handlers'
 import { registerTelemetryHandlers } from '../telemetry'
+import { registerNativeChatBackgroundHandlers } from '../native-chat-background/native-chat-background'
 import { registerPluginHandlers } from '../plugins/plugins'
 import { registerUIHandlers, setTrustedUIRendererWebContentsId } from '../ui'
 import { registerLazyEmulatorHandlers } from '../emulator/lazy-emulator-handlers'
@@ -147,6 +148,7 @@ export async function registerCoreHandlers(
       onBeforeRelaunch: lifecycleOptions.onBeforeRelaunch
     })
     registerBrowserHandlers(store)
+    registerNativeChatBackgroundHandlers()
     registerSessionHandlers(store, runtime)
     registerUIHandlers(store, { isDashboardPopoutRenderer })
     registerLazyEmulatorHandlers((id) => runtime.getEmulatorBridge()?.getIosVideoStreamUrl(id))
