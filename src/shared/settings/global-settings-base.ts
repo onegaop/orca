@@ -35,6 +35,7 @@ import type { ManagedAccountNameSettings } from '../agent-accounts/managed-accou
 import type { NewTabMenuSettings } from '../new-tab-menu/new-tab-menu-layout'
 import type { UiLanguageSettings } from '../i18n/ui-language-settings'
 import type { ChatDeleteSettings } from '../agent-session/chat-deletion/orca-chat-delete'
+import type { StatusBarMemorySettings } from '../diagnostics/status-bar-memory-settings'
 import type { CustomAcpAgentSettings } from '../agent-launch/custom-acp/custom-acp-agent'
 import type { ProjectBadgeAppearanceSettings } from '../repository/appearance/repo-mark-appearance'
 import type { ProjectTreeSettings } from '../sidebar-list/project-tree-settings'
@@ -116,4 +117,5 @@ export type GlobalSettingsBase = AgentStateAppearanceSettings &
   CustomAcpAgentSettings &
   TaskPageSettings &
   ProjectBadgeAppearanceSettings &
-  ProjectTreeSettings
+  ProjectTreeSettings &
+  StatusBarMemorySettings

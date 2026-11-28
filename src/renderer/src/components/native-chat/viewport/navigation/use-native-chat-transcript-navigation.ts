@@ -122,10 +122,7 @@ export function useNativeChatNavigation({
   holdHistory: () => void
   releaseHistory: () => void
   scrollRef: React.RefObject<HTMLDivElement | null>
-  scroll: Pick<
-    NativeChatTranscriptScroll,
-    'scrollMessageToTop' | 'readerLeavesEnd' | 'readerAtEnd' | 'scrollToBottom'
-  >
+  scroll: NativeChatTranscriptScroll
 }) {
   const { scrollMessageToTop, readerLeavesEnd, readerAtEnd, scrollToBottom } = scroll
   const { issue, nextRequestId } = request
@@ -226,8 +223,8 @@ export function useNativeChatNavigation({
     readerAtEnd,
     messageIdAt: (index) => nativeChatSlotKeyAt(slots, index),
     waitingMessageIdAt: (index) => nativeChatSlotKeyAt(waitingSlots, index),
-    jumpTo: ({ messageId, offset }, settled) =>
-      startHistoryJump({ kind: 'item', id: messageId, offset }, (result) => {
+    jumpTo: ({ messageId, offset }, settled, budget) =>
+      startHistoryJump({ kind: 'item', id: messageId, offset, budget }, (result) => {
         if (result === 'missing' || result === 'failed') {
           releaseHistory()
           if (subagentId === null) {
@@ -237,7 +234,12 @@ export function useNativeChatNavigation({
           }
         }
         settled(result)
-      })
+      }),
+    onGiveUp: () => {
+      if (subagentId !== null) {
+        startHistoryJump({ kind: 'subagent', agentId: subagentId })
+      }
+    }
   })
   useEffect(() => {
     // A returning reader's own row lies past the subagent's spawn, so its restore pages far enough.

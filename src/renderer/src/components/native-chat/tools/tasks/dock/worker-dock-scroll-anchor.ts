@@ -69,7 +69,7 @@ export function workerDockRowKeyTarget(key: string, index: number, length: numbe
   }
 }
 
-/** Where a key pressed on a list row moves focus: another row's index, the chip below the last
+/** Where a key pressed on a list row moves focus: another row's index, the chip above the first
  *  row, or null when the key is not a list move. */
 export function workerDockListKeyTarget(
   event: { key: string; target: EventTarget | null },
@@ -84,9 +84,8 @@ export function workerDockListKeyTarget(
   if (next === null) {
     return null
   }
-  return event.key === 'ArrowDown' && index === ids.length - 1
-    ? 'chip'
-    : Math.min(next, ids.length - 1)
+  // The open chip heads the list: up from the first row returns to it.
+  return event.key === 'ArrowUp' && index === 0 ? 'chip' : Math.min(next, ids.length - 1)
 }
 
 /** A soft edge where the card's list has more rows out of view: at the bottom while rows remain

@@ -165,7 +165,7 @@ export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktr
     repoMap,
     worktreeMap,
     worktreeLineageById,
-    worktreeDragGroups: session.worktreeDragGroups,
+    getWorktreeDragGroups: session.getWorktreeDragGroups,
     keepsFolderParent: rowGeometry.keepsFolderParent,
     captureFolderRetention: rowGeometry.captureFolderRetention
   })
@@ -341,7 +341,7 @@ export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktr
   const hiddenDragRanges = useDraggedSubtreeRanges(projection, draggingIdentity)
   const projectFrames = useProjectFrames(rows, props.activeWorktreeId)
   const rowContext = buildWorktreeVirtualRowContext({
-    dragUnitsByRow: rowGeometry.ranges.byRow,
+    getDragRanges: rowGeometry.getRanges,
     hiddenDragRanges,
     projectFrames,
     props: rowProps,

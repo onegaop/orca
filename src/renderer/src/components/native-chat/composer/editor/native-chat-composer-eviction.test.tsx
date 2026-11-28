@@ -3,10 +3,9 @@ import { act, render } from '@testing-library/react'
 import { Editor } from '@tiptap/core'
 import { createRef } from 'react'
 import { expect, it } from 'vitest'
-import {
-  openNativeChatViewTabs,
-  releaseNativeChatViewTabs
-} from '../../pane/ownership/native-chat-view-memory'
+import { useAppStore } from '@/store'
+import type { Tab } from '../../../../../../shared/workspace-layout/tab-groups/tab-types'
+import { releaseNativeChatViewTabs } from '../../pane/ownership/native-chat-view-memory'
 import type { NativeChatComposerInput } from './native-chat-composer-input'
 import {
   NativeChatComposerEditorOwner,
@@ -30,7 +29,12 @@ it('preserves selection and undo when evicting an open chat and disposes them on
       />
     </NativeChatComposerEditorOwner>
   )
-  openNativeChatViewTabs([tab.tabId])
+  useAppStore.setState({
+    unifiedTabsByWorktree: {
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the open-tab check reads only id.
+      [tab.worktreeId]: [{ id: tab.tabId } as Tab]
+    }
+  })
   const first = render(composer)
   const textbox = first.getByRole('textbox')
   const editor = 'editor' in textbox ? textbox.editor : undefined
@@ -57,6 +61,7 @@ it('preserves selection and undo when evicting an open chat and disposes them on
   editor.on('destroy', () => {
     destroyed = true
   })
+  useAppStore.setState({ unifiedTabsByWorktree: {} })
   releaseNativeChatComposerEditors([tab.tabId])
   releaseNativeChatViewTabs([tab.tabId])
   expect(destroyed).toBe(true)

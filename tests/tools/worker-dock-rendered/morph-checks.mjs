@@ -1,5 +1,5 @@
 // The chip's hover opening and its one-shape morph into the list. Imported by run.mjs.
-import { chip, expanded, toggle } from './fixture-session.mjs'
+import { chip, events, expanded, toggle } from './fixture-session.mjs'
 
 const away = (page) => page.mouse.move(2, 2)
 // From outside the chip, so the pointer always enters it (the warm page may have left it there).
@@ -171,11 +171,11 @@ export async function runMorphChecks({ check, scene, assert }) {
       await rest(page)
       await page.waitForTimeout(300)
       await toggle(page).focus()
-      await page.keyboard.press('ArrowUp')
+      await page.keyboard.press('ArrowDown')
       const inRow = await page.evaluate(() =>
         Boolean(document.activeElement?.closest('[data-worker-dock-row]'))
       )
-      assert(inRow, 'ArrowUp did not reach a row')
+      assert(inRow, 'ArrowDown did not reach a row')
       await page.keyboard.press('Escape')
       await page.waitForTimeout(400)
       assert(!(await expanded(page)), 'Escape did not fold it')
@@ -183,6 +183,47 @@ export async function runMorphChecks({ check, scene, assert }) {
         document.activeElement?.hasAttribute('data-worker-dock-pill')
       )
       assert(onChip, 'focus did not return to the chip')
+    })
+  )
+
+  await check('a press where the chip was, as it opens under the pointer, pins the list', () =>
+    scene('twentyFolded720', {}, async (page) => {
+      await rest(page)
+      const spot = await chip(page).boundingBox()
+      await page.waitForTimeout(400)
+      assert(await expanded(page), 'a resting pointer did not open it')
+      // Rows now fill the spot the folded chip had; the press must not open one.
+      await page.mouse.click(spot.x + spot.width / 2, spot.y + spot.height / 2)
+      await away(page)
+      await page.waitForTimeout(500)
+      assert(await expanded(page), 'the press did not pin it open')
+      // As a press on the chip would, it brings focus to the chip, so Escape folds the list.
+      const onChip = await page.evaluate(() =>
+        document.activeElement?.hasAttribute('data-worker-dock-pill')
+      )
+      assert(onChip, 'the pinning press left focus where it was')
+      const opened = (await events(page)).filter((event) => event.action === 'open')
+      assert(opened.length === 0, `the press opened ${opened.map((event) => event.id)}`)
+      // Pinned, a press on a row opens it as usual.
+      await page.locator('[data-worker-dock-open]').first().click()
+      const after = (await events(page)).filter((event) => event.action === 'open')
+      assert(after.length === 1, 'a pinned list did not open its row')
+    })
+  )
+
+  await check('a press there dragged away leaves nothing behind: Enter still toggles', () =>
+    scene('twentyFolded720', {}, async (page) => {
+      await rest(page)
+      const spot = await chip(page).boundingBox()
+      await page.waitForTimeout(400)
+      await page.mouse.move(spot.x + spot.width / 2, spot.y + spot.height / 2)
+      await page.mouse.down()
+      await page.mouse.move(4, 4)
+      await page.mouse.up()
+      await toggle(page).focus()
+      await page.keyboard.press('Enter')
+      await page.waitForTimeout(100)
+      assert(!(await expanded(page)), 'Enter did not fold it after a dragged-away press')
     })
   )
 
@@ -210,11 +251,12 @@ export async function runMorphChecks({ check, scene, assert }) {
       await page.keyboard.press('Enter')
       await page.waitForTimeout(400)
       await page.keyboard.press('Escape')
-      await page.keyboard.press('Shift+Tab')
+      // Forward from the chip, where the rows would come next.
+      await page.keyboard.press('Tab')
       const inRow = await page.evaluate(() =>
         Boolean(document.activeElement?.closest('[data-worker-dock-row]'))
       )
-      assert(!inRow, 'Shift+Tab moved into a folding row')
+      assert(!inRow, 'Tab moved into a folding row')
     })
   )
 

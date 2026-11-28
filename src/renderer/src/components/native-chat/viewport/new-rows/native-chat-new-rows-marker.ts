@@ -1,11 +1,11 @@
 // Mark the first row that arrived or kept growing while the reader was away.
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { stageBesideStreamedText } from '../../../../../../shared/agent-session/view/structured-agent-session-streamed-text-rows'
 import {
   KEPT_TRANSCRIPTS_PER_TAB,
   useNativeChatViewMemory
 } from '../../pane/ownership/native-chat-view-memory'
-import { stageBesideStreamedText } from '../../../../../../shared/agent-session/view/structured-agent-session-streamed-text-rows'
 import { useOrcaWindowForegroundFocused } from '@/attention/use-orca-window-foreground-focused'
 import { compareAgentJournalPositions } from '../../../../../../shared/agent-session/journal/agent-session-journal-position'
 import type { AgentJournalPosition } from '../../../../../../shared/agent-session/journal/agent-session-journal-types'
@@ -207,17 +207,27 @@ export function useNativeChatNewRowsMarker(
     memoryKey === undefined ? undefined : `new-rows:${memoryKey}`,
     KEPT_TRANSCRIPTS_PER_TAB
   )
-  const [seen, setSeen] = useState<Seen>(
+  const [seenState, setSeen] = useState<Seen>(
     () => kept.saved ?? { watching, left: null, missed: null, arriving: false }
   )
+  let seen = seenState
+  // A transcript key that changes mid-view takes that transcript's own kept place, never this one's.
+  const [seenKey, setSeenKey] = useState(memoryKey)
+  if (seenKey !== memoryKey) {
+    seen = kept.saved ?? { watching, left: null, missed: null, arriving: false }
+    setSeenKey(memoryKey)
+    setSeen(seen)
+  }
   const { write: keep } = kept
-  useEffect(() => keep(seen), [keep, seen])
+  // With marking off nothing is tracked, so nothing is kept.
+  useEffect(() => keep(enabled ? seen : undefined), [enabled, keep, seen])
   const latest = useRef({ enabled, seen, slots, waitingSlots })
   useLayoutEffect(() => {
     latest.current = { enabled, seen, slots, waitingSlots }
   })
-  // Why: a hidden view runs no effects, so where the reader left is kept as it hides, before a release.
-  useEffect(
+  // Why: a hidden view runs no effects, so where the reader left is kept as it hides, before a release. Layout, so
+  // a key change keeps the old transcript's own place: this cleanup runs before `latest` takes the new one.
+  useLayoutEffect(
     () => () => {
       const { enabled: on, seen: held, slots: rows, waitingSlots: waiting } = latest.current
       if (on && held.watching) {

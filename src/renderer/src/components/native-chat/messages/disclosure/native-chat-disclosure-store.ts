@@ -1,11 +1,11 @@
 // Keep disclosures outside windowed rows so scrolling cannot erase reader choices; standalone rows fall back to local state.
 
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import type { VirtualItem } from '@tanstack/react-virtual'
 import {
   KEPT_TRANSCRIPTS_PER_TAB,
   useNativeChatViewState
 } from '../../pane/ownership/native-chat-view-memory'
-import type { VirtualItem } from '@tanstack/react-virtual'
 
 export type NativeChatDisclosureStore = {
   read: (key: string) => boolean | undefined
@@ -21,9 +21,10 @@ export const MAX_NATIVE_CHAT_DISCLOSURES = 512
 
 const NO_DISCLOSURES: ReadonlyMap<string, boolean> = new Map()
 
+/** `memoryKey` names the transcript within its chat tab, so a released chat view returns with its disclosures. */
 export function useNativeChatDisclosures(memoryKey?: string): NativeChatDisclosureStore {
-  const [open, setOpen] = useNativeChatViewState(
-    memoryKey === undefined ? undefined : `disclosures:${memoryKey}`,
+  const [open, setOpen] = useNativeChatViewState<ReadonlyMap<string, boolean>>(
+    `disclosures:${memoryKey ?? ''}`,
     NO_DISCLOSURES,
     KEPT_TRANSCRIPTS_PER_TAB
   )

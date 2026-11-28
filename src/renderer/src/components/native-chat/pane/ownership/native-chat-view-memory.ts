@@ -2,13 +2,22 @@ import {
   createContext,
   useCallback,
   useContext,
+  useLayoutEffect,
+  useRef,
   useState,
+  useMemo,
   useSyncExternalStore,
   type SetStateAction
 } from 'react'
+import { useAppStore } from '@/store'
 
 /** The chat tab a releasable view belongs to; null on surfaces that never release their view. */
-export type NativeChatViewTab = { tabId: string; worktreeId: string }
+export type NativeChatViewTab = {
+  tabId: string
+  worktreeId: string
+  /** The host and session the tab shows now; guards belong to it, so a tab switched to another chat starts clear. */
+  conversation?: string
+}
 export const NativeChatViewTabContext = createContext<NativeChatViewTab | null>(null)
 
 // Why: chat views are released while hidden to bound memory. Their small view state (expanded turns and
@@ -19,28 +28,82 @@ export const KEPT_TRANSCRIPTS_PER_TAB = 16
 /** Per-prompt view choices (a folded question, an opened detail) are kept for this many prompts per tab. */
 export const KEPT_PROMPT_VIEWS = 8
 
-const openTabs = new Set<string>()
 const records = new Map<string, Map<string, unknown>>()
 const listeners = new Map<string, Set<() => void>>()
+const onRelease = new Map<string, Set<() => void>>()
 
-/** Layers report the chat tabs they own; a tab stays open here until it is released. */
-export function openNativeChatViewTabs(tabIds: Iterable<string>): void {
-  for (const tabId of tabIds) {
-    openTabs.add(tabId)
-  }
-}
-
-/** A closed tab's view state ends with it. */
+/** A closed tab's view state ends with it, after work a released view left open is wound up. */
 export function releaseNativeChatViewTabs(tabIds: Iterable<string>): void {
   for (const tabId of tabIds) {
-    openTabs.delete(tabId)
+    const pending = onRelease.get(tabId)
+    onRelease.delete(tabId)
+    pending?.forEach((release) => release())
     records.delete(tabId)
     listeners.get(tabId)?.forEach((listener) => listener())
   }
 }
 
-export function isNativeChatViewTabOpen(tab: NativeChatViewTab): boolean {
-  return openTabs.has(tab.tabId)
+/**
+ * Open in any workspace: a tab a rename or drag moved still counts. Its own workspace answers on a switch; only a
+ * tab that left it (moved or closed, both rare) walks the others.
+ */
+export function isNativeChatViewTabOpenAnywhere(tab: NativeChatViewTab): boolean {
+  const byWorktree = useAppStore.getState().unifiedTabsByWorktree
+  if (byWorktree[tab.worktreeId]?.some((entry) => entry.id === tab.tabId)) {
+    return true
+  }
+  return Object.values(byWorktree).some((tabs) => tabs.some((entry) => entry.id === tab.tabId))
+}
+
+let pageHideInstalled = false
+/** A reload or quit winds up what released views left open, as their own `pagehide` handlers would have. */
+function windUpOnPageHide(): void {
+  if (pageHideInstalled || typeof window === 'undefined') {
+    return
+  }
+  pageHideInstalled = true
+  window.addEventListener('pagehide', () => {
+    const pending = [...onRelease.values()].flatMap((set) => [...set])
+    onRelease.clear()
+    pending.forEach((release) => release())
+  })
+}
+
+/**
+ * Runs `release` when the tab closes or the page goes away, unless the returned cancel runs first (a remounted
+ * view took it back). Registered when a view unmounts, which is rare, so the open-tab check can walk the tabs.
+ */
+export function onNativeChatViewTabRelease(
+  tab: NativeChatViewTab,
+  release: () => void
+): () => void {
+  if (!isNativeChatViewTabOpenAnywhere(tab)) {
+    release()
+    return () => {}
+  }
+  windUpOnPageHide()
+  let set = onRelease.get(tab.tabId)
+  if (!set) {
+    set = new Set()
+    onRelease.set(tab.tabId, set)
+  }
+  const own = set
+  own.add(release)
+  return () => {
+    own.delete(release)
+    if (own.size === 0 && onRelease.get(tab.tabId) === own) {
+      onRelease.delete(tab.tabId)
+    }
+  }
+}
+
+/** Why the tab store, not a list layers keep: a view's first write can run before its layer's effects. */
+export function isNativeChatViewTabLive(tab: NativeChatViewTab): boolean {
+  return (
+    useAppStore
+      .getState()
+      .unifiedTabsByWorktree[tab.worktreeId]?.some((entry) => entry.id === tab.tabId) === true
+  )
 }
 
 export function readNativeChatViewMemory<T>(tab: NativeChatViewTab, key: string): T | undefined {
@@ -48,20 +111,38 @@ export function readNativeChatViewMemory<T>(tab: NativeChatViewTab, key: string)
   return records.get(tab.tabId)?.get(key) as T | undefined
 }
 
-/** Writes after the tab closed are dropped, so a late settlement can't recreate a closed tab's record. */
-/** With `keepNewest`, keys sharing this key's prefix (up to its first ':') beyond the newest few are dropped. */
+/** A tab's record for this lifetime of the tab, made if the tab is open; null once it closed. */
+function lifeOf(tab: NativeChatViewTab): Map<string, unknown> | null {
+  let record = records.get(tab.tabId)
+  if (!record && isNativeChatViewTabLive(tab)) {
+    record = new Map()
+    records.set(tab.tabId, record)
+  }
+  return record ?? null
+}
+
+/**
+ * Writes after the tab closed are dropped, so a late settlement can't recreate a closed tab's record; with `life`,
+ * so are writes from a view of an earlier lifetime of a tab id that closed and opened again.
+ * With `keepNewest`, keys sharing this key's prefix (up to its first ':') beyond the newest few are dropped,
+ * except values still in flight (`inFlight: true`).
+ */
 export function writeNativeChatViewMemory(
   tab: NativeChatViewTab,
   key: string,
   value: unknown,
-  keepNewest?: number
+  keepNewest?: number,
+  life?: Map<string, unknown> | null
 ): void {
   const record = records.get(tab.tabId)
+  if (life !== undefined && (life === null || record !== life)) {
+    return
+  }
   if (value === undefined) {
     if (!record?.delete(key)) {
       return
     }
-  } else if (!openTabs.has(tab.tabId) || record?.get(key) === value) {
+  } else if (record?.get(key) === value) {
     return
   } else if (record) {
     record.delete(key)
@@ -69,18 +150,29 @@ export function writeNativeChatViewMemory(
     if (keepNewest !== undefined) {
       dropOldestBeyond(record, key, keepNewest)
     }
-  } else {
+  } else if (isNativeChatViewTabLive(tab)) {
+    // Only a tab's first record checks the tab store; a record exists only until its tab's release.
     records.set(tab.tabId, new Map([[key, value]]))
+  } else {
+    return
   }
   listeners.get(tab.tabId)?.forEach((listener) => listener())
 }
 
 function dropOldestBeyond(record: Map<string, unknown>, key: string, keep: number): void {
   const prefix = key.slice(0, key.indexOf(':') + 1)
-  const group = [...record.keys()].filter((entry) => entry.startsWith(prefix))
+  const group = [...record]
+    .filter(([entry, value]) => entry.startsWith(prefix) && !isInFlight(value))
+    .map(([entry]) => entry)
   for (const stale of group.slice(0, Math.max(0, group.length - keep))) {
     record.delete(stale)
   }
+}
+
+function isInFlight(value: unknown): boolean {
+  return (
+    typeof value === 'object' && value !== null && 'inFlight' in value && value.inFlight === true
+  )
 }
 
 function subscribeToTab(tabId: string, listener: () => void): () => void {
@@ -118,6 +210,8 @@ export function useNativeChatViewState<T>(
   const viewTab = useContext(NativeChatViewTabContext)
   const tab = key === undefined ? null : viewTab
   const [local, setLocal] = useState(initial)
+  // This lifetime of the tab: a request settling after the tab closed and its id opened again writes nothing.
+  const life = useMemo(() => (tab ? lifeOf(tab) : null), [tab])
   const subscribe = useCallback(
     (listener: () => void) => (tab ? subscribeToTab(tab.tabId, listener) : NO_SUBSCRIPTION()),
     [tab]
@@ -133,14 +227,89 @@ export function useNativeChatViewState<T>(
         return
       }
       const next = apply(readNativeChatViewMemory<T>(tab, key) ?? initial)
-      writeNativeChatViewMemory(tab, key, next === initial ? undefined : next, keepNewest)
+      writeNativeChatViewMemory(tab, key, next === initial ? undefined : next, keepNewest, life)
     },
-    [tab, key, initial, keepNewest]
+    [tab, key, initial, keepNewest, life]
   )
   return [tab ? kept : local, setValue]
 }
 
-/** A tab-kept value read once when the view mounts; without a key or a tab, nothing is kept. */
+/**
+ * An in-flight guard (busy, pending, a preview) kept with the tab: a view released mid-request returns still
+ * guarded, and a request settling after release clears it. `read` is synchronous, for same-frame double clicks.
+ * Back at `initial`, the entry is deleted; per-item keys whose settled value stays pass `keepNewest`.
+ */
+export function useNativeChatViewGuard<T>(
+  /** Without a key the guard stays local to the view. */
+  key: string | undefined,
+  initial: T,
+  keepNewest?: number
+): [T, (action: SetStateAction<T>) => void, () => T] {
+  const viewTab = useContext(NativeChatViewTabContext)
+  const tab = key === undefined ? null : viewTab
+  // Suffixed, so `keepNewest` still groups by the key's own prefix.
+  const keptKey =
+    key === undefined || tab?.conversation === undefined ? key : `${key}@${tab.conversation}`
+  const [value, setValue] = useNativeChatViewState(keptKey, initial, keepNewest)
+  const local = useRef(initial)
+  const read = useCallback(
+    (): T =>
+      tab && keptKey !== undefined
+        ? (readNativeChatViewMemory<T>(tab, keptKey) ?? initial)
+        : local.current,
+    [tab, keptKey, initial]
+  )
+  const set = useCallback(
+    (action: SetStateAction<T>) => {
+      const next = isUpdater(action) ? action(read()) : action
+      local.current = next
+      setValue(next)
+    },
+    [read, setValue]
+  )
+  return [value, set, read]
+}
+
+/** A `{ current }` view of a guard; made outside render code, which can't compile accessors. */
+function guardAsRef<T>(read: () => T, set: (value: T) => void): { current: T } {
+  return {
+    get current(): T {
+      return read()
+    },
+    set current(value: T) {
+      set(value)
+    }
+  }
+}
+
+/** `useNativeChatViewGuard` as a mutable ref, for code that sets `.current`; back at `initial`, nothing is kept. */
+export function useNativeChatViewGuardRef<T>(key: string, initial: T): { current: T } {
+  const [, set, read] = useNativeChatViewGuard(key, initial)
+  return useMemo(() => guardAsRef(read, set), [read, set])
+}
+
+/** A mutable ref kept with the tab, so a guard a released view set still holds in the view that replaces it. */
+export function useNativeChatViewRef<T>(
+  /** Without a key the ref stays local to the view. */
+  key: string | undefined,
+  initial: T
+): { current: T } {
+  const viewTab = useContext(NativeChatViewTabContext)
+  const tab = key === undefined ? null : viewTab
+  const [ref] = useState(() => {
+    const kept =
+      tab && key !== undefined ? readNativeChatViewMemory<{ current: T }>(tab, key) : undefined
+    return kept ?? { current: initial }
+  })
+  useLayoutEffect(() => {
+    if (tab && key !== undefined) {
+      writeNativeChatViewMemory(tab, key, ref)
+    }
+  }, [tab, key, ref])
+  return ref
+}
+
+/** A tab-kept value read when the view mounts and when its key changes; without a key or a tab, nothing is kept. */
 export function useNativeChatViewMemory<T>(
   key: string | undefined,
   keepNewest?: number
@@ -149,9 +318,15 @@ export function useNativeChatViewMemory<T>(
   write: (value: T | undefined) => void
 } {
   const tab = useContext(NativeChatViewTabContext)
-  const [saved] = useState(() =>
+  const read = (): T | undefined =>
     tab && key !== undefined ? readNativeChatViewMemory<T>(tab, key) : undefined
-  )
+  // Read again when the key changes: a remounted chat learns its conversation's key only once history loads.
+  const [held, setHeld] = useState(() => ({ key, saved: read() }))
+  let saved = held.saved
+  if (held.key !== key) {
+    saved = read()
+    setHeld({ key, saved })
+  }
   const write = useCallback(
     (value: T | undefined) => {
       if (tab && key !== undefined) {

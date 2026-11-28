@@ -1,4 +1,6 @@
 import { useLayoutEffect, useState, type RefObject } from 'react'
+import { workerDockHeightObserver, workerDockScope } from './WorkerDockPill'
+import { workerChipAnchor } from './worker-chip-slot'
 
 // A row's resting height: one line of title and age.
 export const WORKER_DOCK_ROW = 32
@@ -8,61 +10,82 @@ const JUMP_ROOM = 40
 const CRAMPED = 'data-worker-dock-cramped'
 
 /** The panel list's max height: six rows, or fewer when the chat above the dock is shorter, so the
- *  panel and the Jump to latest above it never run off the pane. Re-read when the pane or the dock
- *  under the panel (a growing message box lifts it) resizes; the panel's own growth (every frame
+ *  panel and the Jump to latest above it never run off the pane. Re-read when the pane, the dock or the
+ *  task list under the panel (either lifts it as it grows) resizes; the panel's own growth (every frame
  *  of the morph) moves nothing this reads. */
 export function useWorkerDockCardBudget({
   root,
-  pill,
   card,
   open,
+  dropped,
   rows,
-  actions
+  placement
 }: {
   root: RefObject<HTMLElement | null>
-  pill: RefObject<HTMLElement | null>
   card: RefObject<HTMLElement | null>
   open: boolean
+  /** Whether the card may drop over the dock when short of room: open, not folding back. */
+  dropped: boolean
   rows: number
-  /** Whether the bulk-action row above the rows is drawn; it takes room from the list. */
-  actions: boolean
+  /** The slot the chip draws in: moved to another, it measures again there. */
+  placement: HTMLElement | null
 }): number {
   const [budget, setBudget] = useState(WORKER_DOCK_ROW * MAX_ROWS)
   useLayoutEffect(() => {
-    const pane = root.current?.closest('[data-native-chat-root]')
-    if (!open || !pane) {
+    const row = root.current
+    const element = card.current
+    const pane = row?.closest('[data-native-chat-root]')
+    // Jump to latest's cramped state belongs to the main transcript only, not a subagent sheet.
+    const scope = workerDockScope(row)
+    const header = element?.firstElementChild
+    if (!open || !row || !element || !pane || !scope) {
       return
     }
     const measure = () => {
       const paneTop = pane.getBoundingClientRect().top
-      const bottom = card.current?.getBoundingClientRect().bottom
-      const header = pill.current?.offsetHeight ?? 0
-      if (bottom === undefined) {
-        return
-      }
-      const actions = card.current?.querySelector<HTMLElement>('[data-worker-dock-actions]')
-      // Besides the list: the chip row, the bulk actions above the rows, the list's top padding and
-      // the borders, then Jump to latest's room and 8px of air.
-      const room = bottom - paneTop - header - (actions?.offsetHeight ?? 0) - 7 - JUMP_ROOM - 8
-      setBudget(Math.max(WORKER_DOCK_ROW, Math.min(WORKER_DOCK_ROW * MAX_ROWS, room)))
+      // The chip's row, not the card: the card may be dropped below it (see `drop`).
+      const bottom = row.getBoundingClientRect().top
+      // Besides the list: the header (bulk actions included), the list's 4px padding above and
+      // below, and the borders, then Jump to latest's room and 8px of air.
+      const headerHeight = header instanceof HTMLElement ? header.offsetHeight : 0
+      const room = bottom - paneTop - headerHeight - 10 - JUMP_ROOM - 8
+      const next = Math.max(WORKER_DOCK_ROW, Math.min(WORKER_DOCK_ROW * MAX_ROWS, room))
+      setBudget(next)
       // Too short for one row and Jump to latest even without the air: Jump steps aside while the card is open
       // (hidden, so nothing half off the pane can be pressed) and returns when it folds.
-      pane.toggleAttribute(CRAMPED, room + 8 < WORKER_DOCK_ROW)
+      scope.toggleAttribute(CRAMPED, room + 8 < WORKER_DOCK_ROW)
+      // Shorter still (the dock has taken the transcript's floor): the card drops over the dock
+      // rather than rising past the pane's top, 4px below it.
+      const drop = Math.max(0, headerHeight + 10 + next - (bottom - paneTop - 4))
+      if (drop && dropped) {
+        element.style.setProperty('translate', `0 ${drop}px`)
+      } else {
+        element.style.removeProperty('translate')
+      }
     }
     measure()
     if (typeof ResizeObserver === 'undefined') {
-      return () => pane.removeAttribute(CRAMPED)
+      return () => {
+        scope.removeAttribute(CRAMPED)
+        element.style.removeProperty('translate')
+      }
     }
-    const observer = new ResizeObserver(measure)
-    for (const element of [pane, root.current?.closest('[data-native-chat-dock]')]) {
-      if (element) {
-        observer.observe(element)
+    // The card rides the transcript's end, which rises as anything under it grows (the message box,
+    // a docked task list that mounts or opens): the transcript viewport just before the chip's row
+    // shrinks for all of them. The header settles taller once a long Stop label wraps. Only height
+    // matters: the header widens on every frame of the morph.
+    const observer = workerDockHeightObserver(measure)
+    const viewport = workerChipAnchor(row)?.previousElementSibling
+    for (const target of [pane, viewport, header]) {
+      if (target) {
+        observer.observe(target)
       }
     }
     return () => {
       observer.disconnect()
-      pane.removeAttribute(CRAMPED)
+      scope.removeAttribute(CRAMPED)
+      element.style.removeProperty('translate')
     }
-  }, [root, pill, card, open, rows, actions])
+  }, [root, card, open, dropped, rows, placement])
   return budget
 }

@@ -3,7 +3,14 @@
 // several workers the name starts with the visible text and names the latest one.
 import { expanded, rows, toggle } from './fixture-session.mjs'
 
-const title = (page) => toggle(page).locator('[data-worker-dock-pill-title]').textContent()
+const STACK = 'native-chat/tools/tasks/dock/WorkerDockStack'
+
+// The lead and the count after it are spaced with a no-break space.
+const title = async (page) =>
+  ((await toggle(page).locator('[data-worker-dock-pill-title]').textContent()) ?? '').replace(
+    /\s+/g,
+    ' '
+  )
 const firstRowTitle = (page) =>
   page.locator('[data-worker-dock-row]').first().locator('.truncate').first().textContent()
 
@@ -37,11 +44,32 @@ export async function runChipNameChecks({ check, scene, assert }) {
         assert(folded === expected, `folded chip shows "${folded}", not "${expected}"`)
         const name = await toggle(page).getAttribute('aria-label')
         assert(name?.startsWith(`${folded}, latest: `), `folded chip named "${name}"`)
+        // Once the 280ms fold has settled.
+        await page.waitForTimeout(400)
         const box = await toggle(page).boundingBox()
         assert(Math.abs(box.height - 24) <= 1, `chip is ${box.height}px tall`)
       })
     )
   }
+
+  await check('in a narrow pane the folded chip shows its whole label, centered', () =>
+    scene('eightTasksMid320', { fixture: STACK, width: 360 }, async (page) => {
+      const shape = await page.evaluate(() => {
+        const title = document.querySelector('[data-worker-dock-pill-title]')
+        const [lead, rest] = title.children
+        const chip = document.querySelector('[data-worker-dock-morph]').getBoundingClientRect()
+        const row = document.querySelector('[data-worker-dock-float]').getBoundingClientRect()
+        return {
+          parts: title.children.length,
+          oneLine: rest ? rest.offsetTop === lead.offsetTop : true,
+          offCenter: Math.abs(chip.left + chip.width / 2 - (row.left + row.width / 2))
+        }
+      })
+      assert(shape.parts === 2, 'the chip label has no count after its lead')
+      assert(shape.oneLine, 'the count after the lead wrapped out of view')
+      assert(shape.offCenter <= 1, `the chip sits ${shape.offCenter}px off center`)
+    })
+  )
 
   await check('one worker: the folded chip is its title, and the title is its name', () =>
     scene('oneFolded720', {}, async (page) => {

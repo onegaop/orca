@@ -51,6 +51,7 @@ export function nativeChatSlotIndexOf(
   return index
 }
 
+/** The row at an index, by the key `nativeChatSlotIndexOf` finds it again by: a message, or a subagent's header. */
 export function nativeChatSlotKeyAt(
   slots: readonly NativeChatTranscriptSlot[],
   index: number

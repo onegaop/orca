@@ -11,9 +11,7 @@ import { structuredAgentSessionPaneKey } from '../../../../shared/agent-session/
 import { useStructuredChatLiveSession } from './session/structured/use-structured-chat-live-session'
 import { NativeChatStructuredPromptCard } from './prompts/NativeChatStructuredPromptCard'
 import { NativeChatComposer } from './composer/NativeChatComposer'
-import { NativeChatEmptyState } from './host-access/NativeChatEmptyState'
-import { NativeChatEmptyPane } from './host-access/NativeChatEmptyPane'
-import { NativeChatLoadingCue } from './host-access/NativeChatLoadingCue'
+import { NativeChatHistoryPlaceholder } from './host-access/NativeChatHistoryPlaceholder'
 import { NativeChatSubagentSheetLayer } from './subagents/NativeChatSubagentSheetLayer'
 import { useStructuredNativeChatSubagents } from './subagents/use-structured-native-chat-subagents'
 import { NativeChatContextClearFade } from './conversation/projection/NativeChatContextClearFade'
@@ -73,6 +71,10 @@ import { useNativeChatHostSendGate } from '@/components/native-chat/host-access/
 import { useStructuredAgentSessionStartFailureFacts } from '@/components/native-chat/messages/notices/use-structured-agent-session-start-failure-facts'
 import { pendingPromptsAllUnanswerableHere } from '../../../../shared/agent-session/requests/prompts/agent-session-approval-subject'
 import type { NativeChatComposerHandle } from './composer/native-chat-composer-types'
+import {
+  NativeChatWorkerChipHost,
+  NativeChatWorkerChipSlot
+} from './tools/tasks/dock/worker-chip-slot'
 import { NativeChatStructuredTranscriptProviders } from './NativeChatStructuredTranscriptProviders'
 
 export function NativeChatStructuredSession(props: Omit<NativeChatStructuredViewProps, 'mode'>) {
@@ -268,64 +270,63 @@ export function NativeChatStructuredSession(props: Omit<NativeChatStructuredView
                   composerRef={composerRef}
                   focusComposer={focusComposer}
                 />
-                <NativeChatContextClearFade
-                  // A read failure stays in view: no divider may come to end the fade.
-                  clearing={controller.contextClear.clearing && viewState.kind !== 'error'}
-                  overlay={
-                    <NativeChatSurfaceFindBar surface={surface} isVisible={props.isVisible} />
-                  }
-                >
-                  {viewState.kind === 'loading' || (viewState.kind === 'error' && !readFailure) ? (
-                    historyPhase !== 'unread' && <NativeChatLoadingCue />
-                  ) : viewState.kind === 'error' ? (
-                    <NativeChatEmptyState
-                      kind="error"
-                      retrying={!readFailure?.final}
-                      {...(readFailure?.named ? { headline: readFailure.text } : {})}
-                    />
-                  ) : viewState.kind === 'empty' ? (
-                    <NativeChatEmptyPane {...props} slot={install.slot} />
-                  ) : (
-                    <NativeChatStructuredTranscriptProviders
-                      pane={props}
-                      chat={submits.rows}
-                      forks={forks}
-                      recovery={controller}
-                      directory={fileLinkContext}
-                      messages={controller.messages}
-                      view={continuation.view}
-                      setup={setup}
-                      messageListRef={submits.messageListRef}
-                      // A rewind or a /clear replaces the conversation; nothing the old one held carries over.
-                      transcriptKey={`${controller.epoch}:${controller.contextClear.clears}`}
-                      transcriptProps={{
-                        find: surface.find,
-                        conversationKey: controller.contextClear.conversationKey,
-                        paneKey,
-                        session,
-                        journalItems: controller.journalItems,
-                        journalSubmissions: controller.submissions,
-                        journalLatestTurn: controller.latestTurn,
-                        journalHostWork: controller.hostWork,
-                        subagentRoster: controller.subagentRoster,
-                        railOutline: controller.railOutline,
-                        isVisible: props.isVisible,
-                        isWorking: controller.isWorking,
-                        expandSignal: false,
-                        workingStartedAt: controller.workingStartedAt,
-                        settledTurns: controller.settledTurns,
-                        awaitingInput: prompt === null ? null : 'shown',
-                        turnActivity: controller.turnActivity,
-                        stopping: bot.stopControls.stopping,
-                        structuredAttachments: true,
-                        runtimeContext: imageRuntimeContext,
-                        deliveryNotices,
-                        turnBot,
-                        botHome: bot.kickoff
-                      }}
-                    />
-                  )}
-                </NativeChatContextClearFade>
+                <NativeChatWorkerChipHost chip={subagents.chip}>
+                  <NativeChatContextClearFade
+                    // A read failure stays in view: no divider may come to end the fade.
+                    clearing={controller.contextClear.clearing && viewState.kind !== 'error'}
+                    overlay={
+                      <NativeChatSurfaceFindBar surface={surface} isVisible={props.isVisible} />
+                    }
+                  >
+                    {viewState.kind !== 'ready' ? (
+                      <NativeChatHistoryPlaceholder
+                        kind={viewState.kind}
+                        readFailure={readFailure}
+                        cue={historyPhase !== 'unread'}
+                        pane={{ slot: install.slot, agent: props.agent, tabId: props.tabId }}
+                      />
+                    ) : (
+                      <NativeChatStructuredTranscriptProviders
+                        pane={props}
+                        chat={submits.rows}
+                        forks={forks}
+                        recovery={controller}
+                        directory={fileLinkContext}
+                        messages={controller.messages}
+                        view={continuation.view}
+                        setup={setup}
+                        messageListRef={submits.messageListRef}
+                        // A rewind or a /clear replaces the conversation; nothing the old one held carries over.
+                        transcriptKey={`${controller.epoch}:${controller.contextClear.clears}`}
+                        transcriptProps={{
+                          find: surface.find,
+                          paneKey,
+                          session,
+                          journalItems: controller.journalItems,
+                          journalSubmissions: controller.submissions,
+                          journalLatestTurn: controller.latestTurn,
+                          journalHostWork: controller.hostWork,
+                          subagentRoster: controller.subagentRoster,
+                          railOutline: controller.railOutline,
+                          isVisible: props.isVisible,
+                          isWorking: controller.isWorking,
+                          expandSignal: false,
+                          workingStartedAt: controller.workingStartedAt,
+                          settledTurns: controller.settledTurns,
+                          awaitingInput: prompt === null ? null : 'shown',
+                          turnActivity: controller.turnActivity,
+                          stopping: bot.stopControls.stopping,
+                          structuredAttachments: true,
+                          runtimeContext: imageRuntimeContext,
+                          deliveryNotices,
+                          turnBot,
+                          botHome: bot.kickoff,
+                          workerChip: <NativeChatWorkerChipSlot />
+                        }}
+                      />
+                    )}
+                  </NativeChatContextClearFade>
+                </NativeChatWorkerChipHost>
               </NativeChatDockTranscript>
               <NativeChatDock
                 shown={!readFailure?.final}

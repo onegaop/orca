@@ -24,12 +24,14 @@ function buildActions(overrides: Partial<SheetArgs> = {}) {
     onDismiss: vi.fn(),
     onToggleChat: vi.fn(),
     onToggleMap: vi.fn(),
+    chatContinuationActions: [],
     isPhoneMode: () => false,
     onToggleDisplayMode: vi.fn(),
     onRename: vi.fn(),
     onClear: vi.fn(),
     onClose: vi.fn(),
     onCloseSessionTab: vi.fn(),
+    t: (_key, fallback) => fallback,
     ...overrides
   })
 }
@@ -67,7 +69,7 @@ describe('getMobileTerminalActionSheetActions', () => {
       onCloseSessionTab
     })
 
-    actions.find((action) => action.label === 'Close Tab')?.onPress()
+    actions.find((action) => action.id === 'close')?.onPress()
     expect(onCloseSessionTab).toHaveBeenCalledWith(tab)
     expect(onClose).not.toHaveBeenCalled()
   })
@@ -82,7 +84,7 @@ describe('getMobileTerminalActionSheetActions', () => {
       onCloseSessionTab
     })
 
-    actions.find((action) => action.label === 'Close Tab')?.onPress()
+    actions.find((action) => action.id === 'close')?.onPress()
     expect(onCloseSessionTab).toHaveBeenCalledWith(second)
   })
 
@@ -101,7 +103,7 @@ describe('getMobileTerminalActionSheetActions', () => {
       isTabMapView: () => true,
       onToggleMap
     }).find((action) => action.id === 'toggleAgentMapView')
-    expect(inMap?.label).toBe('Switch to terminal view')
+    expect(inMap?.label).toBe('Switch to terminal')
   })
 
   it('falls back to the handle close when no session tab owns the handle', () => {
@@ -115,7 +117,7 @@ describe('getMobileTerminalActionSheetActions', () => {
       onCloseSessionTab
     })
 
-    actions.find((action) => action.label === 'Close Tab')?.onPress()
+    actions.find((action) => action.id === 'close')?.onPress()
     expect(onClose).toHaveBeenCalledWith(target)
     expect(onCloseSessionTab).not.toHaveBeenCalled()
   })

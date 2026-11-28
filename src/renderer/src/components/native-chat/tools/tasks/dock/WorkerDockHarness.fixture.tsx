@@ -82,8 +82,7 @@ function Harness({
     hold: boolean
     waiting: ((stale: boolean) => void)[]
   }>(() => ({ log: [], hold: false, waiting: [] }))
-  // Like the runtime feed, a roster update does not replace this loader.
-  const loadWindow = useLatestHandler(async (anchor: string) => {
+  const loadWindow = async (anchor: string) => {
     reads.log.push(anchor)
     if (reads.hold) {
       if (await new Promise<boolean>((resolve) => reads.waiting.push(resolve))) {
@@ -101,7 +100,7 @@ function Harness({
       (current) =>
         new Set([...current, ...rows.slice(Math.max(0, at - 10), at + 20).map((row) => row.id)])
     )
-  })
+  }
   const [tasks, setTasks] = useState<AgentSessionBackgroundTask[]>(() =>
     command
       ? [{ id: 'shell-fixture', kind: 'command', description: 'Check the build', state: 'working' }]
@@ -304,6 +303,14 @@ export const oneFolded720 = defineFixture({
 export const threeFolded720 = defineFixture({
   width: 720,
   render: () => workerDockFixturePane(<Harness count={3} failed={0} variety />)
+})
+export const hostedTwentyFolded720 = defineFixture({
+  width: 720,
+  render: () =>
+    workerDockFixturePane(<Harness count={20} failed={3} />, undefined, {
+      hosted: true,
+      tasks: true
+    })
 })
 export const threeOpen720 = defineFixture({
   width: 720,

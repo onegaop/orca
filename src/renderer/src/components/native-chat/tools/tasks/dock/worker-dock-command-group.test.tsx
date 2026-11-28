@@ -86,6 +86,7 @@ function chip(): HTMLElement {
 
 describe('worker tray counts only agents as workers', () => {
   it.each([
+    // Agents alone read as what runs; with commands, the chip names the two counts apart.
     ['agents only', { workers: [worker('a'), worker('b')] }, '2 running', '2 running'],
     [
       'commands only',
@@ -116,7 +117,7 @@ describe('worker tray counts only agents as workers', () => {
     expect(chip()).toHaveTextContent('1 worker · 1 command')
     cleanup()
     renderTray({ workers: [worker('a', 'failed'), worker('b', 'failed')] })
-    expect(chip()).toHaveTextContent('2 needs you · 2 workers')
+    expect(chip()).toHaveTextContent('2 failed')
   })
 
   it('uses a terminal mark, not the worker grid, when only commands run', () => {
@@ -131,6 +132,7 @@ describe('worker tray counts only agents as workers', () => {
 
 describe('open tray', () => {
   it.each([
+    // The open header reads like the chip.
     ['agents only', { workers: [worker('a'), worker('b')] }, '2 running', 'Workers'],
     [
       'commands only',

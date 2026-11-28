@@ -92,6 +92,7 @@ export function NativeChatTranscriptItems({
                     {/* A leaving row's negative top margin passes through to close the gap before it. */}
                     <div
                       data-index={item.index}
+                      data-native-chat-row-key={rowKeys[item.index]}
                       ref={measureRow}
                       className={leavesWhole ? 'w-full' : 'flow-root w-full'}
                     >
@@ -170,6 +171,7 @@ export function NativeChatWaitingTranscriptItems({
           <div
             key={nativeChatSlotKey(slot)}
             data-native-chat-waiting-index={index}
+            data-native-chat-row-key={nativeChatSlotKey(slot)}
             className={leavesWhole ? 'w-full' : 'flow-root w-full'}
           >
             <NativeChatTranscriptRow

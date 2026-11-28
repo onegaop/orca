@@ -35,6 +35,7 @@ export function NativeChatStructuredComposerTabStrips(props: {
         <NativeChatMcpTray
           sessionId={props.transport.sessionId}
           target={props.target}
+          agent={mcpPanel.agent}
           agentLabel={mcpPanel.agentLabel}
           opens={mcpPanel.opens}
           onClose={() => {

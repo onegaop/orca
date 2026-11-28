@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState, useRef } from 'react'
-import { useNativeChatViewState } from '../pane/ownership/native-chat-view-memory'
 import { CircleHelp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -10,6 +9,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import { useWorkerDockStructuralValue } from '../tools/tasks/dock/NativeChatWorkerDockFrame'
+import { useNativeChatViewState } from '../pane/ownership/native-chat-view-memory'
 import { toast } from 'sonner'
 import { useTranslate } from '@/i18n/use-translate'
 import { callRuntimeRpc } from '@/runtime/rpc/calls/runtime-rpc-call'

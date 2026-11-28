@@ -24,6 +24,7 @@ import { DESKTOP_TERMINAL_SCROLLBACK_ROWS_DEFAULT } from '../terminal/replay/ter
 import { NESTED_WORKER_MAX_DEPTH_DEFAULT } from '../orchestration/workers/nested-worker-depth'
 import { getDefaultWorkspaceCleanupRules } from '../workspace-cleanup/workspace-cleanup-policy'
 import { DEFAULT_FLOATING_PANEL_OPACITY } from './floating-panel-opacity'
+import { defaultPluginSystemSettings } from '../plugins/plugin-system-settings'
 
 export function buildDefaultSettings(args: {
   workspaceDir: string
@@ -192,6 +193,7 @@ export function buildDefaultSettings(args: {
     linuxTilingWindowMode: false,
     tabStripPosition: 'top',
     showTasksButton: true,
+    showStatusBarMemory: true,
     showAutomationsButton: true,
     artifactsEnabled: true,
     // New profiles only; stored profiles without the key load as false (normalizeLoadedGlobalSettings).
@@ -245,11 +247,7 @@ export function buildDefaultSettings(args: {
     terminalModelQueryAuthority: true,
     defaultTuiAgent: null,
     disabledTuiAgents: [...DEFAULT_DISABLED_TUI_AGENTS],
-    pluginSystemEnabled: true,
-    pluginSystemDefaultedOn: true,
-    disabledPlugins: [],
-    pluginConsents: {},
-    devPluginPaths: [],
+    ...defaultPluginSystemSettings(),
     claudeAgentTeamsDefaultDisabledMigrated: true,
     sshRemoteCliControlExistingHostsMigrated: true,
     skipDeleteWorktreeConfirm: false,

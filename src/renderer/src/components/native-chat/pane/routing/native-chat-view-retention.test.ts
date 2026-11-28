@@ -1,30 +1,35 @@
-import { expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { chatViewRetention } from './native-chat-view-retention'
 
-it('evicts old views across workspaces and preserves an unfinished annotation until it closes', () => {
-  const tabs = new Set(['a', 'b', 'c', 'd', 'e', 'split'])
-  chatViewRetention.show('first', ['a', 'split'])
-  const release = chatViewRetention.hold('a', 'annotation')
-  try {
-    chatViewRetention.show('first', ['b', 'split'])
-    chatViewRetention.show('first', ['c', 'split'])
-    chatViewRetention.show('first', ['d', 'split'])
-    chatViewRetention.show('first', ['e', 'split'])
-    chatViewRetention.show('second', ['a'])
-    expect(chatViewRetention.retainedAmong(tabs)).toBe('a\nb\nc\nd\ne\nsplit')
-    chatViewRetention.show('second', [])
-    expect(chatViewRetention.retainedAmong(tabs)).toBe('a\nc\nd\ne\nsplit')
-    chatViewRetention.show('first', ['b', 'split'])
-    expect(chatViewRetention.retainedAmong(tabs)).toBe('a\nb\nd\ne\nsplit')
-    chatViewRetention.show('first', ['c', 'split'])
-    chatViewRetention.show('first', ['d', 'split'])
-    chatViewRetention.show('first', ['e', 'split'])
-    expect(chatViewRetention.retainedAmong(tabs)).toBe('a\nb\nc\nd\ne\nsplit')
-    release()
-    expect(chatViewRetention.retainedAmong(tabs)).toBe('b\nc\nd\ne\nsplit')
-  } finally {
-    chatViewRetention.show('first', [])
-    chatViewRetention.show('second', [])
-    chatViewRetention.forget(tabs)
-  }
+const retained = (ids: readonly string[]): string[] =>
+  chatViewRetention.retainedAmong(new Set(ids)).split('\n').filter(Boolean)
+
+describe('chatViewRetention', () => {
+  it('keeps only the shown chats mounted, however many were visited', () => {
+    const ids = Array.from({ length: 50 }, (_, index) => `tab-${String(index).padStart(2, '0')}`)
+    for (const id of ids) {
+      chatViewRetention.show('layer-a', [id])
+    }
+    expect(retained(ids)).toEqual(['tab-49'])
+
+    chatViewRetention.show('layer-b', ['other'])
+    expect(retained([...ids, 'other'])).toEqual(['other', 'tab-49'])
+    chatViewRetention.show('layer-a', [])
+    expect(retained([...ids, 'other'])).toEqual(['other'])
+    chatViewRetention.show('layer-b', [])
+  })
+
+  it('keeps an unfinished annotation through a workspace switch until its editor closes', () => {
+    const release = chatViewRetention.holdAnnotation('annotating')
+    try {
+      chatViewRetention.show('layer-a', ['annotating'])
+      chatViewRetention.show('layer-a', [])
+      chatViewRetention.show('layer-b', ['other'])
+      expect(retained(['annotating', 'other'])).toEqual(['annotating', 'other'])
+    } finally {
+      release()
+      chatViewRetention.show('layer-b', [])
+    }
+    expect(retained(['annotating', 'other'])).toEqual([])
+  })
 })

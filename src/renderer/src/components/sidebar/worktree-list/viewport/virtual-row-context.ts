@@ -21,11 +21,13 @@ import type { RepoHeaderProjectActions } from '../rows/repo-header-project-actio
 
 import type { ProjectHeaderHostContext } from '../rows/project-header-host-context'
 
+const EMPTY_DRAG_UNITS_BY_ROW: WorktreeVirtualRowContext['dragUnitsByRow'] = new Map()
+
 type BuildArgs = {
   props: VirtualizedWorktreeViewportProps
   projectFrames?: WorktreeVirtualRowContext['projectFrames']
   projectGroups: readonly ProjectGroup[]
-  dragUnitsByRow: ReadonlyMap<number, { identity: string }>
+  getDragRanges: () => { byRow: WorktreeVirtualRowContext['dragUnitsByRow'] }
   hiddenDragRanges: readonly { start: number; end: number }[]
   projection: LineageRowProjection
   activeFamilyRoots: ReadonlySet<number>
@@ -58,7 +60,10 @@ type BuildArgs = {
 export function buildWorktreeVirtualRowContext(args: BuildArgs): WorktreeVirtualRowContext {
   const { props, runtime, session, statusDrag, headerDrag, primaryActive, reveal } = args
   return {
-    dragUnitsByRow: args.dragUnitsByRow,
+    dragUnitsByRow:
+      runtime.worktreeDragState.previewOffsetsByWorktreeId.size > 0
+        ? args.getDragRanges().byRow
+        : EMPTY_DRAG_UNITS_BY_ROW,
     hiddenDragRanges: args.hiddenDragRanges,
     projection: args.projection,
     activeFamilyRoots: args.activeFamilyRoots,

@@ -20,12 +20,24 @@ export type PluginSystemSettings = {
   pluginReplacementsOff?: string[]
   /** Qualified plugin key → hosts the person always allows its frames to open. Main-only. */
   pluginExternalHostGrants?: Record<string, string[]>
+  /** Only toggles the app rail's Plugins page; Plugins stay reachable from Settings. */
+  showPluginsButton?: boolean
 }
 
 type PluginSystemDefaultOnSettings = Pick<
   PluginSystemSettings,
   'pluginSystemEnabled' | 'pluginSystemDefaultedOn'
 >
+
+export function defaultPluginSystemSettings(): PluginSystemSettings {
+  return {
+    ...normalizePluginSystemEnabledDefaultOn(undefined),
+    disabledPlugins: [],
+    pluginConsents: {},
+    devPluginPaths: [],
+    showPluginsButton: false
+  }
+}
 
 export function normalizePluginSystemEnabledDefaultOn(
   settings: Partial<PluginSystemDefaultOnSettings> | undefined

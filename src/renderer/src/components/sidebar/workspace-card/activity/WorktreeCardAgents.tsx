@@ -61,6 +61,8 @@ export default React.memo(function WorktreeCardAgents(props: Props) {
   ) : null
 })
 
+const getAppStoreState = (): ReturnType<typeof useAppStore.getState> => useAppStore.getState()
+
 function WorktreeCardAgentsBody({
   worktreeId,
   executionHostId,
@@ -76,8 +78,7 @@ function WorktreeCardAgentsBody({
   const expansion = useWorktreeAgentExpansionState(worktreeId, executionHostId)
   const focusedPaneKey = useFocusedAgentPaneKey(worktreeId)
   const onActivate = useWorktreeAgentActivation(worktreeId, executionHostId)
-  const onDismiss = useAppStore((s) => s.dropAgentStatus)
-  const send = useAppStore((s) => s.sendPromptToSidebarAgentTarget)
+  const { dropAgentStatus: onDismiss, sendPromptToSidebarAgentTarget: send } = getAppStoreState()
   const control = useAppStore(useShallow((s) => selectSendTargetControlInputs(s, worktreeId)))
   const inputs = useAppStoreWithHostStatuses(
     (s, statuses) => selectSendTargetInputs(s, statuses, worktreeId),

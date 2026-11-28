@@ -1,13 +1,4 @@
-import {
-  Activity,
-  memo,
-  Suspense,
-  useCallback,
-  useId,
-  useLayoutEffect,
-  useMemo,
-  useRef
-} from 'react'
+import { Activity, memo, Suspense, useCallback, useId, useLayoutEffect, useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { lazyWithRetry as lazy } from '@/app-shell/startup/lazy-with-retry'
 import type { Tab, TabGroup } from '../../../../../../shared/workspace-layout/tab-groups/tab-types'
@@ -19,28 +10,13 @@ import {
 } from '@/runtime/native-chat/session-ownership/structured-agent-session-owner'
 import { ActivityPortalContainer } from '@/components/ui/activity-portal-container'
 import { RetainedPaneHost } from '../../../tab-group/retained-pane/RetainedPaneHost'
-import {
-  NativeChatComposerEditorOwner,
-  releaseNativeChatComposerEditors
-} from '../../composer/editor/native-chat-composer-editor-owner'
+import { NativeChatComposerEditorOwner } from '../../composer/editor/native-chat-composer-editor-owner'
 import { NativeChatHostOutageOwner } from '../../host-access/native-chat-host-outage-owner'
 import { NativeChatPaneLifetime } from '../ownership/native-chat-pane-lifetime'
 import { isStructuredTab } from '../../../../../../shared/agent-session/view/structured-agent-session-tab'
-import {
-  NativeChatViewTabContext,
-  openNativeChatViewTabs,
-  releaseNativeChatViewTabs
-} from '../ownership/native-chat-view-memory'
+import { NativeChatViewTabContext } from '../ownership/native-chat-view-memory'
 import { chatViewRetention, useRetainedChatViewKey } from './native-chat-view-retention'
-import { forgetNativeChatAsyncSkipsForTabs } from '../../prompts/use-native-chat-async-questions'
-
-/** A closed chat tab's place, kept editor, view state and kept skips end with it. */
-function releaseClosedChatTabs(closed: ReadonlySet<string>): void {
-  chatViewRetention.forget(closed)
-  releaseNativeChatComposerEditors(closed)
-  releaseNativeChatViewTabs(closed)
-  forgetNativeChatAsyncSkipsForTabs(closed)
-}
+import { forgetChatLayer, reportChatLayerTabs } from './native-chat-closed-tab-release'
 
 const NativeChatView = lazy(() => import('../../NativeChatView'))
 const BotGroupChat = lazy(() =>
@@ -80,8 +56,8 @@ const StructuredAgentSessionOverlaySlot = memo(function StructuredAgentSessionOv
   const target = useMemo(() => structuredAgentSessionTargetForHost(owner), [owner])
   const effectsConnected = isActive || preparingHandoff
   const viewTab = useMemo(
-    () => ({ tabId: tab.id, worktreeId: tab.worktreeId }),
-    [tab.id, tab.worktreeId]
+    () => ({ tabId: tab.id, worktreeId: tab.worktreeId, conversation: `${owner}:${tab.entityId}` }),
+    [tab.id, tab.worktreeId, owner, tab.entityId]
   )
   const backdropActive = useWindowBackdropActive()
   if (!target) {
@@ -222,30 +198,15 @@ const StructuredAgentSessionPaneOverlayLayer = memo(
       chatViewRetention.show(layerId, shownKey ? shownKey.split('\n') : [])
     }, [layerId, shownKey])
     useLayoutEffect(() => () => chatViewRetention.show(layerId, []), [layerId])
-    const ownedTabIds = useMemo(() => new Set(tabIndexById.keys()), [tabIndexById])
-    const ownedTabIdsRef = useRef<ReadonlySet<string>>(new Set())
+    // Keyed by the ids, so a tab's title or status change doesn't resubscribe every owned tab.
+    const ownedKey = structuredTabs.map((tab) => tab.id).join('\n')
+    const ownedTabIds = useMemo(() => new Set(ownedKey ? ownedKey.split('\n') : []), [ownedKey])
     useLayoutEffect(() => {
-      const closed = new Set([...ownedTabIdsRef.current].filter((id) => !ownedTabIds.has(id)))
-      ownedTabIdsRef.current = ownedTabIds
-      openNativeChatViewTabs(ownedTabIds)
-      if (closed.size > 0) {
-        releaseClosedChatTabs(closed)
-      }
-    }, [ownedTabIds])
-    // A removed workspace unmounts this layer without a tab close; tabs gone from the store are closed.
-    useLayoutEffect(
-      () => () => {
-        const live = new Set(
-          (useAppStore.getState().unifiedTabsByWorktree[worktreeId] ?? []).map((tab) => tab.id)
-        )
-        const closed = new Set([...ownedTabIdsRef.current].filter((id) => !live.has(id)))
-        if (closed.size > 0) {
-          releaseClosedChatTabs(closed)
-        }
-      },
-      [worktreeId]
-    )
-    // Why: only shown chats and a few recently shown ones stay mounted, so memory doesn't grow with chats visited.
+      reportChatLayerTabs(layerId, worktreeId, ownedTabIds)
+    }, [layerId, ownedTabIds, worktreeId])
+    // A removed workspace unmounts its layer without a tab-set change.
+    useLayoutEffect(() => () => forgetChatLayer(layerId, worktreeId), [layerId, worktreeId])
+    // Why: only shown chats and open annotations stay mounted, so memory doesn't grow with chats visited.
     const retainedKey = useRetainedChatViewKey(ownedTabIds)
     const mountedTabs = [...new Set([...shownKey.split('\n'), ...retainedKey.split('\n')])]
       .map((id) => tabIndexById.get(id))

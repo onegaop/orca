@@ -11,6 +11,11 @@ import {
 // Why: a chat view released while hidden comes back where its reader left off, not at the end.
 // A newer read generation can supersede the first page while the chat's read owner reactivates.
 const MAX_RESTORE_ATTEMPTS = 5
+/**
+ * Older pages (200 rows each) a return reads to reach its bookmark; one deeper opens at the end, so a switch never
+ * replays a long chat's history.
+ */
+export const NATIVE_CHAT_RESTORE_MAX_PAGES = 3
 
 export type NativeChatReadingPosition = { messageId: string; offset: number }
 
@@ -56,7 +61,8 @@ export function useNativeChatReadingPosition({
   readerAtEnd,
   messageIdAt,
   waitingMessageIdAt,
-  jumpTo
+  jumpTo,
+  onGiveUp
 }: {
   /** One per transcript: a session's main list and each subagent's list read separately. */
   positionKey: string
@@ -70,8 +76,12 @@ export function useNativeChatReadingPosition({
   waitingMessageIdAt: (index: number) => string | null
   jumpTo: (
     position: NativeChatReadingPosition,
-    settled: (result: HistoryJumpResult) => void
+    settled: (result: HistoryJumpResult) => void,
+    /** Older pages left to this return, across its retries. */
+    budget: { pages: number }
   ) => void
+  /** History never became readable this reveal (every try superseded): the view opens as it would unbookmarked. */
+  onGiveUp: () => void
 }): () => boolean {
   const tab = useContext(NativeChatViewTabContext)
   const key = `reading-position:${positionKey}`
@@ -80,16 +90,22 @@ export function useNativeChatReadingPosition({
   const freshMountRef = useRef(true)
   // The restore in flight; an effect replay (StrictMode, a hide mid-restore) keeps the bookmark and retries it.
   const restoringRef = useRef<NativeChatReadingPosition | null>(null)
-  const latest = useRef({ readerAtEnd, jumpTo, messageIdAt, waitingMessageIdAt })
+  // A restore that never read history: its bookmark waits for a later remount unless the reader moves on.
+  const gaveUpRef = useRef(false)
+  const latest = useRef({ readerAtEnd, jumpTo, messageIdAt, waitingMessageIdAt, onGiveUp })
   useLayoutEffect(() => {
-    latest.current = { readerAtEnd, jumpTo, messageIdAt, waitingMessageIdAt }
+    latest.current = { readerAtEnd, jumpTo, messageIdAt, waitingMessageIdAt, onGiveUp }
   })
+  // A given-up restore belongs to its own transcript; another one's bookmark is handled as usual.
+  useLayoutEffect(() => {
+    gaveUpRef.current = false
+  }, [key])
   // Leaving reads the rows while they are still laid out, before a hide takes them off the page.
   useLayoutEffect(() => {
+    const container = scrollRef.current
     if (!isVisible || !ready || !tab) {
       return
     }
-    const container = scrollRef.current
     return () => {
       if (restoringRef.current !== null) {
         restoringRef.current = null
@@ -103,10 +119,11 @@ export function useNativeChatReadingPosition({
               latest.current.waitingMessageIdAt
             )
           : null
-      if (next === null && freshMountRef.current) {
+      if (next === null && (freshMountRef.current || gaveUpRef.current)) {
         return
       }
       freshMountRef.current = false
+      gaveUpRef.current = false
       writeNativeChatViewMemory(tab, key, next ?? undefined, KEPT_TRANSCRIPTS_PER_TAB)
     }
   }, [isVisible, ready, tab, key, scrollRef])
@@ -122,29 +139,42 @@ export function useNativeChatReadingPosition({
       : undefined
     if (position === undefined) {
       freshMountRef.current = false
-      writeNativeChatViewMemory(tab, key, undefined)
+      if (!gaveUpRef.current) {
+        writeNativeChatViewMemory(tab, key, undefined)
+      }
     } else {
       restoringRef.current = position
+      const budget = { pages: NATIVE_CHAT_RESTORE_MAX_PAGES }
       const attempt = (tries: number): void => {
-        latest.current.jumpTo(position, (result) => {
-          if (cancelled) {
-            return
-          }
-          if (result === 'superseded' && tries < MAX_RESTORE_ATTEMPTS) {
-            frame = requestAnimationFrame(() => attempt(tries + 1))
-            return
-          }
-          restoringRef.current = null
-          if (result === 'failed') {
-            // History didn't load; the bookmark stays for the next reveal.
-            return
-          }
-          // Landed, gone, or the reader moved on: the bookmark has done its job.
-          freshMountRef.current = false
-          if (readNativeChatViewMemory(tab, key) === position) {
-            writeNativeChatViewMemory(tab, key, undefined)
-          }
-        })
+        latest.current.jumpTo(
+          position,
+          (result) => {
+            if (cancelled) {
+              return
+            }
+            if (result === 'superseded' && tries < MAX_RESTORE_ATTEMPTS) {
+              frame = requestAnimationFrame(() => attempt(tries + 1))
+              return
+            }
+            restoringRef.current = null
+            if (result === 'failed' || result === 'superseded') {
+              // History didn't load; the bookmark stays for the next reveal.
+              if (result === 'superseded') {
+                // Kept for a later remount; this view is past restoring, so a reveal won't pull the reader back.
+                freshMountRef.current = false
+                gaveUpRef.current = true
+                latest.current.onGiveUp()
+              }
+              return
+            }
+            // Landed, gone, or the reader moved on: the bookmark has done its job.
+            freshMountRef.current = false
+            if (readNativeChatViewMemory(tab, key) === position) {
+              writeNativeChatViewMemory(tab, key, undefined)
+            }
+          },
+          budget
+        )
       }
       attempt(1)
     }

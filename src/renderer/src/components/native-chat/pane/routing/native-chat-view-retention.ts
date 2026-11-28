@@ -1,22 +1,15 @@
-import { useCallback, useContext, useRef, useSyncExternalStore } from 'react'
+import { useCallback, useContext, useSyncExternalStore } from 'react'
 import { useNativeChatPaneLifetimeEffect } from '../ownership/native-chat-pane-lifetime'
 import { NativeChatViewTabContext } from '../ownership/native-chat-view-memory'
-
-// Why: a hidden chat view holds its transcript DOM, fibers and editor; keeping every visited one grows memory with use.
-export const RETAINED_HIDDEN_CHAT_VIEWS = 3
-// Chats held for an open queued-message edit: beyond these, the oldest is released and its typing goes back to its composer.
-export const HELD_CHAT_VIEWS = 3
 
 const EMPTY: ReadonlySet<string> = new Set()
 
 /**
- * Which chat views stay mounted across the window: every shown chat, every chat holding unsaved view state,
- * and the few most recently shown hidden ones. Each change notifies only the tabs whose membership changed.
+ * Only shown chats and chats with an open annotation stay mounted. Each change wakes only the tabs whose
+ * membership changed.
  */
 class ChatViewRetention {
-  private order: readonly string[] = []
   private shownByLayer = new Map<string, readonly string[]>()
-  private holds = new Map<string, number>()
   private annotationHolds = new Map<string, number>()
   private retained: ReadonlySet<string> = EMPTY
   private listenersByTab = new Map<string, Set<() => void>>()
@@ -27,20 +20,12 @@ class ChatViewRetention {
       this.shownByLayer.delete(layer)
     } else {
       this.shownByLayer.set(layer, tabIds)
-      const shown = new Set(tabIds)
-      this.order = [...tabIds, ...this.order.filter((id) => !shown.has(id))]
     }
     this.recompute()
   }
 
-  /** A closed tab frees its place for the next chat shown. */
-  forget(tabIds: ReadonlySet<string>): void {
-    this.order = this.order.filter((id) => !tabIds.has(id))
-    this.recompute()
-  }
-
-  hold(tabId: string, kind: 'queued-edit' | 'annotation' = 'queued-edit'): () => void {
-    const holds = kind === 'annotation' ? this.annotationHolds : this.holds
+  holdAnnotation(tabId: string): () => void {
+    const holds = this.annotationHolds
     holds.set(tabId, (holds.get(tabId) ?? 0) + 1)
     this.recompute()
     return () => {
@@ -56,13 +41,7 @@ class ChatViewRetention {
 
   private recompute(): void {
     const shown = new Set([...this.shownByLayer.values()].flat())
-    const hidden = this.order.filter((id) => !shown.has(id)).slice(0, RETAINED_HIDDEN_CHAT_VIEWS)
-    // Older hidden entries can never come back into the allowance, so the order stays bounded; a shown one
-    // keeps its place for when it hides.
-    const kept = new Set(hidden)
-    this.order = this.order.filter((id) => shown.has(id) || kept.has(id))
-    const held = [...this.holds.keys()].slice(-HELD_CHAT_VIEWS)
-    const next = new Set([...shown, ...hidden, ...held, ...this.annotationHolds.keys()])
+    const next = new Set([...shown, ...this.annotationHolds.keys()])
     const previous = this.retained
     this.retained = next
     const notify = new Set<() => void>()
@@ -124,34 +103,8 @@ export function useNativeChatAnnotationViewHold(editing: boolean): void {
   const tab = useContext(NativeChatViewTabContext)
   useNativeChatPaneLifetimeEffect(
     useCallback(
-      () => (editing && tab ? chatViewRetention.hold(tab.tabId, 'annotation') : undefined),
+      () => (editing && tab ? chatViewRetention.holdAnnotation(tab.tabId) : undefined),
       [editing, tab]
     )
-  )
-}
-
-/** Queue edits take and release their hold even when the view's effects are paused. */
-export function useNativeChatQueuedEditViewHold(): (editing: boolean) => void {
-  const tab = useContext(NativeChatViewTabContext)
-  const release = useRef<(() => void) | null>(null)
-  useNativeChatPaneLifetimeEffect(
-    useCallback(
-      () => () => {
-        release.current?.()
-        release.current = null
-      },
-      []
-    )
-  )
-  return useCallback(
-    (editing) => {
-      if (editing && !release.current && tab) {
-        release.current = chatViewRetention.hold(tab.tabId)
-      } else if (!editing && release.current) {
-        release.current()
-        release.current = null
-      }
-    },
-    [tab]
   )
 }

@@ -1,8 +1,7 @@
+import { Fragment } from 'react'
 import type React from 'react'
 
 import type { GlobalSettings } from '../../../../../shared/settings/global-settings-types'
-import type { StatusBarItem } from '../../../../../shared/ui-chrome/ui-chrome-types'
-import type { FeatureInteractionId } from '../../../../../shared/feature-education/interactions/feature-interaction-catalog'
 import { SearchableSetting } from '../section-layout/SearchableSetting'
 import { SettingsGroupDisclosure } from '../section-layout/SettingsGroupDisclosure'
 import { SettingsGroupNestedRows, SettingsGroupSubsection } from '../section-layout/SettingsGroup'
@@ -25,6 +24,9 @@ import { AppearanceSidebarSubsection } from './AppearanceSidebarSubsection'
 import { LeftSidebarAppearanceSetting } from './LeftSidebarAppearanceSetting'
 import { TabProjectColorSetting } from './TabProjectColorSetting'
 import { getStatusBarUsageFormatEntry } from './appearance-status-bar-usage-format-search'
+import { getStatusBarMemoryEntry } from './appearance-status-bar-memory-search'
+import { StatusBarMemorySetting } from './StatusBarMemorySetting'
+import { recordStatusBarToggleInteraction } from './status-bar-toggle-feature-interaction'
 import { StatusBarUsageFormatSetting } from './StatusBarUsageFormatSetting'
 
 import { useTranslate } from '@/i18n/use-translate'
@@ -41,30 +43,6 @@ type AppearanceWindowSidebarSectionProps = {
   /** Absent when the drawn cards ignore the layout. */
   workspaceCardLayoutEntry?: SettingsSearchEntry
   forceVisiblePrimary?: boolean
-}
-
-function recordStatusBarToggleInteraction(
-  id: StatusBarItem,
-  recordFeatureInteraction: (feature: FeatureInteractionId) => void
-): void {
-  if (id === 'resource-usage') {
-    recordFeatureInteraction('resource-manager')
-  } else if (id === 'ports') {
-    recordFeatureInteraction('ports')
-  } else if (id === 'ssh') {
-    recordFeatureInteraction('ssh')
-  } else if (
-    id === 'claude' ||
-    id === 'codex' ||
-    id === 'opencode-go' ||
-    id === 'kimi' ||
-    id === 'minimax' ||
-    id === 'grok' ||
-    id === 'cursor' ||
-    id === 'muse'
-  ) {
-    recordFeatureInteraction('usage-tracking')
-  }
 }
 
 /** Window & Sidebar appearance section: sidebar/chrome appearance, status bar controls, and layout advanced settings. */
@@ -106,6 +84,8 @@ export function AppearanceWindowSidebarSection({
   const statusBarControlMatches =
     matchesSettingsSearch(searchQuery, usagePercentageDisplayEntry) ||
     matchesSettingsSearch(searchQuery, statusBarUsageFormatEntry) ||
+    (statusBarItems.includes('resource-usage') &&
+      matchesSettingsSearch(searchQuery, getStatusBarMemoryEntry())) ||
     visibleStatusBarToggles.some((toggle) =>
       matchesSettingsSearch(searchQuery, {
         title: toggle.title,
@@ -208,23 +188,27 @@ export function AppearanceWindowSidebarSection({
             {visibleStatusBarToggles.map((toggle) => {
               const enabled = statusBarItems.includes(toggle.id)
               return (
-                <SearchableSetting
-                  key={toggle.id}
-                  title={toggle.title}
-                  description={toggle.description}
-                  keywords={toggle.keywords}
-                >
-                  <SettingsSwitchRow
-                    label={toggle.title}
-                    description={toggle.toggleDescription}
-                    checked={enabled}
-                    onChange={() => {
-                      recordStatusBarToggleInteraction(toggle.id, recordFeatureInteraction)
-                      toggleStatusBarItem(toggle.id)
-                    }}
-                    ariaLabel={toggle.title}
-                  />
-                </SearchableSetting>
+                <Fragment key={toggle.id}>
+                  <SearchableSetting
+                    title={toggle.title}
+                    description={toggle.description}
+                    keywords={toggle.keywords}
+                  >
+                    <SettingsSwitchRow
+                      label={toggle.title}
+                      description={toggle.toggleDescription}
+                      checked={enabled}
+                      onChange={() => {
+                        recordStatusBarToggleInteraction(toggle.id, recordFeatureInteraction)
+                        toggleStatusBarItem(toggle.id)
+                      }}
+                      ariaLabel={toggle.title}
+                    />
+                  </SearchableSetting>
+                  {toggle.id === 'resource-usage' && enabled ? (
+                    <StatusBarMemorySetting settings={settings} updateSettings={updateSettings} />
+                  ) : null}
+                </Fragment>
               )
             })}
           </SettingsGroupNestedRows>
