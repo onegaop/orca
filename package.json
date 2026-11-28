@@ -280,7 +280,7 @@
     "@shadcn/lint": "~0.2.5",
     "@stablyai/playwright-test": "^2.1.16",
     "@tailwindcss/vite": "^4.3.5",
-    "@tanstack/react-virtual": "^3.14.13",
+    "@tanstack/react-virtual": "^3.14.28",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.8",
