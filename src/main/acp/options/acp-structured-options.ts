@@ -34,6 +34,7 @@ export class AcpStructuredOptions {
   constructor(
     private readonly dialect: Pick<
       AcpDialect,
+      | 'includeModelInCatalog'
       | 'modelEfforts'
       | 'familyEfforts'
       | 'withheldCommands'

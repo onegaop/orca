@@ -7,6 +7,7 @@ import {
   textActionArgumentsOwnEffort
 } from '../../../../shared/agent-launch/picker/agent-launch-picker-text-action'
 import { withLaunchEffortDefault } from './agent-launch-setup-default-effort'
+import { isSelectableAgentModel } from '../../../../shared/agent-session/options/model-catalog/agent-model-visibility'
 import { translate } from '@/i18n/i18n'
 import { sayAgentSessionFailureTranslated } from '../native-chat/messages/notices/agent-session-failure-words-text'
 import type { Translate } from '@/i18n/use-translate'
@@ -202,7 +203,12 @@ export function agentLaunchSetupCatalogState(
 ) {
   const hasModels = models.some((model) => !model.hidden)
   const hasUsableModels =
-    hasModels || Boolean(currentModel && !models.some((model) => model.id === currentModel))
+    hasModels ||
+    Boolean(
+      currentModel &&
+      isSelectableAgentModel(entry.agent, currentModel) &&
+      !models.some((model) => model.id === currentModel)
+    )
   const catalogPending = !hasUsableModels && entry.catalogRead === 'pending'
   const settled = !hasUsableModels && !catalogPending
   const unsupported =
@@ -258,6 +264,7 @@ export function agentLaunchSetupCatalogState(
 
 /** Visible model rows, the expanded legacy rows below their toggle, and the model the list starts on. */
 export function agentLaunchSetupModelRows(
+  agent: AgentPickerEntry['agent'],
   models: readonly AgentPickerModel[],
   currentModel: string | undefined,
   query: string,
@@ -274,7 +281,11 @@ export function agentLaunchSetupModelRows(
   const shownLegacy = legacyExpanded ? legacyRows : []
   // Why one keyed list: when the catalog later lists an unlisted current model, its row keeps
   // its identity, so the highlight stays on it instead of jumping to the first model.
-  if (currentModel && !models.some((model) => model.id === currentModel)) {
+  if (
+    currentModel &&
+    isSelectableAgentModel(agent, currentModel) &&
+    !models.some((model) => model.id === currentModel)
+  ) {
     rows.push({ id: currentModel, label: currentModel, unlisted: true })
   }
   // An Arguments-owned text action has no current model row, so it starts on its default as before.

@@ -8,6 +8,9 @@ import {
   parseOpenCodeModelListing
 } from '../opencode/model-launch/opencode-model-catalog-listing'
 import { agentSessionSetupFor } from '../../shared/agent-session/lifecycle/launch/agent-session-setup-commands'
+import { isSelectableAgentModel } from '../../shared/agent-session/options/model-catalog/agent-model-visibility'
+
+const isKiloFreeModel = (id: string): boolean => isSelectableAgentModel('kilo', id)
 
 // An OpenCode 1.x fork under KILO_* names; sign-in and sessions live in `<XDG_DATA_HOME>/kilo`.
 export const KILO_LAUNCH_SPEC: AcpLaunchSpec = {
@@ -18,7 +21,11 @@ export const KILO_LAUNCH_SPEC: AcpLaunchSpec = {
   // Its ACP cannot answer the question tool.
   env: { KILO_ENABLE_QUESTION_TOOL: 'false' },
   // Kilo's Build mode is `code`.
-  dialect: { ...OPENCODE_ACP_DIALECT, interactionModes: { default: 'code', plan: 'plan' } },
+  dialect: {
+    ...OPENCODE_ACP_DIALECT,
+    interactionModes: { default: 'code', plan: 'plan' },
+    includeModelInCatalog: isKiloFreeModel
+  },
   historyCatchUp: 'user-message-id',
   loginCommand: agentSessionSetupFor('kilo')?.loginCommand ?? [],
   account: directoryAccountBinding('XDG_DATA_HOME', (homePath) =>
@@ -29,7 +36,7 @@ export const KILO_LAUNCH_SPEC: AcpLaunchSpec = {
   modelDiscovery: {
     kind: 'command',
     args: OPENCODE_MODEL_LISTING_ARGS,
-    parse: parseOpenCodeModelListing,
+    parse: (stdout) => parseOpenCodeModelListing(stdout).filter(({ id }) => isKiloFreeModel(id)),
     listingNamesConfiguredModel: false
   },
   // Read again at every start, so a reopened conversation takes the current ones.

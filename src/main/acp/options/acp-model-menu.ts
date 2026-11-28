@@ -9,7 +9,7 @@ type SelectOption = Extract<SessionConfigOption, { type: 'select' }>
 
 /** Native choices never establish an unobserved model's capability or configured default. */
 export function acpModelMenuModels(input: {
-  dialect: Pick<AcpDialect, 'modelEfforts' | 'familyEfforts'>
+  dialect: Pick<AcpDialect, 'modelEfforts' | 'familyEfforts' | 'includeModelInCatalog'>
   modelOption: SelectOption | null
   effortOption: SelectOption | null
   state: SessionModelState | null
@@ -23,7 +23,12 @@ export function acpModelMenuModels(input: {
         ...(choice.description ? { description: choice.description } : {})
       }))
     : []
-  return acpListedModels(modelOption, state).map((model) => {
+  const { includeModelInCatalog } = dialect
+  const listed = acpListedModels(modelOption, state)
+  const models = includeModelInCatalog
+    ? listed.filter(({ id }) => includeModelInCatalog(id))
+    : listed
+  return models.map((model) => {
     const info = state?.availableModels.find((entry) => entry.modelId === model.id)
     // The running model's live menu outranks variants advertised for its family.
     const advertised = info

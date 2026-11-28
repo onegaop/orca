@@ -10,6 +10,7 @@ import {
 import { structuredAgentSessionShownSnapshot } from './structured-agent-session-option-view'
 import { withoutUnprovenNewLaunchDefault } from '../model-catalog/host-model-catalog-snapshot-rules'
 import { isCodexProviderModelId } from '../model-catalog/codex-provider-model'
+import { isSelectableAgentModel } from '../model-catalog/agent-model-visibility'
 import type { SessionOptionDescriptor } from '../../../native-chat/input/native-chat-session-options'
 
 export type ModelMenuSurface = 'chat' | 'terminal' | 'textGeneration'
@@ -66,7 +67,11 @@ export function modelMenuOptions(
           ...observed,
           // Launch setup can send the same draft to a terminal. Provider picks belong to the chat composer.
           models: observed.models
-            .filter((model) => input.agent !== 'codex' || !isCodexProviderModelId(model.id))
+            .filter(
+              ({ id }) =>
+                isSelectableAgentModel(input.agent, id) &&
+                (input.agent !== 'codex' || !isCodexProviderModelId(id))
+            )
             .map((model) =>
               input.surface === 'chat' ? model : { ...model, chatEfforts: undefined }
             )

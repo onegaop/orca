@@ -25,6 +25,7 @@ import {
 } from '../reconciliation/structured-agent-session-option-state'
 import { withUnlistedEffort } from '../model-catalog/structured-agent-session-unlisted-effort'
 import { unlistedModelLabel } from '../model-catalog/model-id-label'
+import { isSelectableAgentModel } from '../model-catalog/agent-model-visibility'
 import { listedModelDescribing } from '../model-catalog/structured-agent-session-listed-model'
 import { structuredAgentSessionPermissionDescriptor } from '../permissions/structured-agent-session-permission-option'
 import { structuredAgentSessionInteractionDescriptor } from '../permissions/agent-session-interaction-mode'
@@ -252,7 +253,11 @@ function withFallbackModel(
   agent: string
 ): SessionOptionDescriptor {
   const { kind } = option
-  if (kind.type !== 'select' || kind.choices.some((choice) => choice.value === model)) {
+  if (
+    kind.type !== 'select' ||
+    !isSelectableAgentModel(agent, model) ||
+    kind.choices.some((choice) => choice.value === model)
+  ) {
     return { ...option, fallbackModel: model }
   }
   const choice = { value: model, label: unlistedModelLabel(agent, model), description: model }

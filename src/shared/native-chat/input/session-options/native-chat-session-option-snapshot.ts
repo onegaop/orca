@@ -1,6 +1,7 @@
 import { AGENT_CHAT_PERMISSION_MODE_OPTION_ID } from '../../../agent-launch/permissions/agent-chat-permission-mode-option-id'
 import { unlistedModelLabel } from '../../../agent-session/options/model-catalog/model-id-label'
 import { classifyAgentModels } from '../../../agent-session/options/model-catalog/legacy-agent-models'
+import { isSelectableAgentModel } from '../../../agent-session/options/model-catalog/agent-model-visibility'
 import type {
   AgentSessionOptionCatalog,
   CatalogMidSessionApply,
@@ -231,16 +232,17 @@ export function nativeChatSessionOptionDescriptors(args: {
   modelIsCliDefault: boolean
 }): SessionOptionDescriptor[] {
   const { agent, catalog, models, mode, modelLabel, liveTransport, model } = args
-  // Callers reconcile tracked models into choices first; the trigger must never show an unlisted selection.
   // Legacy rows fold away like the launch picker's; a picker opens the section when the chat is on one.
   const { legacy, hidden } = classifyAgentModels(agent, args.legacyInventory ?? models)
-  const modelChoices = models.map(({ id, label, description }) => ({
-    value: id,
-    label,
-    ...(description ? { description } : {}),
-    ...(legacy.has(id) ? { legacy: true as const } : {}),
-    ...(hidden.has(id) && id !== model.currentId ? { hidden: true as const } : {})
-  }))
+  const modelChoices = models
+    .filter(({ id }) => isSelectableAgentModel(agent, id))
+    .map(({ id, label, description }) => ({
+      value: id,
+      label,
+      ...(description ? { description } : {}),
+      ...(legacy.has(id) ? { legacy: true as const } : {}),
+      ...(hidden.has(id) && id !== model.currentId ? { hidden: true as const } : {})
+    }))
   const modelAction = actionForApply(catalog.modelApply, model.tracked, mode, liveTransport)
   const snapshot: SessionOptionDescriptor[] = [
     {

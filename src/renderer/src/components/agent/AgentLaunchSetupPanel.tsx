@@ -134,6 +134,7 @@ export function AgentLaunchSetupPanel({
     models.some((model) => model.id === currentModel && model.isLegacy)
   )
   const modelRows = agentLaunchSetupModelRows(
+    entry.agent,
     models,
     currentModel,
     modelQuery,
