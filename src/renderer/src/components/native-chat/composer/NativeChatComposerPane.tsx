@@ -5,6 +5,7 @@ import { useNativeChatMobileHoldNotice } from '../host-access/use-native-chat-mo
 import { forwardRef, useCallback, useState, useRef } from 'react'
 import { useNativeChatComposerInterrupt } from './submit/use-native-chat-composer-interrupt'
 import { useNativeChatContextUsageSummary } from '../usage/use-native-chat-context-usage-summary'
+import { useNativeChatCompactContext } from '../usage/use-native-chat-compact-context'
 import { useNativeChatDraft } from '../drafts/use-native-chat-draft'
 import { useNativeChatDraftEvents } from './editor/use-native-chat-draft-events'
 import { useNativeChatComposerRecall } from '../drafts/use-native-chat-composer-recall'
@@ -226,6 +227,7 @@ export const NativeChatComposerPane = forwardRef<ComposerHandle, C.NativeChatCom
       structuredTransport
     })
     const contextUsageSummary = useNativeChatContextUsageSummary(structuredTransport)
+    const onCompactContext = useNativeChatCompactContext(structuredTransport)
 
     const sendStructured = useNativeChatRoomSend(
       useNativeChatStructuredComposerSend({
@@ -411,6 +413,7 @@ export const NativeChatComposerPane = forwardRef<ComposerHandle, C.NativeChatCom
             sessionOptionsSurface={sessionOptions.surface}
             sessionOptionsSnapshot={sessionOptions.snapshot}
             contextUsage={contextUsageSummary}
+            onCompactContext={onCompactContext}
             sessionOptionsPickerRequest={structuredTransport?.optionPickerRequest ?? null}
             agent={agent}
             launchPrompt={launchPrompt}
