@@ -3,20 +3,11 @@
 import { classifyTerminalEscapeIntroducer } from './terminal-escape-introducer'
 
 // Mirror xterm’s VT500 states; C0 controls except ESC/CAN/SUB execute without aborting the sequence.
-type ScanState =
-  | 'ground'
-  | 'esc'
-  | 'escIntermediate'
-  | 'csi'
-  | 'osc'
-  | 'oscEsc'
-  | 'string'
-  | 'stringEsc'
+type ScanState = 'ground' | 'esc' | 'escIntermediate' | 'csi' | 'osc' | 'string' | 'stringEsc'
 
 const ESC = 0x1b
 const CAN = 0x18
 const SUB = 0x1a
-const BEL = 0x07
 
 // Bound unterminated OSC/DCS memory and snapshot size; beyond the cap, carry an inert prefix instead of the sequence.
 export const MAX_PARTIAL_ESCAPE_TAIL_LENGTH = 4096
@@ -94,7 +85,6 @@ const STATE_PREFIX: Record<ScanState, string> = {
   escIntermediate: '\x1b ',
   csi: '\x1b[',
   osc: '\x1b]',
-  oscEsc: '\x1b',
   string: '\x1bP',
   stringEsc: '\x1b'
 }
@@ -124,66 +114,32 @@ function scanPartialEscapeTail(stream: string, stateOnly: boolean): string {
       state = 'esc'
       continue
     }
-    if (state === 'string') {
-      if (!(hasStringScanInterrupt ??= STRING_SCAN_INTERRUPT.test(stream))) {
+    if (state === 'string' || state === 'osc') {
+      const controlScan = state === 'osc' ? OSC_CONTROL_SCAN : STRING_CONTROL_SCAN
+      let control: number
+      if ((hasStringScanInterrupt ??= STRING_SCAN_INTERRUPT.test(stream))) {
+        controlScan.lastIndex = i
+        control = controlScan.exec(stream)?.index ?? -1
+      } else {
         const esc = stream.indexOf('\x1b', i)
-        if (esc === -1) {
-          break
-        }
-        if (esc + 1 < stream.length && stream.charCodeAt(esc + 1) === 0x5c) {
-          i = esc + 1
-          state = 'ground'
-          continue
-        }
-        i = esc
+        const bel =
+          state === 'osc' && (hasBel ??= stream.includes('\x07', i))
+            ? stream.indexOf('\x07', i)
+            : -1
+        control = bel !== -1 && (esc === -1 || bel < esc) ? bel : esc
+      }
+      if (control === -1) {
+        break
+      }
+      i = control
+      const code = stream.charCodeAt(i)
+      if (code === ESC) {
         state = 'stringEsc'
-        continue
-      }
-      STRING_CONTROL_SCAN.lastIndex = i
-      const match = STRING_CONTROL_SCAN.exec(stream)
-      if (!match) {
-        break
-      }
-      i = match.index
-      const code = stream.charCodeAt(i)
-      state = code === ESC ? 'stringEsc' : stateAfterC1Byte(code)
-      if (code !== ESC && state !== 'ground') {
-        start = i
-      }
-      continue
-    }
-    if (state === 'osc') {
-      if (!(hasStringScanInterrupt ??= STRING_SCAN_INTERRUPT.test(stream))) {
-        hasBel ??= stream.includes('\x07', i)
-        const esc = stream.indexOf('\x1b', i)
-        const bel = hasBel ? stream.indexOf('\x07', i) : -1
-        if (esc === -1 && bel === -1) {
-          break
+      } else {
+        state = stateAfterC1Byte(code)
+        if (state !== 'ground') {
+          start = i
         }
-        if (bel !== -1 && (esc === -1 || bel < esc)) {
-          i = bel
-          state = 'ground'
-          continue
-        }
-        if (esc + 1 < stream.length && stream.charCodeAt(esc + 1) === 0x5c) {
-          i = esc + 1
-          state = 'ground'
-          continue
-        }
-        i = esc
-        state = 'oscEsc'
-        continue
-      }
-      OSC_CONTROL_SCAN.lastIndex = i
-      const match = OSC_CONTROL_SCAN.exec(stream)
-      if (!match) {
-        break
-      }
-      i = match.index
-      const code = stream.charCodeAt(i)
-      state = code === ESC ? 'oscEsc' : stateAfterC1Byte(code)
-      if (code !== ESC && state !== 'ground') {
-        start = i
       }
       continue
     }
@@ -196,7 +152,7 @@ function scanPartialEscapeTail(stream: string, stateOnly: boolean): string {
       }
       continue
     }
-    if (code === ESC && state !== 'oscEsc' && state !== 'stringEsc') {
+    if (code === ESC && state !== 'stringEsc') {
       // ESC aborts a pending ESC/CSI sequence and starts a new one.
       start = i
       state = 'esc'
@@ -225,17 +181,6 @@ function scanPartialEscapeTail(stream: string, stateOnly: boolean): string {
         }
         // params/intermediates (0x20–0x3f), C0, DEL stay in-sequence.
         break
-      case 'oscEsc':
-        if (code === 0x5c) {
-          state = 'ground' // ESC \ = ST terminates the OSC
-        } else {
-          // The ESC aborted the OSC and opened a new sequence at i-1 — except a
-          // second ESC starts its own sequence at i, and CAN/SUB abort to ground.
-          start = code === ESC ? i : i - 1
-          state =
-            code === ESC ? 'esc' : code === CAN || code === SUB ? 'ground' : stateAfterEscByte(code)
-        }
-        break
       case 'stringEsc':
         if (code === 0x5c) {
           state = 'ground'
@@ -248,7 +193,7 @@ function scanPartialEscapeTail(stream: string, stateOnly: boolean): string {
     }
   }
   // ESC already ends a string in xterm; replay only its pending escape state.
-  if (state === 'oscEsc' || state === 'stringEsc') {
+  if (state === 'stringEsc') {
     return '\x1b'
   }
   if (stateOnly) {
@@ -277,33 +222,16 @@ export function openEscapeContinuationLength(statePrefix: string, chunk: string)
     if (state === 'ground') {
       return i
     }
-    if (state === 'string') {
-      if (!STRING_SCAN_INTERRUPT.test(chunk)) {
-        const idx = chunk.indexOf('\x1b', i)
-        if (idx === -1) {
-          return -1
-        }
-        return chunk.charCodeAt(idx + 1) === 0x5c ? idx + 2 : idx
-      }
-      STRING_CONTROL_SCAN.lastIndex = i
-      const match = STRING_CONTROL_SCAN.exec(chunk)
-      if (!match) {
+    if (state === 'string' || state === 'osc') {
+      const controlScan = state === 'osc' ? OSC_CONTROL_SCAN : STRING_CONTROL_SCAN
+      controlScan.lastIndex = i
+      const idx =
+        state === 'string' && !STRING_SCAN_INTERRUPT.test(chunk)
+          ? chunk.indexOf('\x1b', i)
+          : (controlScan.exec(chunk)?.index ?? -1)
+      if (idx === -1) {
         return -1
       }
-      const idx = match.index
-      const found = chunk.charCodeAt(idx)
-      if (found !== ESC) {
-          return stateAfterC1Byte(found) === 'ground' ? idx + 1 : idx
-        }
-      return chunk.charCodeAt(idx + 1) === 0x5c ? idx + 2 : idx
-    }
-    if (state === 'osc') {
-      OSC_CONTROL_SCAN.lastIndex = i
-      const match = OSC_CONTROL_SCAN.exec(chunk)
-      if (!match) {
-        return -1
-      }
-      const idx = match.index
       const found = chunk.charCodeAt(idx)
       if (found !== ESC) {
         return stateAfterC1Byte(found) === 'ground' ? idx + 1 : idx
@@ -343,8 +271,7 @@ export function openEscapeContinuationLength(statePrefix: string, chunk: string)
           return i + 1
         }
         break
-      // Unreachable from a statePrefix (both map to 'esc'); an ESC inside a string either finishes ST or starts a kept sequence.
-      case 'oscEsc':
+      // Only the tail scanner enters this state.
       case 'stringEsc':
         return code === 0x5c ? i + 1 : i
     }

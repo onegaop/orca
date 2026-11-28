@@ -62,7 +62,7 @@ function CardTitle({
   return (
     <WorktreeTitleInlineRename
       displayName={card.visibleCardTitle}
-      renameFrom={card.titleOverride === undefined ? undefined : worktree.displayName}
+      renameFrom={card.titleOverride === undefined ? undefined : card.worktree.displayName}
       disabled={card.isDeleting || affiliateListMode}
       showUnreadEmphasis={card.showUnreadEmphasis || rolledUpUnread}
       dimReadTitle={props.dimWhenRead === true && !card.isActiveSurface}
