@@ -12,6 +12,7 @@ import { WorktreeRowOpenInSubMenu } from '../open/WorktreeRowOpenInSubMenu'
 import { WorktreeDeveloperMenu } from '../open/WorktreeDeveloperMenu'
 import { WorkspaceSleepMenuItems } from '../sleep/WorkspaceSleepMenuItems'
 import { WorkspaceVmLifecycleMenuItems } from '../sleep/WorkspaceVmLifecycleMenuItems'
+import { WorkspaceGridViewMenuItems } from '../grid-view/WorkspaceGridViewMenuItems'
 import { useTranslate } from '@/i18n/use-translate'
 import type { WorktreeContextMenuModel } from './use-worktree-context-menu-model'
 import { WorktreeStatusMenuItems } from '../../workspace-status/presentation/WorktreeStatusMenuItems'
@@ -156,6 +157,7 @@ export function WorktreeContextMenuPopup({
                   ? t('auto.components.sidebar.WorktreeContextMenu.697d0f6e1b', 'Unpin')
                   : t('auto.components.sidebar.WorktreeContextMenu.3baa7d6507', 'Pin')}
               </DropdownMenuItem>
+              <WorkspaceGridViewMenuItems workspaceId={worktree.id} disabled={isDeleting} />
             </>
           )}
           <WorktreeStatusMenuItems

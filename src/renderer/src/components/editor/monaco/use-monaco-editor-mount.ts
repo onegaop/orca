@@ -2,6 +2,7 @@ import { useCallback, useLayoutEffect, useRef } from 'react'
 import type { OnMount } from '@monaco-editor/react'
 import { useAppStore } from '@/store/index'
 import { registerFileSearchSelectedTextProvider } from '@/lib/files/search/file-search-selection'
+import { isUnfocusedGridViewMember as isUnfocusedGridMember } from '@/lib/workspace/grid-view/workspace-grid-view-membership'
 import { syncContentOnMount } from '../model-lifetime/buffer-text/monaco-content-sync'
 import { toEditorModelUri } from '../model-lifetime/identity/editor-model-uri'
 import { withProgrammaticContentSync } from '../model-lifetime/buffer-text/monaco-programmatic-sync'
@@ -256,7 +257,14 @@ export function useMonacoEditorMount(params: MonacoEditorMountParams): OnMount {
         restoreMonacoViewState(
           editorInstance,
           viewStateKey,
-          reveal?.viewStateId && revealMatchesEditor ? () => false : undefined
+          reveal?.viewStateId && revealMatchesEditor
+            ? () => false
+            : () => {
+                // An unfocused grid cell stays interactive, so restoring its editor must not steal focus.
+                const state = useAppStore.getState()
+                const memberIds = state.workspaceGridViewMemberIds
+                return !isUnfocusedGridMember(memberIds, state.activeWorktreeId, worktreeId)
+              }
         )
       }
 
