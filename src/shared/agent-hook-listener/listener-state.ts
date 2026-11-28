@@ -16,8 +16,9 @@ import type { CodexSubagentRoster } from './providers/codex/codex-subagent-roste
 import { retireCodexPaneTranscripts } from './providers/codex/codex-pane-transcript-retirement'
 import type { CodexSubagentTranscriptState } from './providers/codex/codex-subagent-transcript'
 import type { CodexAsyncQuestions } from './providers/codex/codex-async-questions'
+import type { AntigravityPaneChildState } from './providers/antigravity/antigravity-subagent-roster'
 import type { MusePaneState } from './providers/muse/muse-pane-state'
-import type { AgentHookEventPayload, AntigravityChildWork, ToolSnapshot } from './listener-event'
+import type { AgentHookEventPayload, ToolSnapshot } from './listener-event'
 import {
   deletePaneScopedCacheEntry,
   deletePaneScopedSetEntry,
@@ -46,9 +47,9 @@ export type HookListenerState = {
   /** Read-only compatibility view. All writes pass through the isolated legacy adapter. */
   lastStatusByPaneKey: ReadonlyMap<string, AgentHookEventPayload>
   antigravityCompletedTranscriptByPaneKey: Map<string, string>
-  /** Work outliving the turn, kept until agy's fully idle Stop: the conversation that spawned in-process subagents,
+  /** Work outliving the turn, kept until agy's fully idle Stop: root conversation/brain dir, active subagents/swarm workers,
    *  and run_command steps agy backgrounded (PreToolUse seen, the PostToolUse it sends when the command ends not yet). */
-  antigravityChildWorkByPaneKey: Map<string, AntigravityChildWork>
+  antigravityChildWorkByPaneKey: Map<string, AntigravityPaneChildState>
   /** Journal-backed prompt for each jcode pane's current turn; see readJcodeTurnPrompt. */
   jcodeTurnPromptByPaneKey: Map<string, JcodeUserPromptEvidence | null>
   /** Open swarm-helper permission requests per jcode pane; see routeJcodeHelperHook. */

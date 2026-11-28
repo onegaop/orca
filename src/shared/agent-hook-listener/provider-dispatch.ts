@@ -13,7 +13,10 @@ import type { ExtractedPromptText } from './prompt-fields'
 import { isNewTurnEvent } from './provider-event-routing'
 import { readLastUserPromptFromTranscript } from './transcript-lines'
 import { readJcodeTurnPrompt } from './providers/jcode/jcode-turn-prompt'
-import { normalizeAntigravityEvent } from './providers/antigravity/antigravity-events'
+import {
+  isAntigravityInSessionChildHook,
+  normalizeAntigravityEvent
+} from './providers/antigravity/antigravity-events'
 import { normalizeAmpEvent } from './providers/amp/amp-events'
 import { normalizeClaudeEvent } from './providers/claude/claude-events'
 import { normalizeCodexEvent } from './providers/codex/codex-events'
@@ -74,6 +77,7 @@ export function normalizeProviderEvent(input: {
       : codexEventName === undefined
         ? undefined
         : codexHookEventForEndedTurn(state, paneKey, codexEventName, hookPayload)
+  let resolvedEventName = eventName
   let resolvedPromptText = promptText
   let promptInteractionKey: string | undefined
   let hasTranscriptPromptEvidence = false
@@ -111,8 +115,9 @@ export function normalizeProviderEvent(input: {
         input.eventName
       )
       break
-    case 'antigravity':
-      if (isNewTurnEvent('antigravity', eventName)) {
+    case 'antigravity': {
+      const childHook = isAntigravityInSessionChildHook(state, paneKey, hookPayload)
+      if (!childHook && isNewTurnEvent('antigravity', eventName)) {
         resolvedPromptText =
           promptText ||
           readLastUserPromptFromTranscript(
@@ -121,7 +126,11 @@ export function normalizeProviderEvent(input: {
           ''
       }
       payload = normalizeAntigravityEvent(state, eventName, promptText, paneKey, hookPayload)
+      if (childHook) {
+        resolvedEventName = undefined
+      }
       break
+    }
     case 'amp':
       payload = normalizeAmpEvent(state, eventName, promptText, paneKey, hookPayload)
       break
@@ -262,7 +271,7 @@ export function normalizeProviderEvent(input: {
     resolvedPromptText,
     promptInteractionKey,
     hasTranscriptPromptEvidence,
-    eventName,
+    eventName: resolvedEventName,
     hostTurnSignals: readHostTurnSignals(source, hookPayload, promptInteractionKey),
     replyCandidate
   }

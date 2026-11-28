@@ -1,5 +1,6 @@
 import { ClaudeHelperKillPoller } from '../../../shared/agent-hook-listener/providers/claude/transcripts/claude-helper-kill-poller'
 import { retainTmuxHookWriterTopology } from './cli-writer-observation'
+import { pollAntigravityTranscriptStatus } from '../../../shared/agent-hook-listener/providers/antigravity/antigravity-transcript-poll'
 import {
   pollCodexTranscriptStatus,
   readCodexTranscriptPoll,
@@ -162,7 +163,7 @@ export abstract class AgentHookServerStatusRetries extends AgentHookServerStatus
       return
     }
     // Nested CLIs inherit pane keys; another provider must not clear this transcript poll.
-    if (source !== 'codex' && source !== 'muse') {
+    if (source !== 'codex' && source !== 'muse' && source !== 'antigravity') {
       return
     }
     if (!shouldPollHookTranscript(this.state, source, original)) {
@@ -235,7 +236,9 @@ export abstract class AgentHookServerStatusRetries extends AgentHookServerStatus
     const logOffset = source === 'muse' ? museLogOffset(this.state, paneKey) : undefined
     const normalized = codexReads
       ? pollCodexTranscriptStatus(this.state, original, body, this.env, codexReads)
-      : normalizeHookPayload(this.state, source, body, this.env)
+      : source === 'antigravity'
+        ? pollAntigravityTranscriptStatus(this.state, original)
+        : normalizeHookPayload(this.state, source, body, this.env)
     if (!normalized) {
       return
     }

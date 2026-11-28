@@ -1,4 +1,4 @@
-// Antigravity lifecycle predicates shared by normalization and result discovery.
+// Antigravity lifecycle predicates shared by normalization, child tracking, and result discovery.
 import { readFirstString } from '../../interactive-tool'
 
 export function isAntigravityStopStillBusy(hookPayload: Record<string, unknown>): boolean {
@@ -11,4 +11,46 @@ export function isAntigravityStopFailed(hookPayload: Record<string, unknown>): b
     readFirstString(hookPayload, ['terminationReason', 'termination_reason'])?.toLowerCase() ===
     'error'
   )
+}
+
+export function isAntigravityFeedbackTool(toolName: string | undefined): boolean {
+  return toolName === 'ask_question' || toolName === 'ask_permission'
+}
+
+export function isAntigravityHelperSpawnTool(toolName: string | undefined): boolean {
+  return toolName === 'invoke_subagent' || toolName === 'swarm' || toolName === 'run_workflow'
+}
+
+export function isAntigravitySubagentTool(toolName: string | undefined): boolean {
+  return (
+    isAntigravityHelperSpawnTool(toolName) ||
+    toolName === 'send_message' ||
+    toolName === 'manage_subagents' ||
+    toolName === 'swarm_wait' ||
+    toolName === 'read_board'
+  )
+}
+
+export function isRecognizedAntigravityEvent(eventName: unknown): boolean {
+  return (
+    eventName === 'PreInvocation' ||
+    eventName === 'PostInvocation' ||
+    eventName === 'PreToolUse' ||
+    eventName === 'PostToolUse' ||
+    eventName === 'Stop'
+  )
+}
+
+export function resolveSimpleAntigravityEventState(
+  eventName: unknown,
+  toolName: string | undefined,
+  stopStillBusy: boolean
+): 'working' | 'waiting' | 'done' | null {
+  if (eventName === 'PreToolUse' && isAntigravityFeedbackTool(toolName)) {
+    return 'waiting'
+  }
+  if (eventName === 'Stop') {
+    return stopStillBusy ? 'working' : 'done'
+  }
+  return isRecognizedAntigravityEvent(eventName) ? 'working' : null
 }

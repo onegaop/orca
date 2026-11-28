@@ -1,4 +1,5 @@
 import { ClaudeHelperKillPoller } from '../../../shared/agent-hook-listener/providers/claude/transcripts/claude-helper-kill-poller'
+import { pollAntigravityTranscriptStatus } from '../../../shared/agent-hook-listener/providers/antigravity/antigravity-transcript-poll'
 import {
   pollCodexTranscriptStatus,
   readCodexTranscriptPoll,
@@ -135,7 +136,7 @@ export class AgentHookResultRetryScheduler {
       return
     }
     // Why: a nested CLI of another kind inherits ORCA_PANE_KEY, so clearing here would silently end a live poll.
-    if (source !== 'codex' && source !== 'muse') {
+    if (source !== 'codex' && source !== 'muse' && source !== 'antigravity') {
       return
     }
     if (!shouldPollHookTranscript(this.host.state, source, original)) {
@@ -219,7 +220,9 @@ export class AgentHookResultRetryScheduler {
     const logOffset = source === 'muse' ? museLogOffset(this.host.state, paneKey) : undefined
     const event = codexReads
       ? pollCodexTranscriptStatus(this.host.state, original, body, this.host.env, codexReads)
-      : normalizeHookPayload(this.host.state, source, body, this.host.env)
+      : source === 'antigravity'
+        ? pollAntigravityTranscriptStatus(this.host.state, original)
+        : normalizeHookPayload(this.host.state, source, body, this.host.env)
     if (!event) {
       return
     }
