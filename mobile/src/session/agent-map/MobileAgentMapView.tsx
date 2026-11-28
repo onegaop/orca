@@ -25,8 +25,9 @@ import {
 } from './MobileAgentMapGraph'
 import { encodeNativeChatTranscriptIdentity } from '../../../../src/shared/native-chat/transcript/messages/native-chat-transcript-retention'
 import { useMobileTranslation } from '../../i18n/use-mobile-translation'
-import { colors } from '../../theme/mobile-theme'
-import { themedStyleSheet } from '../../theme/themed-styles'
+import type { MobilePalette } from '../../theme/mobile-theme'
+import { themedStyleSheet, useThemedStyles } from '../../theme/themed-styles'
+import { useMobileColors } from '../../theme/use-mobile-color-scheme'
 import type { RpcClient } from '../../transport/rpc/rpc-client-contract'
 import { useMobileStructuredAgentState } from '../native-chat/agent-session/use-mobile-structured-agent-state'
 
@@ -44,6 +45,8 @@ export function MobileAgentMapView(args: {
 }): React.JSX.Element {
   const { client, connected, agent, sessionId, sourceIdentity, onClose } = args
   const t = useMobileTranslation()
+  const colors = useMobileColors()
+  const styles = useThemedStyles(stylesSheet)
   const sessionKey =
     sessionId != null
       ? encodeNativeChatTranscriptIdentity([sourceIdentity, agent ?? '', sessionId])
@@ -196,7 +199,10 @@ export function MobileAgentMapView(args: {
                     key={`${event.seq}-${event.kind}`}
                     style={[
                       styles.marker,
-                      { left: `${(i / lastIndex) * 100}%`, backgroundColor: markerColor(event) }
+                      {
+                        left: `${(i / lastIndex) * 100}%`,
+                        backgroundColor: markerColor(event, colors)
+                      }
                     ]}
                   />
                 ))}
@@ -234,7 +240,7 @@ export function MobileAgentMapView(args: {
 }
 
 /** Ticks mark the moments worth scrubbing to: prompts, spawns, questions, failures. */
-function markerColor(event: AgentMap['timeline'][number]): string {
+function markerColor(event: AgentMap['timeline'][number], colors: MobilePalette): string {
   if (event.failed) {
     return colors.statusRed
   }
@@ -262,7 +268,7 @@ function nearestIndexAtOrBefore(timeline: AgentMap['timeline'], ts: number | nul
   return index
 }
 
-const styles = themedStyleSheet(() => ({
+const stylesSheet = themedStyleSheet((colors) => ({
   overlay: {
     ...StyleSheet.absoluteFill,
     backgroundColor: colors.bgBase,

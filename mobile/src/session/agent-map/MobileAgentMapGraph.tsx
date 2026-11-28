@@ -11,14 +11,18 @@ import type { AgentMapLayout } from '../../../../src/shared/agent-session-map/ag
 import { agentMapToolChipsAt } from '../../../../src/shared/agent-session-map/agent-session-map-tool-chips'
 import type { Translate } from '../../i18n/mobile-i18n'
 import { useMobileTranslation } from '../../i18n/use-mobile-translation'
-import { colors, typography } from '../../theme/mobile-theme'
+import { typography, type MobilePalette } from '../../theme/mobile-theme'
+import { useMobileColors } from '../../theme/use-mobile-color-scheme'
 
 export const AGENT_MAP_NODE_WIDTH = 150
 export const AGENT_MAP_NODE_HEIGHT = 52
 export const AGENT_MAP_CHIP_ROW_HEIGHT = 18
 
 // Palette reads stay inside the function so a scheme change re-themes the map.
-function statusColors(status: AgentMapNodeStatus): { stroke: string; fill: string } {
+function statusColors(
+  status: AgentMapNodeStatus,
+  colors: MobilePalette
+): { stroke: string; fill: string } {
   switch (status) {
     case 'running':
       return { stroke: colors.accentBlue, fill: 'rgba(59, 130, 246, 0.14)' }
@@ -78,6 +82,7 @@ export function MobileAgentMapGraph(args: {
 }): React.JSX.Element {
   const { map, layout, viewState, selectedNodeId, onSelectNode } = args
   const t = useMobileTranslation()
+  const colors = useMobileColors()
   const nodeById = useMemo(() => new Map(map.nodes.map((node) => [node.id, node])), [map])
   const viewById = useMemo(
     () => new Map(viewState.nodes.map((node) => [node.nodeId, node])),
@@ -99,7 +104,7 @@ export function MobileAgentMapGraph(args: {
               key={`${edge.fromId}-${edge.toId}`}
               d={edgePath(edge.from, edge.to, edge.fromHeight, edge.toHeight)}
               fill="none"
-              stroke={statusColors(viewById.get(edge.toId)?.status ?? 'unknown').stroke}
+              stroke={statusColors(viewById.get(edge.toId)?.status ?? 'unknown', colors).stroke}
               strokeOpacity={0.45}
               strokeWidth={1.5}
             />
@@ -153,7 +158,8 @@ function MapNode(args: {
 }): React.JSX.Element {
   const { x, y, node, ts, label, status, activeTool, waitingOn, isRoot, selected, onSelect } = args
   const t = useMobileTranslation()
-  const color = statusColors(status)
+  const colors = useMobileColors()
+  const color = statusColors(status, colors)
   const subtitle =
     status === 'running' && activeTool
       ? activeTool

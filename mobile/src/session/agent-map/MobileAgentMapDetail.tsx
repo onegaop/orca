@@ -6,8 +6,9 @@ import type {
 } from '../../../../src/shared/agent-session-map/agent-session-map-model'
 import { formatAgentMapDuration } from '../../../../src/shared/agent-session-map/agent-session-map-duration'
 import { useMobileTranslation } from '../../i18n/use-mobile-translation'
-import { colors, typography } from '../../theme/mobile-theme'
-import { themedStyleSheet } from '../../theme/themed-styles'
+import { typography } from '../../theme/mobile-theme'
+import { themedStyleSheet, useThemedStyles } from '../../theme/themed-styles'
+import { useMobileColors } from '../../theme/use-mobile-color-scheme'
 
 /** The tap-to-inspect sheet for one node: provenance stats, tool calls with
  *  timings, turns, questions/approvals, and the files it touched. */
@@ -18,6 +19,8 @@ export function MobileAgentMapDetail(args: {
 }): React.JSX.Element {
   const { node, view, onClose } = args
   const t = useMobileTranslation()
+  const colors = useMobileColors()
+  const styles = useThemedStyles(stylesSheet)
   const durationMs = node.lastTs - node.firstTs
 
   return (
@@ -173,6 +176,7 @@ export function MobileAgentMapDetail(args: {
 }
 
 function Stat({ label, value }: { label: string; value: string }): React.JSX.Element {
+  const styles = useThemedStyles(stylesSheet)
   return (
     <View style={styles.statCell}>
       <Text style={styles.statLabel}>{label}</Text>
@@ -188,6 +192,7 @@ function Section({
   title: string
   children: React.ReactNode
 }): React.JSX.Element {
+  const styles = useThemedStyles(stylesSheet)
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -197,10 +202,9 @@ function Section({
 }
 
 // The mobile typography module exposes the mono family for file paths and tool names.
-// themedStyleSheet runs its factory eagerly at module load, so this must precede it.
 const typographyMono = typography.monoFamily
 
-const styles = themedStyleSheet(() => ({
+const stylesSheet = themedStyleSheet((colors) => ({
   sheet: {
     position: 'absolute',
     left: 0,
