@@ -1,4 +1,4 @@
-import { MessageSquare, SquareTerminal } from 'lucide-react-native'
+import { MessageSquare, SquareTerminal, Waypoints } from 'lucide-react-native'
 import type { ActionSheetAction } from '../../../components/sheets/ActionSheetModal'
 import type { Translate } from '../../../i18n/mobile-i18n'
 import { resolveMobileNativeChat, type MobileNativeChatTab } from './mobile-native-chat-eligibility'
@@ -12,12 +12,14 @@ export function getMobileNativeChatToggleActions(args: {
   terminalHandle: string | null
   tabs: readonly ToggleTab[]
   isTabChatView: (tabId: string) => boolean
+  isTabMapView: (tabId: string) => boolean
   nativeChatTranscriptIsLocalReadable: boolean
   onClose: () => void
   onToggle: (tabId: string) => void
+  onToggleMap: (tabId: string) => void
   t: Translate
 }): ActionSheetAction[] {
-  const { terminalHandle, tabs, isTabChatView, onClose, onToggle } = args
+  const { terminalHandle, tabs, isTabChatView, isTabMapView, onClose, onToggle, onToggleMap } = args
   const tab = terminalHandle
     ? tabs.find((candidate) => candidate.terminal === terminalHandle)
     : null
@@ -25,6 +27,7 @@ export function getMobileNativeChatToggleActions(args: {
     return []
   }
   const isChat = isTabChatView(tab.id)
+  const isMap = isTabMapView(tab.id)
   return [
     {
       id: 'toggleChatView',
@@ -35,6 +38,17 @@ export function getMobileNativeChatToggleActions(args: {
       onPress: () => {
         onClose()
         onToggle(tab.id)
+      }
+    },
+    {
+      id: 'toggleAgentMapView',
+      label: isMap
+        ? args.t('session.nativeChatToggleAction.switchToTerminalView', 'Switch to terminal view')
+        : args.t('session.nativeChatToggleAction.showAgentMap', 'Show agent map'),
+      icon: Waypoints,
+      onPress: () => {
+        onClose()
+        onToggleMap(tab.id)
       }
     }
   ]

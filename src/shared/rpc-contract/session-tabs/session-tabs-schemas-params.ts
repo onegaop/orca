@@ -173,7 +173,7 @@ export const SetTabProps = lazyZodSchema(() =>
     color: z.string().max(64).nullable().optional(),
     isPinned: z.boolean().optional(),
     // undefined = leave unchanged; no "clear" semantic (absence means default 'terminal').
-    viewMode: z.enum(['terminal', 'chat']).optional(),
+    viewMode: z.enum(['terminal', 'chat', 'map']).optional(),
     // A terminal tab's manual name; null clears it. Older hosts strip it and change nothing.
     customTitle: z.string().max(512).nullable().optional()
   })
@@ -216,7 +216,7 @@ export const CreateTerminalTab = lazyZodSchema(() =>
         message: 'Unknown launch agent'
       })
       .optional(),
-    viewMode: z.enum(['terminal', 'chat']).optional(),
+    viewMode: z.enum(['terminal', 'chat', 'map']).optional(),
     activate: z.boolean().optional(),
     select: z.boolean().optional(),
     navigation: z.enum(RUNTIME_NAVIGATION_TARGETS).optional(),

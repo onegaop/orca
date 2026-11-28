@@ -137,7 +137,7 @@ export function buildWorkspaceLayoutPaneCommands() {
     ...onTab,
     color: z.union([z.string(), z.null()]).optional(),
     isPinned: z.boolean().optional(),
-    viewMode: z.enum(['terminal', 'chat']).optional(),
+    viewMode: z.enum(['terminal', 'chat', 'map']).optional(),
     clearLaunchAgent: z.literal(true).optional()
   })
 

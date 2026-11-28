@@ -38,7 +38,7 @@ export const CreateTerminalTabCommand = lazyZodSchema(() =>
     tabId: z.string().refine(isValidHostTerminalTabId),
     leafId: z.string().refine(isTerminalLeafId),
     groupId: z.string().min(1).optional(),
-    viewMode: z.enum(['terminal', 'chat']).optional(),
+    viewMode: z.enum(['terminal', 'chat', 'map']).optional(),
     createdAt: z.number().int().nonnegative().optional(),
     quickCommandLabel: z.string().trim().min(1).optional(),
     creation: TerminalCreation.optional(),

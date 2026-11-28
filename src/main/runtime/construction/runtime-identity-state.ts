@@ -237,7 +237,7 @@ export abstract class OrcaRuntimeWithRuntimeId extends RuntimeBotConstructionHoo
       activate: boolean
       paired: boolean
       selectIfNoActiveTab: boolean
-      viewMode?: 'terminal' | 'chat'
+      viewMode?: RuntimeMobileSessionCreateTerminalResult['tab']['viewMode']
       /** Retain launch delivery over bare renderer PTYs; silent settlement would lose the command (STA-3214). */
       startupCommand?: string
     }

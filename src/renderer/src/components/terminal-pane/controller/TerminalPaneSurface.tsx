@@ -12,6 +12,7 @@ import { AgentLaunchPaneNoticePortal } from '../launch-outcome/AgentLaunchPaneNo
 import { SessionRestoredBannerPortals } from '../session-restore/SessionRestoredBannerPortals'
 import { handleInternalTerminalFileDrop } from '../input/file-drop/terminal-drop-handler'
 import { TerminalPaneNativeChatPortal } from '../chat/TerminalPaneNativeChatPortal'
+import { TerminalPaneAgentMapPortal } from '../TerminalPaneAgentMapPortal'
 import { TerminalPaneSleepingPortals } from '../session-restore/spawn-deferral/TerminalPaneSleepingPortals'
 import { TerminalPaneCodexRestartPortals } from './TerminalPaneCodexRestartPortals'
 import { TerminalPaneMobileDriverPortals } from '../mobile-driver/TerminalPaneMobileDriverPortals'
@@ -59,6 +60,7 @@ export function TerminalPaneSurface({
     handleCancelClose,
     handleConfirmClose,
     handleContextMenuToggleNativeChat,
+    handleContextMenuToggleAgentMap,
     handlePrimarySelectionAuxClick,
     handlePrimarySelectionMiddleMouseDown,
     handleRemoveTitle,
@@ -195,6 +197,7 @@ export function TerminalPaneSurface({
       />
       <SessionRestoredBannerPortals panes={managedPanes} paneIds={sessionRestoredBannerPaneIds} />
       <TerminalPaneNativeChatPortal controller={controller} />
+      <TerminalPaneAgentMapPortal controller={controller} />
       {Boolean(terminalManager) && (contextMenu.open || (isActive && hasOpenedContextMenu)) ? (
         <Suspense fallback={null}>
           <TerminalContextMenu
@@ -235,6 +238,9 @@ export function TerminalPaneSurface({
             canToggleNativeChat={contextMenuCanToggleChat}
             isNativeChatView={contextMenuIsChatView}
             onToggleNativeChat={handleContextMenuToggleNativeChat}
+            canShowAgentMap={controller.contextMenuCanShowAgentMap}
+            isAgentMapView={controller.contextMenuIsMapView}
+            onToggleAgentMap={handleContextMenuToggleAgentMap}
             onCopyAgentSessionContext={() => void contextMenu.onCopyAgentSessionContext()}
             quickCommandHosts={visibleQuickCommandHosts}
             quickCommandHostLoadFailed={quickCommandHostLoadFailed}
