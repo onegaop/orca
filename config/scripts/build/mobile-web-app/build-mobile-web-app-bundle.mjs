@@ -26,7 +26,7 @@ import {
 } from '../../mobile-web-app/mobile-web-app-route-manifest.mjs'
 import { MOBILE_WEB_PAGE_ROUTES } from './mobile-web-page-routes.mjs'
 import { reactNativeSvgWebPlugin } from './react-native-svg-web-plugin.mjs'
-import { packageBuildPlugin } from './one-package-build-plugin.mjs'
+import { assertMobileReactInputs, packageBuildPlugin } from './one-package-build-plugin.mjs'
 import {
   reactCompilerShim,
   mobileReactCompilerPlugin
@@ -297,7 +297,7 @@ export function mobileWebAppBuildOptions(
     metafile: true,
     logLevel: 'silent',
     jsx: 'automatic',
-    // Fallback mobile nodePaths shares React but cannot override already-resolved shared imports; Zod needs its own alias.
+    // Bare dependencies missing next to a shared module also resolve from mobile.
     nodePaths: [join(mobileDir, 'node_modules')],
     alias: {
       'react-native': 'react-native-web',
@@ -553,6 +553,7 @@ export async function bundleMobileWebApp({ appDir = defaultAppDir } = {}) {
   await assertRoutesCarryNoSynchronousExports(routes)
   const result = await buildMobileWebAppScripts(routes)
   assertNoZodLocaleTables(result.metafile)
+  assertMobileReactInputs(result.metafile)
   const entryOutputPath = entryOutput(result.metafile)
   const outputFiles = bannerOnlyWhereScriptsRunFirst(result.metafile, result.outputFiles)
   const renamed = renameOutputsByContent(result.metafile, outputFiles)

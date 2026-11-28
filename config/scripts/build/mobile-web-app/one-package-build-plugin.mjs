@@ -1,5 +1,5 @@
 import { realpathSync } from 'node:fs'
-import { dirname, join, sep } from 'node:path'
+import { dirname, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const PACKAGE_BUILD_PLUGIN_NAME = 'orca-one-package-build'
@@ -119,9 +119,41 @@ async function viaDependency(build, via, dependency) {
   return { resolveDir: dirname(path), own }
 }
 
+// Shared components must read hooks from the same React instance as the mobile renderer.
+function anchorMobileReact(build) {
+  const marker = 'orca-mobile-react'
+  build.onResolve({ filter: /^react(-dom)?(\/|$)/ }, async (args) => {
+    if (args.pluginData?.[marker]) {
+      return undefined
+    }
+    const resolved = await build.resolve(args.path, {
+      kind: args.kind,
+      resolveDir: mobileDir,
+      pluginData: { [marker]: true }
+    })
+    const { path, namespace, sideEffects, errors, warnings } = resolved
+    return { path, namespace, sideEffects, errors, warnings }
+  })
+}
+
+export function assertMobileReactInputs(metafile) {
+  const mobileReactRoots = {
+    react: realpathSync(join(mobileDir, 'node_modules', 'react')),
+    'react-dom': realpathSync(join(mobileDir, 'node_modules', 'react-dom'))
+  }
+  for (const name of Object.keys(metafile.inputs)) {
+    const input = resolve(mobileDir, name)
+    const packageName = input.match(/[\\/]node_modules[\\/](react(?:-dom)?)[\\/]/)?.[1]
+    if (packageName && !input.startsWith(`${mobileReactRoots[packageName]}${sep}`)) {
+      throw new Error(`[build-mobile-web-app-bundle] duplicate React dependency in ${name}`)
+    }
+  }
+}
+
 export const packageBuildPlugin = {
   name: PACKAGE_BUILD_PLUGIN_NAME,
   setup(build) {
+    anchorMobileReact(build)
     const filter = new RegExp(
       `^(?:${PACKAGE_BUILD_REDIRECTS.map(({ from }) => escapeRegExp(from)).join('|')})$`
     )
