@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { lazyZodSchema } from '../schema/lazy-zod-schema'
 import { isSettableBotAvatar, MAX_BOT_AVATAR_BYTES } from '../bot-avatar'
+import { AVATAR_ANIMATION_STATES } from '../bots/avatar-packs/avatar-pack-types'
 import { requiredString } from './rpc-param-primitives'
 
 /** A mascot, an emoji or null; an upload is set with bots.avatar.upload. */
@@ -32,6 +33,13 @@ export const BotAvatarRead = lazyZodSchema(() =>
     /** Return the Generate anchor for this catalog revision instead of reading the PNG. */
     catalogRevision: z.number().int().nonnegative().optional(),
     catalogEpoch: z.uuid().optional()
+  })
+)
+
+export const BotAvatarAnimation = lazyZodSchema(() =>
+  z.object({
+    botId: requiredString('Missing bot id'),
+    state: z.enum(AVATAR_ANIMATION_STATES)
   })
 )
 

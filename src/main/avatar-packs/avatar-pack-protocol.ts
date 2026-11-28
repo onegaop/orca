@@ -89,7 +89,8 @@ export async function resolveAvatarPacksDir(
 
 export async function handleAvatarPackAssetRequest(
   request: Pick<Request, 'method' | 'url'>,
-  options?: AvatarPacksResolveOptions
+  options?: AvatarPacksResolveOptions,
+  limit = 16 * 1024 * 1024
 ): Promise<Response> {
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     return new Response(null, { status: 405 })
@@ -158,7 +159,6 @@ export async function handleAvatarPackAssetRequest(
   if (!mimeType) {
     return new Response(null, { status: 403 })
   }
-  const limit = 16 * 1024 * 1024
   try {
     const { handle, stats } = await openLocalRegularFile(realPath)
     try {

@@ -26,6 +26,7 @@ export type MobileBotAvatarSource =
   | { kind: 'image'; uri: string }
   /** A bot's uploaded picture, drawn once read; until then, `text`. */
   | { kind: 'upload'; botId: string; avatar: string; text: string }
+  | { kind: 'avatar-pack'; botId: string; avatar: string; text: string; paused?: boolean }
   | { kind: 'text'; text: string }
 
 /** What a bot's row draws over its home folder's row. */
@@ -93,7 +94,10 @@ export type MobileBotChatLineFacts = {
 /** The bot's mascot, its upload, or its emoji or initial, as the desktop draws it. */
 export function mobileBotAvatarSource(
   /** No id: a draft, whose upload no host can answer yet. */
-  bot: Pick<Bot, 'name' | 'avatar' | 'avatarColor' | 'avatarOutfit'> & { id?: string }
+  bot: Pick<Bot, 'name' | 'avatar' | 'avatarColor' | 'avatarOutfit'> & {
+    id?: string
+    paused?: boolean
+  }
 ): MobileBotAvatarSource {
   const parsed = parseBotAvatar(bot.avatar)
   const outfit = wornBotOutfit(bot.avatarOutfit)
@@ -103,6 +107,15 @@ export function mobileBotAvatarSource(
       id: parsed.id,
       ...(bot.avatarColor ? { color: bot.avatarColor } : {}),
       ...(outfit ? { outfit } : {})
+    }
+  }
+  if (parsed?.kind === 'avatar-pack' && bot.avatar && bot.id) {
+    return {
+      kind: 'avatar-pack',
+      botId: bot.id,
+      avatar: bot.avatar,
+      text: botFallback(bot),
+      paused: bot.paused
     }
   }
   if (parsed?.kind === 'upload' && bot.avatar && bot.id) {

@@ -123,6 +123,7 @@ export type RuntimeStore = {
   getMobileClientTabSelections?: Store['getMobileClientTabSelections']
   setMobileClientTabSelections?: Store['setMobileClientTabSelections']
   getSettings(): {
+    avatarPacksDir?: GlobalSettings['avatarPacksDir']
     browserClientHostedRemoteEnabled?: GlobalSettings['browserClientHostedRemoteEnabled']
     autoRenameBranchFromWork?: GlobalSettings['autoRenameBranchFromWork']
     nativeChatAutoName?: GlobalSettings['nativeChatAutoName']

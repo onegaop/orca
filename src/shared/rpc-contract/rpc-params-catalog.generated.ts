@@ -151,6 +151,7 @@ import {
   AutomationUpdate
 } from './automations/automation-params'
 import {
+  BotAvatarAnimation,
   BotAvatarRead,
   BotAvatarUpload,
   BotSlackIconUpload,
@@ -1323,6 +1324,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'bots.access.redeem': BotAccessRedeem,
   'bots.activity': BotActivityRead,
   'bots.agentChoices': null,
+  'bots.avatar.animation': BotAvatarAnimation,
   'bots.avatar.read': BotAvatarRead,
   'bots.avatar.slackIcon.upload': BotSlackIconUpload,
   'bots.avatar.slackIcon.wanted': BotSlackIconWanted,

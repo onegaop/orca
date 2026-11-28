@@ -1,5 +1,6 @@
 import { BOT_GROUP_METHODS } from './bot-groups'
 import { BOT_METHODS } from './bots'
+import { BOT_AVATAR_ANIMATION_METHOD } from './bots-avatar-animation'
 import { BOT_TAKE_OVER_METHOD } from './bots-take-over'
 import { BOT_RUN_SEND_AGAIN_METHOD } from './bots-run-send-again'
 import { BOT_ACCESS_METHODS } from './bots-access'
@@ -35,6 +36,7 @@ import { WEBHOOK_METHODS } from './webhooks'
 
 export const BOT_RPC_METHODS = [
   ...BOT_METHODS,
+  BOT_AVATAR_ANIMATION_METHOD,
   BOT_TAKE_OVER_METHOD,
   BOT_RUN_SEND_AGAIN_METHOD,
   ...BOT_GROUP_METHODS,

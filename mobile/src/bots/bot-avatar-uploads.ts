@@ -32,29 +32,51 @@ export function noteListedBots(
   bots: readonly Pick<ListedBot, 'id' | 'avatar'>[]
 ): void {
   const listed = new Set(bots.map((bot) => bot.id))
+  let hostChanged = false
   for (const [id, by] of listedBy) {
     // Gone from its host's list: nothing reads it there again. A wait stays, for a list that brings it back.
     if (by.key === key && !listed.has(id)) {
       listedBy.delete(id)
+      hostChanged = true
     }
   }
   for (const { id, avatar } of bots) {
-    listedBy.set(id, { client, key })
+    const previousHost = listedBy.get(id)
+    if (previousHost?.client !== client || previousHost.key !== key) {
+      listedBy.set(id, { client, key })
+      hostChanged = true
+    }
     if (avatar && waiting.get(id) === avatar) {
       waiting.delete(id)
       readUpload(id, avatar)
     }
+  }
+  if (hostChanged) {
+    listeners.forEach((listener) => listener())
   }
 }
 
 /** Lets go of a removed paired host's clients, for its own bots and its servers'. Their pictures stay
  *  while drawn, as another paired host may relay the same server, and go under the budget after. */
 export function forgetBotAvatarClients(pairedHostId: string): void {
+  let hostChanged = false
   for (const [id, { key }] of listedBy) {
     if (key === pairedHostId || key.startsWith(`${pairedHostId}\n`)) {
       listedBy.delete(id)
+      hostChanged = true
     }
   }
+  if (hostChanged) {
+    listeners.forEach((listener) => listener())
+  }
+}
+
+export function useBotAvatarHost(botId: string) {
+  return useSyncExternalStore(
+    subscribe,
+    () => listedBy.get(botId),
+    () => undefined
+  )
 }
 
 // After the commit: a remount runs every cleanup before any mount, and must not drop what it draws again.

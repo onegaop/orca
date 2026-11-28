@@ -2,6 +2,7 @@ import { Image, StyleSheet, Text, View } from 'react-native'
 import { themedStyleSheet, useThemedStyles } from '../theme/themed-styles'
 import type { MobileBotAvatarSource } from './host-bot-row-facts'
 import { useBotAvatarUpload } from './bot-avatar-uploads'
+import { MobileBotAvatarAnimation } from './MobileBotAvatarAnimation'
 import { mobileBotMascotAsset, mobileBotMascotRimAsset } from './mobile-bot-mascot-assets'
 import {
   mobileBotOutfitAsset,
@@ -42,10 +43,20 @@ export function MobileBotAvatar({
     return picture(upload)
   }
   if (avatar.kind !== 'mascot') {
-    return (
+    const fallback = (
       <View style={[styles.tile, frame]}>
         <Text style={[styles.letter, { fontSize: Math.round(size * 0.6) }]}>{avatar.text}</Text>
       </View>
+    )
+    return avatar.kind === 'avatar-pack' ? (
+      <MobileBotAvatarAnimation
+        avatar={avatar}
+        size={size}
+        borderRadius={frame.borderRadius}
+        fallback={fallback}
+      />
+    ) : (
+      fallback
     )
   }
   // The mascot pictures are transparent: their tile color goes behind, on a dark one the light rim, and
