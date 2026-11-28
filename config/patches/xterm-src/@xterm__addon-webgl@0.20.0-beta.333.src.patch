@@ -32,7 +32,7 @@ index 49fdf5b1bb4d6c1f602e36470248a10a690a3479..384f4db6f22d0691f66938d42333d1b0
      if (code !== NULL_CELL_CODE && cell.extended.underlineStyle === UnderlineStyle.DOTTED) {
        const lineWidth = Math.max(1, Math.floor(this._optionService.rawOptions.fontSize * this._coreBrowserService.dpr / 15));
 diff --git a/src/GlyphRenderer.ts b/src/GlyphRenderer.ts
-index 742f0879ff4f04509e4a07c8efdf0d5743fe8ee5..21347443255cba3011e534248557239931ab7d47 100644
+index 1e8e5247eacaf55b42d1c93d28dc136a6ca09422..3a7aee9f041e2ed3ccaf0f35b4220e553b38dcd6 100644
 --- a/src/GlyphRenderer.ts
 +++ b/src/GlyphRenderer.ts
 @@ -61,6 +61,8 @@ function createFragmentShaderSource(maxFragmentShaderTextureUnits: number): stri
@@ -61,7 +61,7 @@ index 742f0879ff4f04509e4a07c8efdf0d5743fe8ee5..21347443255cba3011e5342485572399
    private _activeBuffer: number = 0;
    private readonly _vertices: IVertices = {
      count: 0,
-@@ -387,6 +390,15 @@ export class GlyphRenderer extends Disposable {
+@@ -388,6 +391,15 @@ export class GlyphRenderer extends Disposable {
          this._bindAtlasPageTexture(gl, this._atlas, i);
        }
      }
@@ -102,7 +102,7 @@ index eebfda3b3df9b4c8cefcc6a64692053ed5eaeefa..75e34767bd1e12802b72371fddb5fc90
          this._updateRectangle(vertices, offset, currentFg, currentBg, currentStartX, terminal.cols, y);
        }
 diff --git a/src/TextureAtlas.ts b/src/TextureAtlas.ts
-index eff0d0e1c36906b1f14b85fb8db7907bf685c8a7..493e2185fbcad504a057685045b06bdc3f0eec1b 100644
+index bad0be5dade246bc3b0003265e18e8991eb58e9e..adb8a7edcbd4d2db3fe7aecc5073903d13f5cdb4 100644
 --- a/src/TextureAtlas.ts
 +++ b/src/TextureAtlas.ts
 @@ -3,6 +3,7 @@
@@ -144,7 +144,7 @@ index eff0d0e1c36906b1f14b85fb8db7907bf685c8a7..493e2185fbcad504a057685045b06bdc
            this._cacheMap.set(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, rasterizedGlyph);
          }
        });
-@@ -138,21 +144,23 @@ export class TextureAtlas implements ITextureAtlas {
+@@ -138,21 +144,20 @@ export class TextureAtlas implements ITextureAtlas {
    private _pageLayoutVersion = 0;
    public get pageLayoutVersion(): number { return this._pageLayoutVersion; }
  
@@ -155,10 +155,7 @@ index eff0d0e1c36906b1f14b85fb8db7907bf685c8a7..493e2185fbcad504a057685045b06bdc
 +  public fontProbeLastMismatch: { desired: string, actual: string } | undefined;
 +
    public clearTexture(): void {
--    if (this._pages[0].currentRow.x === 0 && this._pages[0].currentRow.y === 0) {
-+    // Guard on every page rather than pages[0]: a merged page is never written through
-+    // currentRow, so once one lands at index 0 the old check made every later clear a no-op.
-+    if (this._pages.every(page => page.glyphs.length === 0 && page.currentRow.x === 0 && page.currentRow.y === 0)) {
+     if (this._pages.every(page => page.glyphs.length === 0)) {
        return;
      }
 -    for (const page of this._pages) {
@@ -172,24 +169,23 @@ index eff0d0e1c36906b1f14b85fb8db7907bf685c8a7..493e2185fbcad504a057685045b06bdc
 -    // which case the clearing renderer has cleared only its own model and every other owner still
 -    // holds texture coords into the rows just wiped.
 -    this._pageLayoutVersion++;
-+    // Return the atlas to its constructor state instead of clearing in place: page.clear() leaves
-+    // page.glyphs populated, which would keep the guard above from ever firing again. Eviction
-+    // also bumps _pageLayoutVersion, so every renderer sharing this atlas rebuilds its model.
++    // Drop allocated pages and bump _pageLayoutVersion so every renderer sharing this atlas
++    // rebuilds its model against the new page.
 +    this._evictAllPages();
 +    this._createNewPage();
    }
  
    private _createNewPage(): AtlasPage {
-@@ -164,7 +172,7 @@ export class TextureAtlas implements ITextureAtlas {
+@@ -164,7 +169,7 @@ export class TextureAtlas implements ITextureAtlas {
        // Find the set of the largest 4 images, below the maximum size, with the highest
        // percentages used
        const pagesBySize = this._pages.filter(e => {
--        return e.canvas.width * 2 <= (TextureAtlas.maxTextureSize || Constants.FORCED_MAX_TEXTURE_SIZE);
-+        return e.canvas.width * 2 <= Math.min(TextureAtlas.maxTextureSize || Constants.FORCED_MAX_TEXTURE_SIZE, Constants.FORCED_MAX_TEXTURE_SIZE);
+-        return e.glyphs.length > 0 && e.canvas.width * 2 <= (TextureAtlas.maxTextureSize || Constants.FORCED_MAX_TEXTURE_SIZE);
++        return e.glyphs.length > 0 && e.canvas.width * 2 <= Math.min(TextureAtlas.maxTextureSize || Constants.FORCED_MAX_TEXTURE_SIZE, Constants.FORCED_MAX_TEXTURE_SIZE);
        }).sort((a, b) => {
          if (b.canvas.width !== a.canvas.width) {
            return b.canvas.width - a.canvas.width;
-@@ -468,6 +476,36 @@ export class TextureAtlas implements ITextureAtlas {
+@@ -468,6 +473,36 @@ export class TextureAtlas implements ITextureAtlas {
      return this._config.colors.contrastCache;
    }
  
@@ -226,7 +222,7 @@ index eff0d0e1c36906b1f14b85fb8db7907bf685c8a7..493e2185fbcad504a057685045b06bdc
    private _drawToCache(codeOrChars: number | string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean, domContainer: HTMLElement | undefined): IRasterizedGlyph {
      const chars = typeof codeOrChars === 'number' ? String.fromCharCode(codeOrChars) : codeOrChars;
  
-@@ -538,7 +576,8 @@ export class TextureAtlas implements ITextureAtlas {
+@@ -538,7 +573,8 @@ export class TextureAtlas implements ITextureAtlas {
      const fontWeight = bold ? this._config.fontWeightBold : this._config.fontWeight;
      const fontStyle = italic ? 'italic' : '';
      this._tmpCtx.font =
@@ -250,10 +246,10 @@ index bfd6fd76cebe8f55dce7bfad5406d4f7cd184320..0bd283ea7b2bb72d5d3f20b6e7e11e7c
    /**
     * Incremented whenever cached glyph texture page mappings may be stale, such as after atlas page
 diff --git a/src/WebglRenderer.ts b/src/WebglRenderer.ts
-index 2d0f5a3a8ee7fc0765a0179cee0102edb9376e4b..92f1c7241e887cd907d21d91aa26c0def02339f5 100644
+index 3c2091466fddc207a1656ff9ecf8e58fc3124c0b..8c3cc72063fe8dd24c09ae6c2587ade5bc0f840f 100644
 --- a/src/WebglRenderer.ts
 +++ b/src/WebglRenderer.ts
-@@ -323,7 +323,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
+@@ -327,7 +327,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
        );
      }
      this._charAtlas = atlas;
@@ -262,7 +258,7 @@ index 2d0f5a3a8ee7fc0765a0179cee0102edb9376e4b..92f1c7241e887cd907d21d91aa26c0de
      this._glyphRenderer.value?.setAtlas(this._charAtlas);
    }
  
-@@ -393,7 +393,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
+@@ -397,7 +397,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
      // page's version, so re-run the update and force a full texture rebind.
      let merged = false;
      let mergeRetries = 0;
@@ -274,7 +270,7 @@ index 2d0f5a3a8ee7fc0765a0179cee0102edb9376e4b..92f1c7241e887cd907d21d91aa26c0de
        merged = true;
        this._clearModel(true);
        this._updateModel(0, this._terminal.rows - 1);
-@@ -403,6 +406,20 @@ export class WebglRenderer extends Disposable implements IRenderer {
+@@ -407,6 +410,20 @@ export class WebglRenderer extends Disposable implements IRenderer {
      }
  
      // Render

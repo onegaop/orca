@@ -2259,11 +2259,11 @@ index b3ad14ee041fac933a7f90bf66fe7985eef4beed..a0a645c42b3c8a08a699b32a46def5ed
      }
  
 diff --git a/src/common/input/WriteBuffer.ts b/src/common/input/WriteBuffer.ts
-index 3837fe30b18f98725e3c322aad39be7868fcc786..2a5d39a4adb16952e7e114d1a083df09f7988006 100644
+index ba7ac876a08aa08a0bb73061ffc55cae01164712..fdaf9cac41065f9cba994a61ff089753aa22ff97 100644
 --- a/src/common/input/WriteBuffer.ts
 +++ b/src/common/input/WriteBuffer.ts
-@@ -43,12 +43,26 @@ export class WriteBuffer extends Disposable {
-   private _didUserInput = false;
+@@ -45,12 +45,26 @@ export class WriteBuffer extends Disposable {
+   private _isAwaitingAsyncHandler = false;
  
    private readonly _innerWriteTimer = this._register(new TimeoutTimer());
 +  private _writeChannel: {
@@ -2289,7 +2289,7 @@ index 3837fe30b18f98725e3c322aad39be7868fcc786..2a5d39a4adb16952e7e114d1a083df09
        this._writeBuffer.length = 0;
        this._callbacks.length = 0;
        this._pendingData = 0;
-@@ -56,6 +70,11 @@ export class WriteBuffer extends Disposable {
+@@ -58,6 +72,11 @@ export class WriteBuffer extends Disposable {
      }));
    }
  
@@ -2301,15 +2301,25 @@ index 3837fe30b18f98725e3c322aad39be7868fcc786..2a5d39a4adb16952e7e114d1a083df09
    public handleUserInput(): void {
      this._didUserInput = true;
    }
-@@ -72,6 +91,7 @@ export class WriteBuffer extends Disposable {
-     if (this._store.isDisposed) {
-       return;
-     }
-+    this._cancelScheduledInnerWrite();
-     // exit early if another sync write loop is active
-     if (this._isSyncWriting) {
-       return;
-@@ -106,6 +126,7 @@ export class WriteBuffer extends Disposable {
+@@ -92,7 +111,7 @@ export class WriteBuffer extends Disposable {
+       const result = this._action(data);
+       if (result) {
+         // Keep a scheduled _innerWrite from feeding the paused parser.
+-        this._innerWriteTimer.cancel();
++        this._cancelScheduledInnerWrite();
+         this._resumeAfterAsyncHandler(result, startTime);
+         isPaused = true;
+         break;
+@@ -105,7 +124,7 @@ export class WriteBuffer extends Disposable {
+ 
+     if (!isPaused) {
+       // Reset buffer state
+-      this._innerWriteTimer.cancel();
++      this._cancelScheduledInnerWrite();
+       this._pendingData = 0;
+       this._bufferOffset = 0x7FFFFFFF;
+       this._writeBuffer.length = 0;
+@@ -125,6 +144,7 @@ export class WriteBuffer extends Disposable {
      if (this._store.isDisposed) {
        return;
      }
@@ -2317,7 +2327,7 @@ index 3837fe30b18f98725e3c322aad39be7868fcc786..2a5d39a4adb16952e7e114d1a083df09
      // stop writeSync recursions with maxSubsequentCalls argument
      // This is dangerous to use as it will lose the current data chunk
      // and return immediately.
-@@ -212,7 +233,34 @@ export class WriteBuffer extends Disposable {
+@@ -231,7 +251,34 @@ export class WriteBuffer extends Disposable {
      if (this._store.isDisposed) {
        return;
      }
