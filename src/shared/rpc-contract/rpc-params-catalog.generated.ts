@@ -118,7 +118,14 @@ import {
   AgentActivityOrchestrationParams,
   AgentActivitySetReadParams
 } from './agent-activity/agent-activity-params'
-import { AgentListParams, AgentReadParams, AgentShowParams } from './agent-conversation-params'
+import {
+  AgentListParams,
+  AgentReadParams,
+  AgentReplyParams,
+  AgentRequestsParams,
+  AgentRespondParams,
+  AgentShowParams
+} from './agent-conversation-params'
 import { AgentLaunch, AgentLaunchReplay } from './agent-launch/agent-launch-params'
 import { AgentLaunchSettingsMutation } from './agent-launch/agent-launch-settings-params'
 import {
@@ -1198,6 +1205,9 @@ export const RPC_PARAMS_BY_METHOD = {
   'agent.launchReplay': AgentLaunchReplay,
   'agent.list': AgentListParams,
   'agent.read': AgentReadParams,
+  'agent.reply': AgentReplyParams,
+  'agent.requests': AgentRequestsParams,
+  'agent.respond': AgentRespondParams,
   'agent.show': AgentShowParams,
   'agentActivity.clear': AgentActivityClearParams,
   'agentActivity.orchestration': AgentActivityOrchestrationParams,

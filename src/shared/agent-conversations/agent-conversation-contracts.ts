@@ -64,6 +64,39 @@ export type AgentReadResult = {
   limited: boolean
 }
 
+export type AgentPendingPromptOption = {
+  id: string
+  label: string
+  kind?: string
+}
+
+export type AgentPendingPrompt = {
+  itemId: string
+  revision: number
+  kind: 'approval' | 'question'
+  title: string
+  detail?: string
+  questionId?: string
+  options: AgentPendingPromptOption[]
+}
+
+export type AgentRequestsResult = {
+  orcaSessionId: string
+  prompts: AgentPendingPrompt[]
+}
+
+export type AgentReplyResult = {
+  orcaSessionId: string
+  accepted: true
+  dispatchState?: string
+}
+
+export type AgentRespondResult = {
+  orcaSessionId: string
+  itemId: string
+  resolved: true
+}
+
 export const AGENT_READ_DEFAULT_LIMIT = 20
 export const AGENT_READ_MAX_LIMIT = 100
 

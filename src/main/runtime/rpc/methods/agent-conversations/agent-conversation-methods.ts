@@ -2,11 +2,17 @@ import { defineMethod } from '../../core'
 import {
   AgentListParams,
   AgentReadParams,
+  AgentReplyParams,
+  AgentRequestsParams,
+  AgentRespondParams,
   AgentShowParams
 } from '../../../../../shared/rpc-contract/agent-conversation-params'
 import type {
   AgentListResult,
   AgentReadResult,
+  AgentReplyResult,
+  AgentRequestsResult,
+  AgentRespondResult,
   AgentShowResult
 } from '../../../../../shared/agent-conversations/agent-conversation-contracts'
 import {
@@ -15,6 +21,11 @@ import {
 } from '../../../agent-conversations/agent-conversation-list'
 import { resolveAgentConversation } from '../../../agent-conversations/agent-conversation-address'
 import { readAgentConversation } from '../../../agent-conversations/agent-conversation-read'
+import {
+  readAgentPendingRequests,
+  replyToAgentConversation,
+  respondToAgentConversationPrompt
+} from '../../../agent-conversations/agent-conversation-actions'
 
 // Listing reads every workspace's open agents, so no workspace page may hide one.
 const AGENT_LIST_WORKTREE_LIMIT = 10_000
@@ -51,5 +62,34 @@ export const AGENT_CONVERSATION_METHODS = [
     params: AgentReadParams,
     handler: async (params, ctx): Promise<AgentReadResult> =>
       readAgentConversation(ctx, await resolveAgentConversation(ctx.runtime, params.id), params)
+  }),
+  defineMethod({
+    name: 'agent.requests',
+    permission: 'workspace',
+    params: AgentRequestsParams,
+    handler: async (params, ctx): Promise<AgentRequestsResult> =>
+      readAgentPendingRequests(ctx, await resolveAgentConversation(ctx.runtime, params.id))
+  }),
+  defineMethod({
+    name: 'agent.reply',
+    permission: 'workspace',
+    params: AgentReplyParams,
+    handler: async (params, ctx): Promise<AgentReplyResult> =>
+      replyToAgentConversation(
+        ctx,
+        await resolveAgentConversation(ctx.runtime, params.id),
+        params.text
+      )
+  }),
+  defineMethod({
+    name: 'agent.respond',
+    permission: 'workspace',
+    params: AgentRespondParams,
+    handler: async (params, ctx): Promise<AgentRespondResult> =>
+      respondToAgentConversationPrompt(
+        ctx,
+        await resolveAgentConversation(ctx.runtime, params.id),
+        params
+      )
   })
 ]

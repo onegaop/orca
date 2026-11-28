@@ -20,6 +20,9 @@ import {
   type AgentReadEntry,
   type AgentReadResult,
   type AgentReadTool,
+  type AgentReplyResult,
+  type AgentRequestsResult,
+  type AgentRespondResult,
   type AgentShowResult
 } from '../../shared/agent-conversations/agent-conversation-contracts'
 import { AGENT_STATUS_STATES } from '../../shared/agent-status/contracts/agent-status-types'
@@ -75,6 +78,43 @@ export const AGENT_CONVERSATION_HANDLERS: Record<string, CommandHandler> = {
       ...(limit !== undefined ? { limit } : {})
     })
     printResult(result, json, formatAgentRead)
+  },
+  'agent requests': async ({ flags, client, json }) => {
+    const result = await callAgentMethod<AgentRequestsResult>(client, 'agent.requests', {
+      id: getRequiredStringFlag(flags, 'id')
+    })
+    printResult(result, json, (value) =>
+      value.prompts.length === 0
+        ? 'No pending prompts.'
+        : value.prompts.map((p) => `[${p.kind}] ${p.title} (${p.itemId}#${p.revision})`).join('\n')
+    )
+  },
+  'agent reply': async ({ flags, client, json }) => {
+    const result = await callAgentMethod<AgentReplyResult>(client, 'agent.reply', {
+      id: getRequiredStringFlag(flags, 'id'),
+      text: getRequiredStringFlag(flags, 'text')
+    })
+    printResult(result, json, (value) => `Sent reply to ${value.orcaSessionId}.`)
+  },
+  'agent respond': async ({ flags, client, json }) => {
+    const revision = getOptionalPositiveIntegerFlag(flags, 'revision')
+    if (revision === undefined) {
+      throw new RuntimeClientError('invalid_argument', '--revision must be a positive integer.')
+    }
+    const kind = getRequiredStringFlag(flags, 'kind')
+    if (kind !== 'approval' && kind !== 'question') {
+      throw new RuntimeClientError('invalid_argument', '--kind must be approval or question.')
+    }
+    const questionId = getOptionalStringFlag(flags, 'question-id')
+    const result = await callAgentMethod<AgentRespondResult>(client, 'agent.respond', {
+      id: getRequiredStringFlag(flags, 'id'),
+      itemId: getRequiredStringFlag(flags, 'item'),
+      revision,
+      kind,
+      optionId: getRequiredStringFlag(flags, 'option'),
+      ...(questionId ? { questionId } : {})
+    })
+    printResult(result, json, (value) => `Responded to prompt ${value.itemId}.`)
   }
 }
 

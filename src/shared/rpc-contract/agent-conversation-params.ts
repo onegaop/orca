@@ -24,3 +24,27 @@ export const AgentReadParams = lazyZodSchema(() =>
     limit: z.number().int().positive().max(AGENT_READ_MAX_LIMIT).optional()
   })
 )
+
+export const AgentRequestsParams = lazyZodSchema(() =>
+  z.object({
+    id: requiredString('Missing agent ID')
+  })
+)
+
+export const AgentReplyParams = lazyZodSchema(() =>
+  z.object({
+    id: requiredString('Missing agent ID'),
+    text: requiredString('Missing reply text')
+  })
+)
+
+export const AgentRespondParams = lazyZodSchema(() =>
+  z.object({
+    id: requiredString('Missing agent ID'),
+    itemId: requiredString('Missing prompt item ID'),
+    revision: z.number().int().positive(),
+    kind: z.enum(['approval', 'question']),
+    optionId: requiredString('Missing option ID'),
+    questionId: z.string().min(1).optional()
+  })
+)

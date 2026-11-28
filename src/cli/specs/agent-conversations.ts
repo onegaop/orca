@@ -45,5 +45,34 @@ export const AGENT_CONVERSATION_COMMAND_SPECS: CommandSpec[] = [
       'orca agent read orca_session_id:3540ecf3-47c3-4876-b825-81bf5d6b3595 --limit 10',
       'orca agent read orca_session_id:3540ecf3-47c3-4876-b825-81bf5d6b3595 --json'
     ]
+  },
+  {
+    path: ['agent', 'requests'],
+    summary: 'List pending approval or question prompts for an agent chat',
+    usage: 'orca agent requests <id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'id'],
+    positionalArgs: ['id'],
+    examples: ['orca agent requests orca_session_id:3540ecf3-47c3-4876-b825-81bf5d6b3595 --json']
+  },
+  {
+    path: ['agent', 'reply'],
+    summary: 'Send a follow-up message to an agent chat by its Orca session ID',
+    usage: 'orca agent reply <id> --text <message> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'id', 'text'],
+    positionalArgs: ['id'],
+    examples: [
+      'orca agent reply orca_session_id:3540ecf3-47c3-4876-b825-81bf5d6b3595 --text "Go ahead"'
+    ]
+  },
+  {
+    path: ['agent', 'respond'],
+    summary: 'Answer a pending approval or question prompt for an agent chat',
+    usage:
+      'orca agent respond <id> --item <itemId> --revision <n> --kind <approval|question> --option <optionId> [--question-id <qId>] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'id', 'item', 'revision', 'kind', 'option', 'question-id'],
+    positionalArgs: ['id'],
+    examples: [
+      'orca agent respond orca_session_id:3540ecf3-47c3-4876-b825-81bf5d6b3595 --item item_1 --revision 1 --kind approval --option allow_once'
+    ]
   }
 ]
