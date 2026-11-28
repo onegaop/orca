@@ -97,8 +97,55 @@ import Testing
     #expect(prompts[0].options.count == 2)
 }
 
+@Test func menuBarStatusReflectsHighestPriorityIndicator() {
+    let blocked = AgentRow(state: "blocked", worktreeId: "r::1", workspace: "main", paneKey: "p1", updatedAt: 1000)
+    let waiting = AgentRow(state: "waiting", worktreeId: "r::2", workspace: "main", paneKey: "p2", updatedAt: 2000)
+    let done = AgentRow(state: "done", worktreeId: "r::3", workspace: "main", paneKey: "p3", updatedAt: 3000)
+    let working = AgentRow(state: "working", worktreeId: "r::4", workspace: "main", paneKey: "p4", updatedAt: 4000)
+
+    let blockedStatus = InboxMenuStatus(state: InboxPanelState(snapshot: Snapshot(agents: [blocked, waiting, working])))
+    #expect(blockedStatus.indicator == .blocked)
+    #expect(blockedStatus.text == "2")
+    #expect(blockedStatus.description.contains("1 项阻塞"))
+
+    let waitingStatus = InboxMenuStatus(state: InboxPanelState(snapshot: Snapshot(agents: [waiting, done])))
+    #expect(waitingStatus.indicator == .waiting)
+    #expect(waitingStatus.text == "1")
+
+    let doneStatus = InboxMenuStatus(state: InboxPanelState(snapshot: Snapshot(agents: [done, working])))
+    #expect(doneStatus.indicator == .unreadDone)
+    #expect(doneStatus.text == "1")
+
+    // Once done is archived, indicator falls through to working.
+    let workingStatus = InboxMenuStatus(
+        state: InboxPanelState(snapshot: Snapshot(agents: [done, working]), archivedTimestamps: [done.id: 3000])
+    )
+    #expect(workingStatus.indicator == .working)
+    #expect(workingStatus.symbolName == "waveform")
+    #expect(workingStatus.text == "1")
+
+    // When all clear and healthy, menu bar stays quiet with empty text.
+    let idleStatus = InboxMenuStatus(
+        state: InboxPanelState(snapshot: Snapshot(agents: [done]), archivedTimestamps: [done.id: 3000])
+    )
+    #expect(idleStatus.indicator == .idle)
+    #expect(idleStatus.text == "")
+
+    let staleStatus = InboxMenuStatus(state: InboxPanelState(snapshot: Snapshot(agents: []), stale: true))
+    #expect(staleStatus.indicator == .stale)
+    #expect(staleStatus.text == "0~")
+
+    let disconnectedStatus = InboxMenuStatus(state: InboxPanelState(problem: "offline"))
+    #expect(disconnectedStatus.indicator == .disconnected)
+    #expect(disconnectedStatus.text == "!")
+
+    let loadingStatus = InboxMenuStatus(state: InboxPanelState())
+    #expect(loadingStatus.indicator == .loading)
+    #expect(loadingStatus.text == "…")
+}
+
 @MainActor
-@Test func hubAndNotchViewsKeepExpectedDimensions() {
+@Test func hubViewKeepsExpectedDimensions() {
     let hub = InboxHubView(
         state: InboxFixtures.hasTasksState,
         filter: .constant(.inbox),
@@ -109,26 +156,4 @@ import Testing
     let hubHosting = NSHostingView(rootView: hub)
     #expect(abs(hubHosting.fittingSize.width - InboxMetrics.hubWidth) < 1)
     #expect(abs(hubHosting.fittingSize.height - InboxMetrics.hubHeight) < 1)
-
-    let compactNotch = InboxNotchView(
-        state: InboxFixtures.hasTasksState,
-        filter: .constant(.inbox),
-        hasPhysicalNotch: true,
-        isExpanded: false,
-        focusDispatchTrigger: 0,
-        onHoverChange: { _ in },
-        onToggleExpand: {},
-        onCollapse: {},
-        onRefresh: {},
-        onSelectHost: { _ in },
-        onArchiveAllDone: {},
-        onSetPresentationMode: { _ in },
-        onSetNotificationsEnabled: { _ in },
-        onDispatchTask: { _, _, _ in },
-        onQuit: {},
-        cardHandlers: InboxCardHandlers()
-    )
-    let notchHosting = NSHostingView(rootView: compactNotch)
-    #expect(abs(notchHosting.fittingSize.width - NotchHUDMetrics.compactWidthWithNotch) < 1)
-    #expect(abs(notchHosting.fittingSize.height - NotchHUDMetrics.compactHeight) < 1)
 }

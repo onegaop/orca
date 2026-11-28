@@ -52,12 +52,10 @@ private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, N
     private let bridge = InboxPresentationBridge()
     private var statusItem: NSStatusItem?
     private var menuStatus: InboxMenuStatus?
-    private var notchController: NotchHUDController?
     private var hotkeyManager: GlobalHotkeyManager?
     private var notifications: InboxNotificationCenter?
     private var pollingTask: Task<Void, Never>?
     private var menuUpdates: Task<Void, Never>?
-    private var modeUpdates: Task<Void, Never>?
     private var clockUpdates: Task<Void, Never>?
 
     private static let hubSize = NSSize(
@@ -82,7 +80,6 @@ private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, N
         statusItem = item
         item.button?.target = self
         item.button?.action = #selector(toggleFromMenuBar(_:))
-        item.button?.imagePosition = .imageLeading
         updateMenuButton(InboxMenuStatus(state: store.panelState()))
 
         let notifier = InboxNotificationCenter { [weak self] url in
@@ -93,18 +90,6 @@ private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, N
             notifier?.post(events)
         }
 
-        let notch = NotchHUDController(
-            onExpandedChange: { [weak self] expanded in
-                self?.store.setPanelOpen(expanded || (self?.popover.isShown == true))
-            },
-            makeContent: { [weak self] hasPhysicalNotch, isExpanded in
-                guard let self else { return AnyView(EmptyView()) }
-                return AnyView(self.makeNotchRootView(hasPhysicalNotch: hasPhysicalNotch, isExpanded: isExpanded))
-            }
-        )
-        notchController = notch
-        applyPresentationMode(store.presentationMode)
-
         let hotkey = GlobalHotkeyManager { [weak self] in
             self?.triggerGlobalToggle()
         }
@@ -114,11 +99,6 @@ private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, N
         menuUpdates = Task { [weak self, store] in
             for await status in Observations({ InboxMenuStatus(state: store.panelState()) }) {
                 self?.updateMenuButton(status)
-            }
-        }
-        modeUpdates = Task { [weak self, store] in
-            for await mode in Observations({ store.presentationMode }) {
-                self?.applyPresentationMode(mode)
             }
         }
         clockUpdates = Task { [weak self, store] in
@@ -136,43 +116,38 @@ private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, N
 
     func applicationWillTerminate(_ notification: Notification) {
         hotkeyManager?.unregister()
-        notchController?.teardown()
         pollingTask?.cancel()
         menuUpdates?.cancel()
-        modeUpdates?.cancel()
         clockUpdates?.cancel()
-    }
-
-    private func applyPresentationMode(_ mode: InboxPresentationMode) {
-        switch mode {
-        case .notch:
-            if popover.isShown {
-                popover.performClose(nil)
-            }
-            notchController?.show()
-        case .menubar:
-            notchController?.hide()
-        }
     }
 
     private func triggerGlobalToggle() {
         bridge.focusDispatchTrigger += 1
-        if store.presentationMode == .notch {
-            notchController?.show()
-            notchController?.toggleExpanded(focusInput: true)
-        } else if let button = statusItem?.button {
+        if let button = statusItem?.button {
             togglePopover(button)
         }
     }
 
     private func updateMenuButton(_ status: InboxMenuStatus) {
         guard let button = statusItem?.button else { return }
-        if menuStatus?.symbolName != status.symbolName {
-            let image = NSImage(systemSymbolName: status.symbolName, accessibilityDescription: nil)
-            image?.isTemplate = true
-            button.image = image
+        if menuStatus?.indicator != status.indicator || menuStatus?.symbolName != status.symbolName {
+            button.image = MenuBarStatusIcon.image(for: status)
         }
-        if menuStatus?.text != status.text { button.title = status.text }
+        if menuStatus?.text != status.text {
+            button.imagePosition = status.text.isEmpty ? .imageOnly : .imageLeading
+            if status.text.isEmpty {
+                button.title = ""
+                button.attributedTitle = NSAttributedString()
+            } else {
+                button.attributedTitle = NSAttributedString(
+                    string: " \(status.text)",
+                    attributes: [
+                        .font: NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium),
+                        .baselineOffset: 0.5
+                    ]
+                )
+            }
+        }
         if menuStatus?.description != status.description {
             button.toolTip = status.description
             button.setAccessibilityLabel("Orca 任务收件箱 · \(status.description)")
@@ -181,12 +156,7 @@ private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, N
     }
 
     @objc private func toggleFromMenuBar(_ button: NSStatusBarButton) {
-        if store.presentationMode == .notch {
-            notchController?.show()
-            notchController?.toggleExpanded(focusInput: false)
-        } else {
-            togglePopover(button)
-        }
+        togglePopover(button)
     }
 
     private func togglePopover(_ button: NSStatusBarButton) {
@@ -206,35 +176,13 @@ private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, N
     }
 
     func popoverWillClose(_ notification: Notification) {
-        store.setPanelOpen(notchController?.expanded == true)
+        store.setPanelOpen(false)
     }
 
     private func makePopoverRootView() -> InboxHostContainer {
         InboxHostContainer(
             store: store,
             bridge: bridge,
-            hasPhysicalNotch: false,
-            embeddedInNotch: false,
-            isExpanded: true,
-            onHoverChange: { _ in },
-            onToggleExpand: {},
-            onCollapse: { [weak self] in self?.popover.performClose(nil) },
-            onOpenOrca: { [weak self] url in await self?.openOrca(destination: url) },
-            onCopySessionID: copySessionID,
-            onQuit: { NSApplication.shared.terminate(nil) }
-        )
-    }
-
-    private func makeNotchRootView(hasPhysicalNotch: Bool, isExpanded: Bool) -> InboxHostContainer {
-        InboxHostContainer(
-            store: store,
-            bridge: bridge,
-            hasPhysicalNotch: hasPhysicalNotch,
-            embeddedInNotch: true,
-            isExpanded: isExpanded,
-            onHoverChange: { [weak self] hovering in self?.notchController?.handleHover(hovering) },
-            onToggleExpand: { [weak self] in self?.notchController?.toggleExpanded(focusInput: false) },
-            onCollapse: { [weak self] in self?.notchController?.collapse(animated: true) },
             onOpenOrca: { [weak self] url in await self?.openOrca(destination: url) },
             onCopySessionID: copySessionID,
             onQuit: { NSApplication.shared.terminate(nil) }
@@ -262,7 +210,6 @@ private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, N
             } else {
                 _ = try await NSWorkspace.shared.openApplication(at: appURL, configuration: configuration)
             }
-            notchController?.collapse(animated: true)
             if popover.isShown { popover.performClose(nil) }
         } catch {
             store.actionProblem = "无法打开 Orca：\(error.localizedDescription)"
@@ -274,12 +221,6 @@ private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, N
 private struct InboxHostContainer: View {
     let store: InboxStore
     let bridge: InboxPresentationBridge
-    let hasPhysicalNotch: Bool
-    let embeddedInNotch: Bool
-    let isExpanded: Bool
-    let onHoverChange: (Bool) -> Void
-    let onToggleExpand: () -> Void
-    let onCollapse: () -> Void
     let onOpenOrca: (URL?) async -> Void
     let onCopySessionID: (String) -> Void
     let onQuit: () -> Void
@@ -292,56 +233,25 @@ private struct InboxHostContainer: View {
                 set: { bridge.filter = $0 }
             )
             let handlers = makeCardHandlers(environment: state.selectedHost.id)
-            if embeddedInNotch {
-                InboxNotchView(
-                    state: state,
-                    filter: filterBinding,
-                    hasPhysicalNotch: hasPhysicalNotch,
-                    isExpanded: isExpanded,
-                    focusDispatchTrigger: bridge.focusDispatchTrigger,
-                    onHoverChange: onHoverChange,
-                    onToggleExpand: onToggleExpand,
-                    onCollapse: onCollapse,
-                    onRefresh: { store.requestRefresh() },
-                    onSelectHost: { store.selectHost($0) },
-                    onArchiveAllDone: { store.archiveAllDone() },
-                    onSetPresentationMode: { store.setPresentationMode($0) },
-                    onSetNotificationsEnabled: { store.setNotificationsEnabled($0) },
-                    onDispatchTask: { worktreeId, agent, prompt in
-                        try await dispatchTask(
-                            worktreeId: worktreeId,
-                            agent: agent,
-                            prompt: prompt,
-                            environment: state.selectedHost.id
-                        )
-                    },
-                    onQuit: onQuit,
-                    cardHandlers: handlers
-                )
-            } else {
-                InboxHubView(
-                    state: state,
-                    filter: filterBinding,
-                    embeddedInNotch: false,
-                    focusDispatchTrigger: bridge.focusDispatchTrigger,
-                    onRefresh: { store.requestRefresh() },
-                    onSelectHost: { store.selectHost($0) },
-                    onArchiveAllDone: { store.archiveAllDone() },
-                    onSetPresentationMode: { store.setPresentationMode($0) },
-                    onSetNotificationsEnabled: { store.setNotificationsEnabled($0) },
-                    onDispatchTask: { worktreeId, agent, prompt in
-                        try await dispatchTask(
-                            worktreeId: worktreeId,
-                            agent: agent,
-                            prompt: prompt,
-                            environment: state.selectedHost.id
-                        )
-                    },
-                    onCollapse: onCollapse,
-                    onQuit: onQuit,
-                    cardHandlers: handlers
-                )
-            }
+            InboxHubView(
+                state: state,
+                filter: filterBinding,
+                focusDispatchTrigger: bridge.focusDispatchTrigger,
+                onRefresh: { store.requestRefresh() },
+                onSelectHost: { store.selectHost($0) },
+                onArchiveAllDone: { store.archiveAllDone() },
+                onSetNotificationsEnabled: { store.setNotificationsEnabled($0) },
+                onDispatchTask: { worktreeId, agent, prompt in
+                    try await dispatchTask(
+                        worktreeId: worktreeId,
+                        agent: agent,
+                        prompt: prompt,
+                        environment: state.selectedHost.id
+                    )
+                },
+                onQuit: onQuit,
+                cardHandlers: handlers
+            )
         }
     }
 

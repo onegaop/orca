@@ -359,7 +359,7 @@ public enum CompactRelativeTime {
     }
 }
 
-/// Pure view-layer state for the inbox popover & Notch HUD, independent of live CLI fetching.
+/// Pure view-layer state for the menu bar inbox popover, independent of live CLI fetching.
 public struct InboxPanelState: Sendable {
     public var snapshot: Snapshot?
     public var updated: Date?
@@ -371,7 +371,6 @@ public struct InboxPanelState: Sendable {
     public var stale: Bool
     public var actionProblem: String?
     public var archivedTimestamps: [String: Double]
-    public var presentationMode: InboxPresentationMode
     public var notificationsEnabled: Bool
     public var dispatchWorkspaces: [DispatchWorkspaceOption]
     public var installedAgents: [InstalledAgentOption]
@@ -390,7 +389,6 @@ public struct InboxPanelState: Sendable {
         stale: Bool = false,
         actionProblem: String? = nil,
         archivedTimestamps: [String: Double] = [:],
-        presentationMode: InboxPresentationMode = .notch,
         notificationsEnabled: Bool = true,
         dispatchWorkspaces: [DispatchWorkspaceOption] = [],
         installedAgents: [InstalledAgentOption] = [],
@@ -408,7 +406,6 @@ public struct InboxPanelState: Sendable {
         self.stale = stale
         self.actionProblem = actionProblem
         self.archivedTimestamps = archivedTimestamps
-        self.presentationMode = presentationMode
         self.notificationsEnabled = notificationsEnabled
         self.dispatchWorkspaces = dispatchWorkspaces
         self.installedAgents = installedAgents

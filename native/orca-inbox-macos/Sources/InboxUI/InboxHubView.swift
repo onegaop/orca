@@ -5,15 +5,12 @@ import InboxCore
 public struct InboxHubView: View {
     public let state: InboxPanelState
     @Binding public var filter: InboxFeedFilter
-    public let embeddedInNotch: Bool
     public let focusDispatchTrigger: Int
     public let onRefresh: () -> Void
     public let onSelectHost: (HostTarget) -> Void
     public let onArchiveAllDone: () -> Void
-    public let onSetPresentationMode: (InboxPresentationMode) -> Void
     public let onSetNotificationsEnabled: (Bool) -> Void
     public let onDispatchTask: (String, String, String) async throws -> Void
-    public let onCollapse: (() -> Void)?
     public let onQuit: () -> Void
     public let cardHandlers: InboxCardHandlers
 
@@ -34,29 +31,23 @@ public struct InboxHubView: View {
     public init(
         state: InboxPanelState,
         filter: Binding<InboxFeedFilter>,
-        embeddedInNotch: Bool = false,
         focusDispatchTrigger: Int = 0,
         onRefresh: @escaping () -> Void,
         onSelectHost: @escaping (HostTarget) -> Void = { _ in },
         onArchiveAllDone: @escaping () -> Void = {},
-        onSetPresentationMode: @escaping (InboxPresentationMode) -> Void = { _ in },
         onSetNotificationsEnabled: @escaping (Bool) -> Void = { _ in },
         onDispatchTask: @escaping (String, String, String) async throws -> Void = { _, _, _ in },
-        onCollapse: (() -> Void)? = nil,
         onQuit: @escaping () -> Void,
         cardHandlers: InboxCardHandlers
     ) {
         self.state = state
         self._filter = filter
-        self.embeddedInNotch = embeddedInNotch
         self.focusDispatchTrigger = focusDispatchTrigger
         self.onRefresh = onRefresh
         self.onSelectHost = onSelectHost
         self.onArchiveAllDone = onArchiveAllDone
-        self.onSetPresentationMode = onSetPresentationMode
         self.onSetNotificationsEnabled = onSetNotificationsEnabled
         self.onDispatchTask = onDispatchTask
-        self.onCollapse = onCollapse
         self.onQuit = onQuit
         self.cardHandlers = cardHandlers
     }
@@ -77,13 +68,11 @@ public struct InboxHubView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            if !embeddedInNotch {
-                topHeader
-                    .padding(.horizontal, InboxMetrics.horizontalPadding)
-                    .padding(.top, 12)
-                    .padding(.bottom, 8)
-                Divider()
-            }
+            topHeader
+                .padding(.horizontal, InboxMetrics.horizontalPadding)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+            Divider()
 
             InboxQuickDispatchBar(
                 workspaces: state.dispatchWorkspaces,
@@ -147,7 +136,7 @@ public struct InboxHubView: View {
         }
         .frame(width: InboxMetrics.hubWidth, height: InboxMetrics.hubHeight)
         .background {
-            if reduceTransparency && !embeddedInNotch {
+            if reduceTransparency {
                 Color(nsColor: .windowBackgroundColor)
             }
         }
@@ -282,27 +271,6 @@ public struct InboxHubView: View {
                 .buttonStyle(.borderless)
                 .foregroundStyle(.secondary)
                 .help("将收件箱中所有已完成项标记为已读归档")
-            }
-
-            if embeddedInNotch {
-                Button(action: onRefresh) {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 11, weight: .medium))
-                }
-                .buttonStyle(.borderless)
-                .foregroundStyle(.secondary)
-                .disabled(state.refreshing)
-                .help("立即同步")
-
-                if let onCollapse {
-                    Button(action: onCollapse) {
-                        Image(systemName: "chevron.up")
-                            .font(.system(size: 11, weight: .semibold))
-                    }
-                    .buttonStyle(.borderless)
-                    .foregroundStyle(.secondary)
-                    .help("收起灵动岛 (Esc)")
-                }
             }
         }
     }
@@ -469,21 +437,6 @@ public struct InboxHubView: View {
                     .controlSize(.small)
 
                     Menu {
-                        Section("显示形态") {
-                            ForEach(InboxPresentationMode.allCases) { mode in
-                                Button {
-                                    onSetPresentationMode(mode)
-                                } label: {
-                                    HStack {
-                                        Text(mode.title)
-                                        if state.presentationMode == mode {
-                                            Image(systemName: "checkmark")
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
                         if state.hosts.count > 1 {
                             Section("切换主机") {
                                 ForEach(state.hosts) { host in
@@ -499,9 +452,9 @@ public struct InboxHubView: View {
                                     }
                                 }
                             }
-                        }
 
-                        Divider()
+                            Divider()
+                        }
 
                         Toggle(
                             "阻塞/完成时系统轻提醒",

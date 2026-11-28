@@ -45,7 +45,19 @@ public enum SessionDestination {
     }
 }
 
-public struct InboxMenuStatus: Sendable {
+public enum InboxMenuIndicator: String, Equatable, Sendable {
+    case blocked
+    case waiting
+    case unreadDone
+    case working
+    case idle
+    case stale
+    case disconnected
+    case loading
+}
+
+public struct InboxMenuStatus: Equatable, Sendable {
+    public let indicator: InboxMenuIndicator
     public let text: String
     public let symbolName: String
     public let description: String
@@ -53,20 +65,59 @@ public struct InboxMenuStatus: Sendable {
     public init(state: InboxPanelState) {
         let host = state.selectedHost.displayName
         if let snapshot = state.snapshot {
-            let count = snapshot.count(in: .attention)
+            let counts = InboxTriageRules.counts(
+                snapshot: snapshot,
+                archivedTimestamps: state.archivedTimestamps
+            )
             let partial = snapshot.truncated ? "+" : ""
             let stale = state.stale || state.problem != nil
-            text = "\(count)\(partial)\(stale ? "~" : "")"
-            symbolName = stale ? "clock.arrow.circlepath" : "tray"
-            description = "\(host) · \(snapshot.truncated ? "至少 " : "")\(count) 项待处理\(stale ? " · 旧数据" : "")\(state.refreshing ? " · 正在刷新" : "")"
+            let suffix = "\(partial)\(stale ? "~" : "")"
+
+            if counts.blocked > 0 {
+                indicator = .blocked
+                symbolName = "tray.fill"
+                text = "\(counts.urgent)\(suffix)"
+            } else if counts.waiting > 0 {
+                indicator = .waiting
+                symbolName = "tray.fill"
+                text = "\(counts.urgent)\(suffix)"
+            } else if counts.unreadDone > 0 {
+                indicator = .unreadDone
+                symbolName = "tray.fill"
+                text = "\(counts.unreadDone)\(suffix)"
+            } else if counts.working > 0 {
+                indicator = .working
+                symbolName = "waveform"
+                text = "\(counts.working)\(suffix)"
+            } else if stale {
+                indicator = .stale
+                symbolName = "clock.arrow.circlepath"
+                text = "0\(suffix)"
+            } else {
+                indicator = .idle
+                symbolName = "tray"
+                text = ""
+            }
+
+            var parts: [String] = []
+            if counts.blocked > 0 { parts.append("\(counts.blocked) 项阻塞") }
+            if counts.waiting > 0 { parts.append("\(counts.waiting) 项等你") }
+            if counts.unreadDone > 0 { parts.append("\(counts.unreadDone) 项新完成") }
+            if counts.working > 0 { parts.append("\(counts.working) 个运行中") }
+            let summary = parts.isEmpty
+                ? "全部已清空"
+                : "\(snapshot.truncated ? "至少 " : "")\(parts.joined(separator: " · "))"
+            description = "\(host) · \(summary)\(stale ? " · 旧数据" : "")\(state.refreshing ? " · 正在同步" : "")"
         } else if state.problem != nil {
+            indicator = .disconnected
             text = "!"
             symbolName = "bolt.horizontal.circle"
-            description = "\(host) · 未连接 · 待处理数量未知"
+            description = "\(host) · 未连接 · 点击重试"
         } else {
+            indicator = .loading
             text = "…"
             symbolName = "tray"
-            description = "\(host) · 正在读取待处理数量"
+            description = "\(host) · 正在读取 Agent 状态"
         }
     }
 }

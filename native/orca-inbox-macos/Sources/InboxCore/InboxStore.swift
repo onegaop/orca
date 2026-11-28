@@ -12,7 +12,6 @@ public final class InboxStore {
 
     private static let selectedHostKey = "orcaInbox.selectedHostId"
     private static let archivedTimestampsKey = "orcaInbox.archivedTimestamps"
-    private static let presentationModeKey = "orcaInbox.presentationMode"
     private static let notificationsEnabledKey = "orcaInbox.notificationsEnabled"
     private static let dispatchWorktreeKey = "orcaInbox.lastDispatchWorktreeId"
     private static let dispatchAgentKey = "orcaInbox.lastDispatchAgent"
@@ -21,7 +20,6 @@ public final class InboxStore {
     public private(set) var selectedHost: HostTarget
     public private(set) var panelIsOpen = false
     public private(set) var archivedTimestamps: [String: Double]
-    public private(set) var presentationMode: InboxPresentationMode
     public private(set) var notificationsEnabled: Bool
     public private(set) var installedAgents: [InstalledAgentOption] = InstalledAgentOption.defaults
     public private(set) var defaultDispatchWorktreeId: String?
@@ -64,12 +62,6 @@ public final class InboxStore {
         } else {
             archivedTimestamps = [:]
         }
-        if let rawMode = defaults.string(forKey: Self.presentationModeKey),
-           let mode = InboxPresentationMode(rawValue: rawMode) {
-            presentationMode = mode
-        } else {
-            presentationMode = .notch
-        }
         if defaults.object(forKey: Self.notificationsEnabledKey) != nil {
             notificationsEnabled = defaults.bool(forKey: Self.notificationsEnabledKey)
         } else {
@@ -97,7 +89,6 @@ public final class InboxStore {
             stale: selectionNeedsRefresh || updated.map { now.timeIntervalSince($0) > 120 } == true,
             actionProblem: actionProblem,
             archivedTimestamps: archivedTimestamps,
-            presentationMode: presentationMode,
             notificationsEnabled: notificationsEnabled,
             dispatchWorkspaces: workspaces,
             installedAgents: installedAgents,
@@ -114,12 +105,6 @@ public final class InboxStore {
         selectionNeedsRefresh = true
         actionProblem = nil
         requestRefresh()
-    }
-
-    public func setPresentationMode(_ mode: InboxPresentationMode) {
-        guard presentationMode != mode else { return }
-        presentationMode = mode
-        defaults.set(mode.rawValue, forKey: Self.presentationModeKey)
     }
 
     public func setNotificationsEnabled(_ enabled: Bool) {

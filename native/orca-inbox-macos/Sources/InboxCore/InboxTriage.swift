@@ -16,20 +16,6 @@ public enum InboxFeedFilter: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-public enum InboxPresentationMode: String, CaseIterable, Identifiable, Sendable {
-    case notch
-    case menubar
-
-    public var id: String { rawValue }
-
-    public var title: String {
-        switch self {
-        case .notch: "刘海灵动岛"
-        case .menubar: "仅菜单栏"
-        }
-    }
-}
-
 public struct InboxTriageCounts: Equatable, Sendable {
     public let inbox: Int
     public let urgent: Int
