@@ -58,6 +58,7 @@ export type MobileSessionTab =
           | 'launchDraftCreatedAt'
           | 'terminalTheme'
           | 'unread'
+          | 'unreadAt'
           | 'isPinned'
         >
       > & {
@@ -75,6 +76,7 @@ export type MobileSessionTab =
       | 'forked'
       | 'sideChat'
       | 'unread'
+      | 'unreadAt'
       | 'isPinned'
     > & {
       chatStatus?: RuntimeMobileSessionAgentTabStatus & MirroredEvidenceReceipt

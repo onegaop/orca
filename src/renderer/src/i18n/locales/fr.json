@@ -1532,7 +1532,7 @@
           "urlPlaceholder": "https://example.com/mcp",
           "transport": "Streamable HTTP · localhost désigne l’ordinateur de ce bot.",
           "headers": "En-têtes",
-          "authHint": "Si le serveur exige une connexion via le navigateur, le bouton « Connecter » apparaît après sa vérification native.",
+          "authHint": "Si le serveur exige une connexion via le navigateur, le bouton « Se connecter » apparaît après sa vérification native.",
           "executable": "Exécutable",
           "commandPlaceholder": "npx",
           "args": "Arguments",
@@ -5824,9 +5824,8 @@
             "84c3b15dca": "Limites d'utilisation des agents",
             "d663430cf9": "Configurer le suivi d'utilisation",
             "remoteLabel": "Aucune utilisation sur {{host}}",
-            "remoteTitle": "Utilisation sur {{host}}",
-            "remoteBody": "Cet espace de travail s’exécute sur {{host}}, la barre affiche donc l’utilisation de cet hôte. Connectez-vous à un agent sur cet hôte, ou sélectionnez un espace de travail local pour voir l’utilisation de cet ordinateur.",
-            "remoteOpenAccounts": "Ouvrir les comptes de {{host}}"
+            "remoteNoUsageYet": "Aucune utilisation pour l’instant. Connectez-vous là-bas.",
+            "remoteAccounts": "Comptes"
           },
           "SkillUpdateStatusSegment": {
             "runningLabel": "Mise à jour des skills",
@@ -15623,7 +15622,10 @@
             "operationResolve": "Résoudre",
             "operationResolveLabel": "Résoudre les conflits avec l'IA",
             "operationMoreActions": "Plus d'actions",
-            "operationAbortConfirm": "Sélectionnez à nouveau pour abandonner"
+            "operationAbortConfirm": "Sélectionnez à nouveau pour abandonner",
+            "operationRunChangedTitle": "Rien n'a été abandonné",
+            "operationRunChangedDescription": "L'opération a changé après le choix d'Abandonner. Vérifiez son état actuel et réessayez.",
+            "operationRunUnknown": "Impossible de savoir quelle exécution est en pause : Abandonner est désactivé ici. Actualisez le contrôle de code source ou abandonnez-la dans un terminal."
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "Impossible de démarrer l'agent sélectionné.",
@@ -16774,14 +16776,18 @@
           "resetDone": "Icône et couleur réinitialisées",
           "undo": "Annuler",
           "styleLetters": "Lettres",
-          "stylePicture": "Image",
-          "resetAppearance": "Réinitialiser l'icône et la couleur",
+          "styleImage": "Image",
           "faviconPlaceholder": "Site web pour le favicon",
           "lettersInput": "Jusqu'à 2 lettres",
           "lettersPlaceholder": "1–2 lettres",
           "useLetters": "Utiliser « {{value0}} »",
-          "usingGitHubAvatar": "Utilise l'avatar GitHub",
-          "openSettings": "Ouvrir les paramètres"
+          "openSettings": "Ouvrir les paramètres",
+          "noIconFound": "Aucune icône trouvée",
+          "githubAvatar": "Avatar GitHub",
+          "websiteIcon": "Icône du site web",
+          "fetchIcon": "Récupérer",
+          "uploadTooLarge": "Plus de 256 Ko",
+          "options": "Options"
         }
       },
       "pet": {
@@ -19798,7 +19804,7 @@
           "runStatusDispatchFailed": "Échec"
         },
         "runContent": {
-          "noOutput": "Aucun contenu de sortie disponible."
+          "noOutput": "Aucune sortie."
         },
         "runViewState": {
           "viewRun": "Voir l’exécution",
@@ -22818,10 +22824,7 @@
         "refused": "Google a refusé les identifiants de ce chat.",
         "usageLimit": "Cette connexion a atteint sa limite d’utilisation.",
         "signInGoogle": "Se connecter avec Google",
-        "yourAgy": "Votre agy",
         "yourAgyVersion": "Votre agy · v{{version}}",
-        "orcasAgy": "L’agy d’Orca",
-        "orcasAgyVersion": "L’agy d’Orca · v{{version}}",
         "runsOn": "Exécuté avec : {{program}}",
         "keepsOwnLogin": "Ce chat conserve la connexion Google propre à agy. Les nouveaux chats se connectent via {{method}}.",
         "apiKeyEnvironment": "Depuis votre environnement",
@@ -26046,7 +26049,6 @@
       "noEmailNotSaved": "agy n’a pas indiqué d’adresse e-mail · non enregistrée",
       "saveShort": "Enregistrer",
       "active": "Actif",
-      "runtime": "Environnement d'exécution",
       "chatTitle": "Antigravity Chat",
       "terminalTitle": "agy dans le terminal",
       "terminalDescription": "Utilise les comptes enregistrés propres à agy. Le changement s'applique aux nouvelles sessions agy.",
@@ -30074,7 +30076,7 @@
       "newThreadTab": "Nouveau fil",
       "items": {
         "orNames": "{{names}} ou {{last}}",
-        "emptyBotsNeedsYou": "Rien de la part de {{names}} ne requiert votre action",
+        "emptyBotsNeedsYou": "Rien de {{names}} à traiter",
         "emptyBots": "Aucun élément de {{names}}",
         "emptyTitle": "Aucun élément de ce groupe pour l’instant",
         "filterNamed": "Filtrer les éléments, filtre actif : {{filter}}",

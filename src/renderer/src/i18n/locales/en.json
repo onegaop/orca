@@ -819,7 +819,12 @@
         "customCommandDescription": "Command line shared by recipes that select Custom command. Use {prompt} to pass the input as an argument; otherwise it is piped to stdin.",
         "saveFailed": "Could not save chat name settings.",
         "searchAgent": "agent",
-        "searchTemplate": "command template"
+        "searchTemplate": "command template",
+        "antigravity": "Generate chat titles with Antigravity",
+        "antigravityEnterprise": "Sends each chat’s first message to Antigravity to name it, which uses your Gemini Enterprise quota.",
+        "antigravityApiKey": "Sends each chat’s first message to Antigravity to name it, billed to your Gemini API key.",
+        "antigravityAgentPlatform": "Sends each chat’s first message to Antigravity to name it, billed to your Google Cloud project.",
+        "antigravityGoogle": "Sends each chat’s first message to Antigravity to name it, which uses your Antigravity quota on your Google account."
       },
       "providers": {
         "title": "Providers",
@@ -1863,7 +1868,7 @@
           "urlPlaceholder": "https://example.com/mcp",
           "transport": "Streamable HTTP · localhost means this bot’s computer.",
           "headers": "Headers",
-          "authHint": "If the server needs browser sign-in, Connect appears after its native check.",
+          "authHint": "If the server needs browser sign-in, Sign in appears after its native check.",
           "executable": "Executable",
           "commandPlaceholder": "npx",
           "args": "Arguments",
@@ -5937,7 +5942,8 @@
             "startChat": "Start a chat with {{value0}}",
             "cliTag": "(CLI)",
             "agentsLoading": "Loading agents",
-            "chatNotOnWindows": "No chat on Windows yet"
+            "chatNotOnWindows": "No chat on Windows yet",
+            "chatUpdateRequired": "Update CLI for chat"
           },
           "RecentTabSwitcher": {
             "329638ff6f": "Switch Tab",
@@ -6316,9 +6322,8 @@
             "84c3b15dca": "Agent usage limits",
             "d663430cf9": "Configure usage tracking",
             "remoteLabel": "No usage on {{host}}",
-            "remoteTitle": "Usage on {{host}}",
-            "remoteBody": "This workspace runs on {{host}}, so the bar shows that host's usage. Sign in to an agent there, or focus a local workspace to see this computer's usage.",
-            "remoteOpenAccounts": "Open {{host}} accounts"
+            "remoteNoUsageYet": "No usage yet. Sign in there.",
+            "remoteAccounts": "Accounts"
           },
           "SkillUpdateStatusSegment": {
             "runningLabel": "Updating skills",
@@ -16036,7 +16041,10 @@
             "operationAbortConfirm": "Select again to abort",
             "operationResolve": "Resolve",
             "operationMoreActions": "More actions",
-            "operationResolveLabel": "Resolve conflicts with AI"
+            "operationResolveLabel": "Resolve conflicts with AI",
+            "operationRunChangedTitle": "Nothing was aborted",
+            "operationRunChangedDescription": "The operation changed after Abort was chosen. Check its current state and try again.",
+            "operationRunUnknown": "Can't tell which run is paused, so Abort is off here. Refresh Source Control, or abort it in a terminal."
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "Could not start the selected agent.",
@@ -17174,14 +17182,18 @@
           "resetDone": "Icon and color reset",
           "undo": "Undo",
           "styleLetters": "Letters",
-          "stylePicture": "Picture",
-          "resetAppearance": "Reset icon & color",
+          "styleImage": "Image",
           "faviconPlaceholder": "Website for favicon",
           "lettersInput": "Up to 2 letters",
           "lettersPlaceholder": "1–2 letters",
           "useLetters": "Use “{{value0}}”",
-          "usingGitHubAvatar": "Using the GitHub avatar",
           "openSettings": "Open Settings",
+          "noIconFound": "No icon found",
+          "githubAvatar": "GitHub avatar",
+          "websiteIcon": "Website icon",
+          "fetchIcon": "Fetch",
+          "uploadTooLarge": "Over 256 KB",
+          "options": "Options",
           "applyToAll": "Apply to all",
           "appliedToAll_one": "Applied to {{count}} project",
           "appliedToAll_other": "Applied to {{count}} projects",
@@ -23354,10 +23366,7 @@
         "refused": "Google refused this chat's credentials.",
         "usageLimit": "This sign-in reached its usage limit.",
         "signInGoogle": "Sign in with Google",
-        "yourAgy": "Your agy",
         "yourAgyVersion": "Your agy · v{{version}}",
-        "orcasAgy": "Orca's agy",
-        "orcasAgyVersion": "Orca's agy · v{{version}}",
         "runsOn": "Runs on: {{program}}",
         "keepsOwnLogin": "This chat keeps agy's own Google login. New chats use {{method}}.",
         "apiKeyEnvironment": "From your environment",
@@ -24649,7 +24658,9 @@
           "updateFailed": "Couldn't update notifications on {{host}}.",
           "unsupported": "Update Orca on {{host}} to change its notifications here.",
           "enabledDescription": "Alerts {{host}} sends for its agents and terminals, including pushes to your phones.",
-          "sectionDescription": "Alerts {{host}} sends for its agents and terminals."
+          "sectionDescription": "Alerts {{host}} sends for its agents and terminals.",
+          "loadFailed": "Couldn't load notifications from {{host}}.",
+          "retry": "Try again"
         }
       },
       "orcaAccount": {
@@ -26183,7 +26194,6 @@
       "noEmailNotSaved": "agy didn't report an email · not saved",
       "saveShort": "Save",
       "active": "Active",
-      "runtime": "Runtime",
       "chatTitle": "Antigravity Chat",
       "terminalTitle": "agy in the terminal",
       "terminalDescription": "Uses agy's own saved accounts. Switching applies to new agy sessions.",
@@ -26205,7 +26215,11 @@
       "loginNow": "agy's login right now",
       "signedInUnread": "agy is signed in",
       "unreadDetail": "Show the account to see which one. macOS may ask you to allow keychain access.",
-      "showAccount": "Show account"
+      "showAccount": "Show account",
+      "agyCli": "agy CLI",
+      "agyUpdateAvailable": "v{{installed}} · v{{latest}} available",
+      "agyNotInstalled": "Not installed on this host.",
+      "agyInstallLink": "Install it with Google's installer"
     },
     "claude": {
       "added": "Account added. Select it to use it for the next Claude you start.",
@@ -31882,6 +31896,7 @@
     "qwenCodeProduct": "Qwen Code",
     "devinProduct": "Devin CLI",
     "codebuddyProduct": "CodeBuddy Code",
+    "antigravityProduct": "Antigravity CLI",
     "commandCopied": "Command copied",
     "commandNotCopied": "Could not copy the command",
     "copyCommand": "Copy",

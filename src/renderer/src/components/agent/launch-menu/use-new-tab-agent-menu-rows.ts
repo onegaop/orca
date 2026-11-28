@@ -210,11 +210,11 @@ export function useAgentMenuObservation(
     }
     const published =
       availability?.state === 'received' ? availability.byAgent.get(agent) : undefined
-    if (published?.state === 'refused' && published.reason === 'windows') {
-      return 'windows'
+    if (published?.state === 'refused') {
+      const r = published.reason
+      return r === 'windows' || r === 'too-old' ? r : 'not-on-host'
     }
-    // Missing/refused published availability overrides a preliminary route that would otherwise allow launch.
-    return !published || published.state === 'refused' ? 'not-on-host' : preliminary
+    return published ? preliminary : 'not-on-host'
   }
   const { detectedIds } = detection
   const rows = buildNewTabAgentMenuRows({

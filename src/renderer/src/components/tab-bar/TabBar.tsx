@@ -42,6 +42,7 @@ function HorizontalTabBar({
   const tabStripNavigation = useTabStripOverflowNavigation({
     activeVisibleTabId: itemProjection.activeVisibleTabId,
     activeDockSlotId: activeClientHostedBrowserRowId ?? itemProjection.activeVisibleTabId,
+    isFocused: props.isFocused,
     layoutKey: stripLayoutKey,
     slotIds,
     worktreeId

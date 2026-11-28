@@ -43,6 +43,8 @@ import {
   type CardStyleChoice
 } from './card-style-choice'
 
+const getAppStoreState = (): ReturnType<typeof useAppStore.getState> => useAppStore.getState()
+
 type OptionItemProps = {
   preserveWorkspaceBoardOpen: boolean
   hostOptions: SidebarHostOption[]
@@ -138,9 +140,8 @@ function HostsOptionItem({
   hostOptions
 }: OptionItemProps): JSX.Element {
   const t = useTranslate()
-  const setWorkspaceHostScope = useAppStore((s) => s.setWorkspaceHostScope)
   const visibleWorkspaceHostIds = useAppStore((s) => s.visibleWorkspaceHostIds)
-  const setVisibleWorkspaceHostIds = useAppStore((s) => s.setVisibleWorkspaceHostIds)
+  const { setWorkspaceHostScope, setVisibleWorkspaceHostIds } = getAppStoreState()
   return (
     <SidebarHostScopeMenuSection
       hostVisibilityLabel={getSidebarHostVisibilityLabel(visibleWorkspaceHostIds, hostOptions, t)}
@@ -155,7 +156,7 @@ function HostsOptionItem({
 
 function GroupByOptionItem(): JSX.Element {
   const groupBy = useAppStore((s) => s.groupBy)
-  const setGroupBy = useAppStore((s) => s.setGroupBy)
+  const { setGroupBy } = getAppStoreState()
   return (
     <div className="px-2 pt-0.5 pb-1">
       <SidebarGroupByToggle groupBy={groupBy} setGroupBy={setGroupBy} />
@@ -166,7 +167,7 @@ function GroupByOptionItem(): JSX.Element {
 function SortByOptionItem({ preserveWorkspaceBoardOpen }: OptionItemProps): JSX.Element {
   const t = useTranslate()
   const sortBy = useAppStore((s) => s.sortBy)
-  const setSortBy = useAppStore((s) => s.setSortBy)
+  const { setSortBy } = getAppStoreState()
   return (
     <OptionChoiceSubmenu
       label={t('auto.components.sidebar.SidebarWorkspaceOptionsMenu.7bada3b1ab', 'Sort by')}
@@ -198,7 +199,7 @@ function ProjectTasksViewItem(): JSX.Element {
 function ProjectOrderOptionItem({ preserveWorkspaceBoardOpen }: OptionItemProps): JSX.Element {
   const t = useTranslate()
   const projectOrderBy = useAppStore((s) => s.projectOrderBy)
-  const setProjectOrderBy = useAppStore((s) => s.setProjectOrderBy)
+  const { setProjectOrderBy } = getAppStoreState()
   return (
     <OptionChoiceSubmenu
       label={t('auto.components.sidebar.SidebarWorkspaceOptionsMenu.09faabd875', 'Project order')}

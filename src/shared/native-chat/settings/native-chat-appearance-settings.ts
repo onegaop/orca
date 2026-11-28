@@ -33,6 +33,8 @@ export type NativeChatGlobalSettings = {
   /** Off keeps chats unnamed without running a naming agent. Absent means on. */
   nativeChatSideChatPane?: boolean
   nativeChatAutoName?: boolean
+  /** Antigravity chats name themselves with agy, on the chat's own sign-in. Absent means off. */
+  antigravityChatNaming?: boolean
   /** Explicit per-agent overrides of the default surface. */
   nativeChatProviders?: NativeChatProviderChoices
   /** Own sends bring the latest into view; off keeps a reader who scrolled up in place. Absent means on. */
