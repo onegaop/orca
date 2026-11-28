@@ -84,6 +84,7 @@ function stateDotTooltipLabel(
 
 type Props = {
   showStateAccent?: boolean
+  stateAccentEdge?: 'start' | 'end'
   showModel?: boolean
   agent: DashboardAgentRowData
   onDismiss: (paneKey: string) => void
@@ -117,6 +118,7 @@ type Props = {
 const DashboardAgentRow = React.memo(function DashboardAgentRow({
   agent,
   showStateAccent = false,
+  stateAccentEdge = 'start',
   showModel = true,
   onDismiss,
   onActivate,
@@ -290,6 +292,7 @@ const DashboardAgentRow = React.memo(function DashboardAgentRow({
           state={dotState}
           unread={isUnvisited && dotState === 'done'}
           manualColor={agent.tab.color}
+          edge={stateAccentEdge}
         />
       )}
       {lineageChildCount > 0 && !hideLineageConnectors ? (

@@ -98,6 +98,7 @@ function getCompactAgentTime(agent: DashboardAgentRowData, now: number): string 
 
 type CompactAgentRowProps = {
   showStateAccent?: boolean
+  stateAccentEdge?: 'start' | 'end'
   showModel?: boolean
   agent: DashboardAgentRowData
   now: number
@@ -123,6 +124,7 @@ type CompactAgentRowProps = {
 export const CompactAgentRow = React.memo(function CompactAgentRow({
   agent,
   showStateAccent = false,
+  stateAccentEdge = 'start',
   showModel = true,
   now,
   parentConversationDescription,
@@ -368,6 +370,7 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
           state={dotState}
           unread={isUnvisited && dotState === 'done'}
           manualColor={agent.tab.color}
+          edge={stateAccentEdge}
         />
       )}
       {rowBody}

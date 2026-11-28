@@ -32,6 +32,7 @@ import { useUiLanguageRevision } from '@/i18n/use-ui-language-revision'
 import { useWorktreeAgentActivation } from './use-worktree-agent-activation'
 import { opensClaudeParentConversation } from '@/lib/agent-session/navigation/claude-agent-row-view'
 import { IdleChildAgentGroupRow } from './worktree-card-idle-child-agents'
+import { isProjectTreeOn } from '../../../../../../shared/sidebar-list/project-tree-settings'
 import type { AgentChildren } from '@/store/slices/agent-status/projection/agent-row-display-model'
 import type { DashboardAgentRow as AgentRow } from '@/components/dashboard/rows/dashboard-agent-row'
 
@@ -262,6 +263,7 @@ const AgentBranch = React.memo(function AgentBranch({
   )
   const acknowledgedAt = useAppStore((s) => s.acknowledgedAgentsByPaneKey[paneKey] ?? 0)
   const showAgentStateAccents = useAppStore((s) => s.settings?.showAgentStateAccents === true)
+  const projectTreeOn = useAppStore((s) => isProjectTreeOn(s.settings))
   const t = useTranslate()
   if (!row) {
     return null
@@ -282,6 +284,7 @@ const AgentBranch = React.memo(function AgentBranch({
   const common = {
     agent: row,
     showStateAccent: showAgentStateAccents && root && !context.targets,
+    stateAccentEdge: projectTreeOn ? ('end' as const) : ('start' as const),
     showModel: context.showAgentModels,
     now: context.now,
     isUnvisited: row.rowSource === 'live' && acknowledgedAt < agentAttentionTurnAt(row.entry),
