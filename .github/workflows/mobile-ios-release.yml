@@ -151,6 +151,10 @@ jobs:
           IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
         run: |
           set -euo pipefail
+          if [[ -z "$IOS_DIST_CERT_P12" || -z "$IOS_DIST_CERT_PASSWORD" ]]; then
+            echo "::error::iOS distribution signing secrets are missing from the release environment."
+            exit 1
+          fi
           KEYCHAIN_PATH="$RUNNER_TEMP/orca-signing.keychain-db"
           # Random per-run keychain password; never persisted.
           KEYCHAIN_PASSWORD="$(openssl rand -base64 24)"
