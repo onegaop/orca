@@ -24058,6 +24058,9 @@
           "setUp": "Kur"
         }
       },
+      "advanced": {
+        "localOnlyNotice": "Sorun giderme için düşük seviyeli uyumluluk ayarları. Bu ayarlar {{host}} üzerinde değil, bu bilgisayarda saklanır."
+      },
       "repositoryHooks": {
         "availableEnvVars": "Kullanılabilir ortam değişkenleri"
       },
