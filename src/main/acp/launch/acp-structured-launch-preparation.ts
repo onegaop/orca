@@ -13,6 +13,16 @@ import type { AcpStructuredLaunch } from './acp-structured-launch-resolution'
 import type { AcpStructuredSessionAdapterDeps } from '../session/acp-structured-session-adapter-deps'
 import type { AcpLaunchSpec, AcpPreparedAccount } from './acp-launch-contract'
 import type { AcpStructuredConnection, ConnectAcpAgent } from '../process/acp-structured-connection'
+import { withoutCallerIdentity } from '../../runtime/agent-session/environment/structured-session-child-env'
+
+/** The environment a launch's process gets; see `AcpLaunchSpec.sharedToolProcess`. */
+export function acpProcessEnvironment(
+  launch: Pick<AcpStructuredLaunch, 'spec' | 'env' | 'envToDelete'>
+): { env: Record<string, string>; envToDelete: string[] } {
+  return launch.spec.sharedToolProcess
+    ? withoutCallerIdentity(launch.env, launch.envToDelete)
+    : { env: launch.env, envToDelete: launch.envToDelete }
+}
 
 export function prepareAcpStructuredLaunch(
   deps: Pick<AcpStructuredSessionAdapterDeps, 'resolveLaunch'>,

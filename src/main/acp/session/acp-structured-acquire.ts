@@ -22,10 +22,10 @@ import { acpLaneChildWorkDelivery } from '../journal/acp-lane-child-work-deliver
 import { NO_ACP_CHILD_STOPS } from '../turns/acp-structured-child-stop'
 import {
   acpLaunchConnect,
+  acpProcessEnvironment,
   currentAcpLaunchAccount,
   prepareAcpStructuredLaunch
 } from '../launch/acp-structured-launch-preparation'
-import { acpProcessEnvironment } from '../launch/acp-structured-launch-resolution'
 import type { AcpStructuredLaunch } from '../launch/acp-structured-launch-resolution'
 import { SharedToolProcessSession } from '../../runtime/agent-session/environment/shared-tool-process-callers'
 import { AcpStructuredOptions } from '../options/acp-structured-options'
