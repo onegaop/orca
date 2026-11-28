@@ -39,6 +39,7 @@ import type { CustomAcpAgentSettings } from '../agent-launch/custom-acp/custom-a
 import type { ProjectBadgeAppearanceSettings } from '../repository/appearance/repo-mark-appearance'
 import type { ProjectTreeSettings } from '../sidebar-list/project-tree-settings'
 import type { MacWindowCloseBehavior } from '../app-lifecycle/windows/macos-window-close-behavior'
+import type { FloatingPanelOpacitySettings } from './floating-panel-opacity'
 
 type AnimationSettings = {
   /** Use continuous display-refresh rotation for spinners instead of 12 FPS stepped frames (#39119). */
@@ -89,6 +90,7 @@ export type GlobalSettingsBase = AgentStateAppearanceSettings &
   TerminalColorOverrideGlobalSettings &
   WindowMaterialSettings &
   AnimationSettings &
+  FloatingPanelOpacitySettings &
   DesktopWindowSettings &
   EditorSaveSettings &
   BotsGlobalSettings &
