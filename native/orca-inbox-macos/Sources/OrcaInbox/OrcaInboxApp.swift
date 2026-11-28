@@ -32,31 +32,46 @@ enum OrcaInboxApp {
 }
 
 @MainActor
+@Observable
+private final class InboxPresentationBridge {
+    var filter: InboxFeedFilter = .inbox
+    var focusDispatchTrigger = 0
+}
+
+@MainActor
 private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private let store = InboxStore(
         fetchHosts: { try await Task.detached(priority: .utility) { try Live.fetchHosts() }.value },
         fetchSnapshot: { target in
             try await Task.detached(priority: .utility) { try Live.fetch(environment: target) }.value
+        },
+        fetchInstalledAgents: { target in
+            try await Task.detached(priority: .utility) { try Live.fetchInstalledAgents(environment: target) }.value
         }
     )
+    private let bridge = InboxPresentationBridge()
     private var statusItem: NSStatusItem?
     private var menuStatus: InboxMenuStatus?
+    private var notchController: NotchHUDController?
+    private var hotkeyManager: GlobalHotkeyManager?
+    private var notifications: InboxNotificationCenter?
     private var pollingTask: Task<Void, Never>?
     private var menuUpdates: Task<Void, Never>?
+    private var modeUpdates: Task<Void, Never>?
     private var clockUpdates: Task<Void, Never>?
 
-    private static let panelSize = NSSize(
-        width: InboxMetrics.panelWidth,
-        height: InboxMetrics.panelHeight
+    private static let hubSize = NSSize(
+        width: InboxMetrics.hubWidth,
+        height: InboxMetrics.hubHeight
     )
 
     private lazy var popover: NSPopover = {
         let popover = NSPopover()
         popover.behavior = .transient
         popover.delegate = self
-        popover.contentSize = Self.panelSize
-        let controller = NSHostingController(rootView: InboxWindow(store: store))
-        controller.preferredContentSize = Self.panelSize
+        popover.contentSize = Self.hubSize
+        let controller = NSHostingController(rootView: makePopoverRootView())
+        controller.preferredContentSize = Self.hubSize
         popover.contentViewController = controller
         return popover
     }()
@@ -66,13 +81,44 @@ private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, N
         item.autosaveName = "Item-0"
         statusItem = item
         item.button?.target = self
-        item.button?.action = #selector(togglePopover(_:))
+        item.button?.action = #selector(toggleFromMenuBar(_:))
         item.button?.imagePosition = .imageLeading
         updateMenuButton(InboxMenuStatus(state: store.panelState()))
+
+        let notifier = InboxNotificationCenter { [weak self] url in
+            Task { await self?.openOrca(destination: url) }
+        }
+        notifications = notifier
+        store.onAlertEvents = { [weak notifier] events in
+            notifier?.post(events)
+        }
+
+        let notch = NotchHUDController(
+            onExpandedChange: { [weak self] expanded in
+                self?.store.setPanelOpen(expanded || (self?.popover.isShown == true))
+            },
+            makeContent: { [weak self] hasPhysicalNotch, isExpanded in
+                guard let self else { return AnyView(EmptyView()) }
+                return AnyView(self.makeNotchRootView(hasPhysicalNotch: hasPhysicalNotch, isExpanded: isExpanded))
+            }
+        )
+        notchController = notch
+        applyPresentationMode(store.presentationMode)
+
+        let hotkey = GlobalHotkeyManager { [weak self] in
+            self?.triggerGlobalToggle()
+        }
+        _ = hotkey.registerOptionSpace()
+        hotkeyManager = hotkey
 
         menuUpdates = Task { [weak self, store] in
             for await status in Observations({ InboxMenuStatus(state: store.panelState()) }) {
                 self?.updateMenuButton(status)
+            }
+        }
+        modeUpdates = Task { [weak self, store] in
+            for await mode in Observations({ store.presentationMode }) {
+                self?.applyPresentationMode(mode)
             }
         }
         clockUpdates = Task { [weak self, store] in
@@ -89,9 +135,34 @@ private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, N
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        hotkeyManager?.unregister()
+        notchController?.teardown()
         pollingTask?.cancel()
         menuUpdates?.cancel()
+        modeUpdates?.cancel()
         clockUpdates?.cancel()
+    }
+
+    private func applyPresentationMode(_ mode: InboxPresentationMode) {
+        switch mode {
+        case .notch:
+            if popover.isShown {
+                popover.performClose(nil)
+            }
+            notchController?.show()
+        case .menubar:
+            notchController?.hide()
+        }
+    }
+
+    private func triggerGlobalToggle() {
+        bridge.focusDispatchTrigger += 1
+        if store.presentationMode == .notch {
+            notchController?.show()
+            notchController?.toggleExpanded(focusInput: true)
+        } else if let button = statusItem?.button {
+            togglePopover(button)
+        }
     }
 
     private func updateMenuButton(_ status: InboxMenuStatus) {
@@ -109,13 +180,22 @@ private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, N
         menuStatus = status
     }
 
-    @objc private func togglePopover(_ button: NSStatusBarButton) {
+    @objc private func toggleFromMenuBar(_ button: NSStatusBarButton) {
+        if store.presentationMode == .notch {
+            notchController?.show()
+            notchController?.toggleExpanded(focusInput: false)
+        } else {
+            togglePopover(button)
+        }
+    }
+
+    private func togglePopover(_ button: NSStatusBarButton) {
         if popover.isShown {
             popover.performClose(button)
         } else {
             // Set the exact size before show so AppKit anchors the popover below the menu bar instead of resizing upward over it.
-            popover.contentSize = Self.panelSize
-            popover.contentViewController?.preferredContentSize = Self.panelSize
+            popover.contentSize = Self.hubSize
+            popover.contentViewController?.preferredContentSize = Self.hubSize
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             popover.contentViewController?.view.window?.makeKey()
         }
@@ -126,42 +206,45 @@ private final class InboxApplicationDelegate: NSObject, NSApplicationDelegate, N
     }
 
     func popoverWillClose(_ notification: Notification) {
-        store.setPanelOpen(false)
+        store.setPanelOpen(notchController?.expanded == true)
     }
-}
 
-@MainActor
-private struct InboxWindow: View {
-    let store: InboxStore
-    @State private var bucket: Bucket = .attention
+    private func makePopoverRootView() -> InboxHostContainer {
+        InboxHostContainer(
+            store: store,
+            bridge: bridge,
+            hasPhysicalNotch: false,
+            embeddedInNotch: false,
+            isExpanded: true,
+            onHoverChange: { _ in },
+            onToggleExpand: {},
+            onCollapse: { [weak self] in self?.popover.performClose(nil) },
+            onOpenOrca: { [weak self] url in await self?.openOrca(destination: url) },
+            onCopySessionID: copySessionID,
+            onQuit: { NSApplication.shared.terminate(nil) }
+        )
+    }
 
-    var body: some View {
-        TimelineView(.periodic(from: .now, by: 15)) { context in
-            let state = store.panelState(at: context.date)
-            InboxPanelView(
-                state: state,
-                bucket: $bucket,
-                onRefresh: { store.requestRefresh() },
-                onSelectHost: { store.selectHost($0) },
-                onOpenOrca: { Task { await openOrca() } },
-                onOpenSession: { row in Task { await openSession(row, environment: state.selectedHost.id) } },
-                onCopySessionID: copySessionID,
-                onQuit: { NSApplication.shared.terminate(nil) }
-            )
-        }
+    private func makeNotchRootView(hasPhysicalNotch: Bool, isExpanded: Bool) -> InboxHostContainer {
+        InboxHostContainer(
+            store: store,
+            bridge: bridge,
+            hasPhysicalNotch: hasPhysicalNotch,
+            embeddedInNotch: true,
+            isExpanded: isExpanded,
+            onHoverChange: { [weak self] hovering in self?.notchController?.handleHover(hovering) },
+            onToggleExpand: { [weak self] in self?.notchController?.toggleExpanded(focusInput: false) },
+            onCollapse: { [weak self] in self?.notchController?.collapse(animated: true) },
+            onOpenOrca: { [weak self] url in await self?.openOrca(destination: url) },
+            onCopySessionID: copySessionID,
+            onQuit: { NSApplication.shared.terminate(nil) }
+        )
     }
 
     private func copySessionID(_ id: String) {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(id, forType: .string)
-    }
-
-    private func openSession(_ row: AgentRow, environment: String) async {
-        guard let destination = SessionDestination.url(for: row, environment: environment) else {
-            store.actionProblem = "这条记录缺少完整会话标识。可右键复制会话 ID 或打开 Orca。"
-            return
-        }
-        await openOrca(destination: destination)
+        store.showToast("已复制会话 ID")
     }
 
     private func openOrca(destination: URL? = nil) async {
@@ -179,8 +262,146 @@ private struct InboxWindow: View {
             } else {
                 _ = try await NSWorkspace.shared.openApplication(at: appURL, configuration: configuration)
             }
+            notchController?.collapse(animated: true)
+            if popover.isShown { popover.performClose(nil) }
         } catch {
             store.actionProblem = "无法打开 Orca：\(error.localizedDescription)"
         }
+    }
+}
+
+@MainActor
+private struct InboxHostContainer: View {
+    let store: InboxStore
+    let bridge: InboxPresentationBridge
+    let hasPhysicalNotch: Bool
+    let embeddedInNotch: Bool
+    let isExpanded: Bool
+    let onHoverChange: (Bool) -> Void
+    let onToggleExpand: () -> Void
+    let onCollapse: () -> Void
+    let onOpenOrca: (URL?) async -> Void
+    let onCopySessionID: (String) -> Void
+    let onQuit: () -> Void
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 10)) { context in
+            let state = store.panelState(at: context.date)
+            let filterBinding = Binding<InboxFeedFilter>(
+                get: { bridge.filter },
+                set: { bridge.filter = $0 }
+            )
+            let handlers = makeCardHandlers(environment: state.selectedHost.id)
+            if embeddedInNotch {
+                InboxNotchView(
+                    state: state,
+                    filter: filterBinding,
+                    hasPhysicalNotch: hasPhysicalNotch,
+                    isExpanded: isExpanded,
+                    focusDispatchTrigger: bridge.focusDispatchTrigger,
+                    onHoverChange: onHoverChange,
+                    onToggleExpand: onToggleExpand,
+                    onCollapse: onCollapse,
+                    onRefresh: { store.requestRefresh() },
+                    onSelectHost: { store.selectHost($0) },
+                    onArchiveAllDone: { store.archiveAllDone() },
+                    onSetPresentationMode: { store.setPresentationMode($0) },
+                    onSetNotificationsEnabled: { store.setNotificationsEnabled($0) },
+                    onDispatchTask: { worktreeId, agent, prompt in
+                        try await dispatchTask(
+                            worktreeId: worktreeId,
+                            agent: agent,
+                            prompt: prompt,
+                            environment: state.selectedHost.id
+                        )
+                    },
+                    onQuit: onQuit,
+                    cardHandlers: handlers
+                )
+            } else {
+                InboxHubView(
+                    state: state,
+                    filter: filterBinding,
+                    embeddedInNotch: false,
+                    focusDispatchTrigger: bridge.focusDispatchTrigger,
+                    onRefresh: { store.requestRefresh() },
+                    onSelectHost: { store.selectHost($0) },
+                    onArchiveAllDone: { store.archiveAllDone() },
+                    onSetPresentationMode: { store.setPresentationMode($0) },
+                    onSetNotificationsEnabled: { store.setNotificationsEnabled($0) },
+                    onDispatchTask: { worktreeId, agent, prompt in
+                        try await dispatchTask(
+                            worktreeId: worktreeId,
+                            agent: agent,
+                            prompt: prompt,
+                            environment: state.selectedHost.id
+                        )
+                    },
+                    onCollapse: onCollapse,
+                    onQuit: onQuit,
+                    cardHandlers: handlers
+                )
+            }
+        }
+    }
+
+    private func makeCardHandlers(environment: String) -> InboxCardHandlers {
+        InboxCardHandlers(
+            onOpenSession: { row in
+                Task {
+                    guard let destination = SessionDestination.url(for: row, environment: environment) else {
+                        store.actionProblem = "这条记录缺少完整会话标识。可右键复制会话 ID 或打开 Orca。"
+                        return
+                    }
+                    await onOpenOrca(destination)
+                }
+            },
+            onCopySessionID: onCopySessionID,
+            onOpenOrca: { Task { await onOpenOrca(nil) } },
+            onArchive: { store.archive($0) },
+            onUnarchive: { store.unarchive($0) },
+            onLoadTranscript: { row in
+                guard let id = row.orcaSessionId else { throw InboxFailure.unreadable }
+                return try await Task.detached(priority: .userInitiated) {
+                    try Live.fetchTranscript(sessionId: id, environment: environment)
+                }.value
+            },
+            onLoadPendingPrompts: { row in
+                guard let id = row.orcaSessionId else { return [] }
+                return await Task.detached(priority: .userInitiated) {
+                    Live.fetchPendingPrompts(sessionId: id, environment: environment)
+                }.value
+            },
+            onReply: { row, text in
+                guard let id = row.orcaSessionId else { throw InboxFailure.unreadable }
+                try await Task.detached(priority: .userInitiated) {
+                    try Live.replyToAgent(sessionId: id, text: text, environment: environment)
+                }.value
+                store.showToast("已发送回复给「\(row.label)」")
+                store.requestRefresh()
+            },
+            onRespondPrompt: { row, prompt, option in
+                guard let id = row.orcaSessionId else { throw InboxFailure.unreadable }
+                try await Task.detached(priority: .userInitiated) {
+                    try Live.respondToPrompt(sessionId: id, prompt: prompt, option: option, environment: environment)
+                }.value
+                store.showToast("已确认「\(option.label)」")
+                store.requestRefresh()
+            }
+        )
+    }
+
+    private func dispatchTask(
+        worktreeId: String,
+        agent: String,
+        prompt: String,
+        environment: String
+    ) async throws {
+        store.rememberDispatchSelection(worktreeId: worktreeId, agent: agent)
+        try await Task.detached(priority: .userInitiated) {
+            try Live.dispatchAgent(worktreeId: worktreeId, agent: agent, prompt: prompt, environment: environment)
+        }.value
+        store.showToast("已派发给 \(agent) 后台运行")
+        store.requestRefresh()
     }
 }

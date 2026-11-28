@@ -1,17 +1,20 @@
-# Orca 任务收件箱
+# Orca 任务收件箱（v0.5.0）
 
-v0.4.2，macOS 26+ 菜单栏伴侣。菜单栏按钮由 AppKit 管理，任务面板使用 SwiftUI。通过本机已安装的 Orca 查看所选本机或配对远程主机的 Agent 状态。它不创建工作区，也不管理 Agent。
+macOS 26+ 原生 Agent 指挥伴侣（AppKit + SwiftUI Liquid Glass），支持**刘海灵动岛（Notch HUD）**与**菜单栏弹窗**双形态自由切换，并提供全局快捷键 **`⌥Space`** 随时呼出。
 
-- 状态：待处理（阻塞优先，然后等待输入）、进行中、已完成。
-- 菜单栏数字是**当前所选主机**的阻塞 + 等待输入数量。首次读取显示 `…`，没有缓存且连接失败显示 `!`；旧数据用时钟图标及 `~` 标记（例如 `3~`）。截断列表的数字带 `+`，表示数量下限。悬停可查看主机和状态，断线不会显示成零待办。
-- 菜单栏与面板共用一个 Store、一条串行轮询：启动、打开面板或切换主机时立即读取；打开时每 15 秒刷新，关闭时每 60 秒刷新。只查询所选主机，不轮询所有远程主机。手动刷新复用同一条轮询，不并发堆积请求。
-- 每个主机单独保留内存缓存。切换主机时立即显示其缓存（标为旧数据）或加载状态；失败保留该主机的结果。超过 120 秒没有成功同步也标为旧数据。主机发现失败或选中环境暂时不在列表里时，不会偷偷切回本机。
-- 层级：项目 → 工作区 → Agent；Git 工作区用 Orca 的工作区标识归类，不按分支名称合并，也支持文件夹工作区。
-- 有完整稳定标识的任务可以点击打开**原会话**；右键仍可复制 Orca 会话 ID、打开此会话或打开 Orca。缺少稳定会话 ID、使用旧版数字窗格 ID 或其他无效字段时，显示“缺少完整会话标识”，保留右键入口，不声称能直接定位。
-- 跳转使用 `orca://inbox/session?environment=<HostTarget.id>&workspace=<worktreeId>&pane=<paneKey>&id=<orcaSessionId>`，记录带执行主机时追加 `host=<hostId>`。通过 `URLComponents` 编码，另将字面量 `+` 转义为 `%2B`，再用 `NSWorkspace.open(_:withApplicationAt:configuration:)` 交给解析出的同一个 Orca.app，避免多个版本竞争默认协议处理器。接收端仍会核对实际会话标识后定位，不把复用的窗格当作原会话。
-- 数据源：本机 Orca 自带的 `host list --json` 和 `agent list --environment <所选主机> --json`；不调用 `agent read`、不保存或展示回复正文、不发通知。连接错误显示在面板，找不到应用或启动失败也显示明确错误。
-- 启动入口：`~/Applications/Orca Inbox.app`。不配置登录启动。底部“打开 Orca”继续打开主窗口。
+## 核心能力
 
-本地重建安装：`./install.sh`（同时保留 `./install-mini.sh` 兼容入口）。构建：`swift build --disable-sandbox --product OrcaInbox`。纯逻辑检查：`swift test --disable-sandbox --filter 'sessionDestination|inFlightHostSwitch'`；这些检查不会启动 Orca 或 Inbox 界面。`--check-live --environment <id>` 可只读检查所选环境的 CLI 连通性。
+- **平铺高密度 Triage 收件箱**：按「收件箱（阻塞顶置 + 等回复 + 未读完成） / 运行中 / 全部」组织卡片，直接展示 `lastAssistantMessage` 纯文本摘要，并支持按需展开查看最近对话（`orca agent read`）。
+- **已读归档机制**：已完成的任务支持单条归档或“一键清空已完成”，持久化在本地 `UserDefaults`；同一会话若后续产生更新的回复（`updatedAt` 变新），会自动重新浮现为未读；阻塞/等待项永远置顶不被隐藏。
+- **顶部“一句话快速派活”**：直接选择工作区与已安装 Agent（记住上次选择），回车调用 `orca agent launch` 在后台开跑，无需切回 Orca 主窗口。
+- **原地快速回复与一键审批**：通过 `orca agent requests`、`orca agent reply` 与 `orca agent respond` 读取当前待确认的权限审批或提问选项，支持在卡片内一键批准/拒绝/选选项或直接发送追问。
+- **刘海灵动岛 & 顶部悬浮胶囊**：在带刘海的 MacBook 上自动贴合刘海两侧显示运行与待处理状态，悬停或点击丝滑展开完整指挥台；外接无刘海显示器自动切换为顶部居中悬浮药丸；在底栏“更多设置”中可随时切换为“仅菜单栏”模式。
+- **高频轻量同步与轻提醒**：展开时每 3 秒同步，收起时每 10 秒同步；检测到新阻塞、等待或完成时发送可选的 macOS 系统通知（点击通知直达对应 Orca 会话）。
+- **精准跳转**：保留 `orca://inbox/session?...` 稳定会话定位与多主机（本机 / 配对远程主机）独立缓存。
 
-回归时确认：切换本机/远程后计数只跟随当前主机；关闭面板后计数仍更新；离线时显示未知或旧数据；点击任务进入同一环境、工作区及稳定会话；缺标识任务保留复制和打开 Orca。真实菜单栏、冷启动/已运行 Orca 的端到端跳转仍需在允许的独立图形环境验收。
+## 构建与测试
+
+- 本地重建安装：`./install.sh`（同步保留 `./install-mini.sh`）
+- 调试构建：`swift build --disable-sandbox --product OrcaInbox`
+- 单元测试：`swift test --disable-sandbox`
+- 连通性自检：`.build/debug/OrcaInbox --check-live --environment local`

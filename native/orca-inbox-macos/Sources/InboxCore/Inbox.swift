@@ -62,6 +62,7 @@ public enum AgentStateKind: String, Sendable, Equatable {
 
 public struct AgentRow: Decodable, Identifiable, Sendable {
     public let orcaSessionId: String?
+    public let kind: String?
     public let agent: String?
     public let state: String
     public let worktreeId: String
@@ -70,10 +71,12 @@ public struct AgentRow: Decodable, Identifiable, Sendable {
     public let hostId: String?
     public let paneKey: String
     public let title: String?
+    public let lastAssistantMessage: String?
     public let updatedAt: Double
 
     public init(
         orcaSessionId: String? = nil,
+        kind: String? = nil,
         agent: String? = nil,
         state: String,
         worktreeId: String,
@@ -82,9 +85,11 @@ public struct AgentRow: Decodable, Identifiable, Sendable {
         hostId: String? = nil,
         paneKey: String,
         title: String? = nil,
+        lastAssistantMessage: String? = nil,
         updatedAt: Double
     ) {
         self.orcaSessionId = orcaSessionId
+        self.kind = kind
         self.agent = agent
         self.state = state
         self.worktreeId = worktreeId
@@ -93,10 +98,13 @@ public struct AgentRow: Decodable, Identifiable, Sendable {
         self.hostId = hostId
         self.paneKey = paneKey
         self.title = title
+        self.lastAssistantMessage = lastAssistantMessage
         self.updatedAt = updatedAt
     }
 
     public var id: String { [hostId ?? "local", worktreeId, paneKey].joined(separator: "\u{001F}") }
+
+    public var isChat: Bool { kind == "chat" }
 
     public var stateKind: AgentStateKind { AgentStateKind(rawState: state) }
 
@@ -119,6 +127,36 @@ public struct AgentRow: Decodable, Identifiable, Sendable {
     public var subtitleAgent: String? {
         guard let agent, !agent.isEmpty else { return nil }
         return agent == label ? nil : agent
+    }
+
+    /// Compact project/workspace/agent context tag for flat triage cards.
+    public var contextTag: String {
+        var parts: [String] = []
+        if let repo, !repo.isEmpty {
+            parts.append(repo)
+        } else if !workspace.isEmpty && workspace != label {
+            parts.append(workspace)
+        }
+        if let agent, !agent.isEmpty {
+            parts.append(agent)
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    /// Plain-text preview of the agent's latest reply with lightweight Markdown cleanup.
+    public var summaryPreview: String? {
+        guard let raw = lastAssistantMessage?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !raw.isEmpty else { return nil }
+        var text = raw
+            .replacingOccurrences(of: #"\[([^\]]+)\]\([^\)]+\)"#, with: "$1", options: .regularExpression)
+            .replacingOccurrences(of: #"(?m)^#{1,6}\s+"#, with: "", options: .regularExpression)
+            .replacingOccurrences(of: "**", with: "")
+            .replacingOccurrences(of: "__", with: "")
+            .replacingOccurrences(of: "`", with: "")
+        text = text.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return nil }
+        return text.count > 220 ? String(text.prefix(219)) + "…" : text
     }
 
     public var date: Date { Date(timeIntervalSince1970: updatedAt / 1000) }
@@ -321,7 +359,7 @@ public enum CompactRelativeTime {
     }
 }
 
-/// Pure view-layer state for the inbox popover, independent of live CLI fetching.
+/// Pure view-layer state for the inbox popover & Notch HUD, independent of live CLI fetching.
 public struct InboxPanelState: Sendable {
     public var snapshot: Snapshot?
     public var updated: Date?
@@ -332,6 +370,14 @@ public struct InboxPanelState: Sendable {
     public var selectedHost: HostTarget
     public var stale: Bool
     public var actionProblem: String?
+    public var archivedTimestamps: [String: Double]
+    public var presentationMode: InboxPresentationMode
+    public var notificationsEnabled: Bool
+    public var dispatchWorkspaces: [DispatchWorkspaceOption]
+    public var installedAgents: [InstalledAgentOption]
+    public var defaultDispatchWorktreeId: String?
+    public var defaultDispatchAgent: String
+    public var toastMessage: String?
 
     public init(
         snapshot: Snapshot? = nil,
@@ -342,7 +388,15 @@ public struct InboxPanelState: Sendable {
         hosts: [HostTarget] = [.local],
         selectedHost: HostTarget = .local,
         stale: Bool = false,
-        actionProblem: String? = nil
+        actionProblem: String? = nil,
+        archivedTimestamps: [String: Double] = [:],
+        presentationMode: InboxPresentationMode = .notch,
+        notificationsEnabled: Bool = true,
+        dispatchWorkspaces: [DispatchWorkspaceOption] = [],
+        installedAgents: [InstalledAgentOption] = [],
+        defaultDispatchWorktreeId: String? = nil,
+        defaultDispatchAgent: String = "codex",
+        toastMessage: String? = nil
     ) {
         self.snapshot = snapshot
         self.updated = updated
@@ -353,6 +407,14 @@ public struct InboxPanelState: Sendable {
         self.selectedHost = selectedHost
         self.stale = stale
         self.actionProblem = actionProblem
+        self.archivedTimestamps = archivedTimestamps
+        self.presentationMode = presentationMode
+        self.notificationsEnabled = notificationsEnabled
+        self.dispatchWorkspaces = dispatchWorkspaces
+        self.installedAgents = installedAgents
+        self.defaultDispatchWorktreeId = defaultDispatchWorktreeId
+        self.defaultDispatchAgent = defaultDispatchAgent
+        self.toastMessage = toastMessage
     }
 
     public var isDisconnectedWithStaleData: Bool {

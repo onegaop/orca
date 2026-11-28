@@ -16,8 +16,11 @@ public enum InboxMetrics {
     public static let panelWidth: CGFloat = 420
     public static let panelHeight: CGFloat = 492
 
-    public static let horizontalPadding: CGFloat = 16
-    public static let footerHeight: CGFloat = 48
+    public static let hubWidth: CGFloat = 472
+    public static let hubHeight: CGFloat = 556
+
+    public static let horizontalPadding: CGFloat = 14
+    public static let footerHeight: CGFloat = 44
 
     // Unified vertical alignment grid for Project -> Workspace -> Agent
     public static let projectIconWidth: CGFloat = 16
