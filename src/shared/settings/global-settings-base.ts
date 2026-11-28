@@ -40,6 +40,11 @@ import type { ProjectBadgeAppearanceSettings } from '../repository/appearance/re
 import type { ProjectTreeSettings } from '../sidebar-list/project-tree-settings'
 import type { MacWindowCloseBehavior } from '../app-lifecycle/windows/macos-window-close-behavior'
 
+type AnimationSettings = {
+  /** Use continuous display-refresh rotation for spinners instead of 12 FPS stepped frames (#39119). */
+  smoothSpinners?: boolean
+}
+
 type DesktopWindowSettings = {
   /** Windows-only: close (X) hides to tray instead of quitting; the tray icon is always present regardless. */
   minimizeToTrayOnClose?: boolean
@@ -83,6 +88,7 @@ export type GlobalSettingsBase = AgentStateAppearanceSettings &
   TerminalScrollSettings &
   TerminalColorOverrideGlobalSettings &
   WindowMaterialSettings &
+  AnimationSettings &
   DesktopWindowSettings &
   EditorSaveSettings &
   BotsGlobalSettings &

@@ -6,6 +6,8 @@ import { UIZoomControl } from './UIZoomControl'
 import { SearchableSetting } from '../section-layout/SearchableSetting'
 import { ReduceVisualEffectsSetting } from './ReduceVisualEffectsSetting'
 import { getReduceVisualEffectsEntries } from './appearance-reduce-visual-effects-search'
+import { SmoothSpinnersSetting } from './SmoothSpinnersSetting'
+import { getSmoothSpinnersEntries } from './appearance-smooth-spinners-search'
 import { SettingsGroupDisclosure } from '../section-layout/SettingsGroupDisclosure'
 import { SettingsSearchableSelect } from '../form-controls/SettingsSearchableSelect'
 import { useAppStore } from '../../../store/index'
@@ -99,9 +101,11 @@ export function AppearanceInterfaceSection({
   const titlebarEntry = getTitlebarEntries()[0]
   const typographyEntry = getTypographyEntries()[0]
   const reduceVisualEffectsEntry = getReduceVisualEffectsEntries()[0]
+  const smoothSpinnersEntry = getSmoothSpinnersEntries()[0]
   const advancedEntries = [
     ...getTitlebarEntries(),
     ...getReduceVisualEffectsEntries(),
+    ...getSmoothSpinnersEntries(),
     ...getSystemTrayEntries({ showSystemTray: isDesktopWindows }),
     ...getMenuBarIconEntries({ showMenuBarIcon: isDesktopMac })
   ]
@@ -301,6 +305,12 @@ export function AppearanceInterfaceSection({
           <ReduceVisualEffectsSetting
             entry={reduceVisualEffectsEntry}
             enabled={settings.reduceVisualEffects === true}
+            updateSettings={updateSettings}
+          />
+
+          <SmoothSpinnersSetting
+            entry={smoothSpinnersEntry}
+            enabled={settings.smoothSpinners === true}
             updateSettings={updateSettings}
           />
 

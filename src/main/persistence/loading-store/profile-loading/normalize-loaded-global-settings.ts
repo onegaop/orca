@@ -172,6 +172,7 @@ export function normalizeLoadedGlobalSettings(
     mobilePairingCustomAddress,
     mobilePairingCustomAddresses,
     machineName: normalizeMachineName(parsed.settings?.machineName),
+    smoothSpinners: parsed.settings?.smoothSpinners === true,
     minimizeToTrayOnClose: parsed.settings?.minimizeToTrayOnClose === true,
     macWindowCloseBehavior: normalizeMacWindowCloseBehavior(
       parsed.settings?.macWindowCloseBehavior

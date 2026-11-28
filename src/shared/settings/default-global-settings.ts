@@ -135,6 +135,8 @@ export function buildDefaultSettings(args: {
     terminalScrollOnUserInput: true,
     windowBackgroundBlur: false,
     reduceVisualEffects: false,
+    // Why: opt-in; 12 FPS stepped spinners avoid waking the GPU on every refresh by default (#45773).
+    smoothSpinners: false,
     minimizeToTrayOnClose: false,
     macWindowCloseBehavior: 'close-window',
     // Why: default-on everywhere so it round-trips across platforms; only darwin acts on it.
