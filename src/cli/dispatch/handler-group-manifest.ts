@@ -233,7 +233,14 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
   },
   {
     name: 'agent-conversations',
-    keys: ['agent list', 'agent show', 'agent read'],
+    keys: [
+      'agent list',
+      'agent show',
+      'agent read',
+      'agent requests',
+      'agent reply',
+      'agent respond'
+    ],
     load: async () => (await import('../agents/agent-conversations.js')).AGENT_CONVERSATION_HANDLERS
   },
   {

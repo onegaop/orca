@@ -33,6 +33,18 @@ const COMMAND_SCOPED_FLAG_HELP: Record<string, Record<string, string>> = {
     id: AGENT_ID_FLAG_HELP,
     limit: '--limit <n>            Newest entries to return (default 20, at most 100)'
   },
+  'agent requests': { id: AGENT_ID_FLAG_HELP },
+  'agent reply': {
+    id: AGENT_ID_FLAG_HELP,
+    text: '--text <text>          Follow-up message text to send to the agent'
+  },
+  'agent respond': {
+    id: AGENT_ID_FLAG_HELP,
+    request: '--request <id>         Pending approval or question request ID',
+    option: '--option <id>          Option ID to select (approvals or single choice)',
+    answer: '--answer <text>        Free-form answer text when the prompt expects text',
+    text: '--text <text>          Optional extra note or answer text'
+  },
   'extension reload': {
     'extension-id':
       '--extension-id <id>   Installed unpacked extension ID; also accepted positionally',

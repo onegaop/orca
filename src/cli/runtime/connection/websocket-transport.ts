@@ -54,8 +54,17 @@ const AGENT_READ_CLIENT_CAPABILITIES = [
   PI_STRUCTURED_DIALOGS_RUNTIME_CAPABILITY
 ] as const
 
+const AGENT_CONVERSATION_CAPABILITY_METHODS = new Set([
+  'agent.read',
+  'agent.requests',
+  'agent.reply',
+  'agent.respond'
+])
+
 function clientCapabilitiesFor(method: string) {
-  return method === 'agent.read' ? AGENT_READ_CLIENT_CAPABILITIES : CLI_CLIENT_CAPABILITIES
+  return AGENT_CONVERSATION_CAPABILITY_METHODS.has(method)
+    ? AGENT_READ_CLIENT_CAPABILITIES
+    : CLI_CLIENT_CAPABILITIES
 }
 
 export async function sendWebSocketRequest<TResult>(
