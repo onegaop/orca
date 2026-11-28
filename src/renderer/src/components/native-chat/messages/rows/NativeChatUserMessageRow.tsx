@@ -84,6 +84,7 @@ function UserMessageMeta({
 
 export function NativeChatUserMessageRow({
   message,
+  messaging = false,
   markdown,
   prose,
   rowRef,
@@ -94,6 +95,7 @@ export function NativeChatUserMessageRow({
   deliveryNotice
 }: {
   message: NativeChatMessage
+  messaging?: boolean
   markdown: string
   prose: ReturnType<typeof deriveNativeChatRowContent>['prose']
   rowRef: React.RefObject<HTMLDivElement | null>
@@ -153,7 +155,7 @@ export function NativeChatUserMessageRow({
           onRefolded={onRefolded}
         />
       ) : (
-        <NativeChatUserBubble>
+        <NativeChatUserBubble variant={messaging ? 'messaging' : 'default'}>
           {markdown ? (
             <>
               <NativeChatImageAttachments
