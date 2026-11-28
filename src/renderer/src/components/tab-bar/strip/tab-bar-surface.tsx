@@ -98,11 +98,15 @@ export function renderTabBarSurface(
     })
 
   const sideChatOnly = itemProjection.sideChatOnly && clientHostedBrowserRows.length === 0
+  const surfaceStyle: React.CSSProperties & Record<'--tab-project-color', string> = {
+    '--tab-project-color': runtime.tabProjectColor ?? 'transparent'
+  }
   return (
     <div
       ref={surfaceRef}
       data-side-chat-only={sideChatOnly || undefined}
       className="group/side-chat-pane flex items-stretch h-full overflow-hidden flex-1 min-w-0"
+      style={surfaceStyle}
     >
       {sideChatOnly ? <SideChatPaneMark t={t} /> : null}
       {pinnedCount > 0 ? (

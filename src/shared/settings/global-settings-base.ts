@@ -65,6 +65,11 @@ type AgentStateAppearanceSettings = {
   showAgentStateAccents?: boolean
 }
 
+type TabAppearanceSettings = {
+  /** Off keeps tabs untinted; absent means on. */
+  tintTabsWithProjectColor?: boolean
+}
+
 /** Settings groups owned by their feature modules and composed into GlobalSettings. */
 export type GlobalSettingsBase = AgentStateAppearanceSettings &
   AntigravityChatAuthSettings &
@@ -92,6 +97,7 @@ export type GlobalSettingsBase = AgentStateAppearanceSettings &
   AnimationSettings &
   FloatingPanelOpacitySettings &
   DesktopWindowSettings &
+  TabAppearanceSettings &
   EditorSaveSettings &
   BotsGlobalSettings &
   BrowserPasswordsGlobalSettings &

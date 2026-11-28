@@ -1,7 +1,11 @@
 import { getZoomEntries } from './appearance-zoom-search'
 import type { SettingsSearchEntry } from '../search/settings-search'
 import { getTerminalAppearanceSearchEntries } from '../terminal/terminal-search'
-import { getSidebarEntries, getWorkspaceCardLayoutEntry } from './appearance-sidebar-search'
+import {
+  getSidebarEntries,
+  getTabProjectColorEntry,
+  getWorkspaceCardLayoutEntry
+} from './appearance-sidebar-search'
 import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 import { translate } from '@/i18n/i18n'
 import type { Translate } from '@/i18n/use-translate'
@@ -291,6 +295,7 @@ export function getAppearancePaneSearchEntries(
     ...getReduceVisualEffectsEntries(),
     ...getSmoothSpinnersEntries(),
     ...getStatusBarEntries(),
+    getTabProjectColorEntry(),
     ...getSidebarEntries(),
     ...(options.showWorkspaceCardLayout ? [getWorkspaceCardLayoutEntry()] : []),
     ...getAppIconEntries(),

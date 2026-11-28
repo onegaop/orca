@@ -23,6 +23,7 @@ import {
 
 import { AppearanceSidebarSubsection } from './AppearanceSidebarSubsection'
 import { LeftSidebarAppearanceSetting } from './LeftSidebarAppearanceSetting'
+import { TabProjectColorSetting } from './TabProjectColorSetting'
 import { getStatusBarUsageFormatEntry } from './appearance-status-bar-usage-format-search'
 import { StatusBarUsageFormatSetting } from './StatusBarUsageFormatSetting'
 
@@ -121,6 +122,7 @@ export function AppearanceWindowSidebarSection({
   const showSidebarAdvanced = !isSearching || sidebarAdvancedMatches
   const showFileExplorerAdvanced = !isSearching || fileExplorerAdvancedMatches
   const showAdvanced = showSidebarAdvanced || showFileExplorerAdvanced
+  const tabColorSettingProps = { settings, updateSettings, forceVisible: forceVisiblePrimary }
 
   return (
     <>
@@ -145,6 +147,8 @@ export function AppearanceWindowSidebarSection({
       >
         <LeftSidebarAppearanceSetting settings={settings} updateSettings={updateSettings} />
       </SearchableSetting>
+
+      <TabProjectColorSetting {...tabColorSettingProps} />
 
       <SearchableSetting
         title={statusBarTitle}

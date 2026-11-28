@@ -47,13 +47,17 @@ export function getTabRootStateClasses(
 ): string {
   // List rows sit on the list's own ground, highlighted like sidebar rows rather than raised like strip tabs.
   if (orientation === 'vertical') {
-    return isActive
-      ? 'bg-accent text-accent-foreground'
-      : 'bg-transparent text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+    return `tab-project-tint-vertical ${
+      isActive
+        ? 'bg-accent text-accent-foreground'
+        : 'bg-transparent text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+    }`
   }
-  return isActive
-    ? 'bg-tab-active text-tab-active-foreground'
-    : 'bg-tab-inactive text-tab-inactive-foreground hover:text-tab-active-foreground'
+  return `tab-project-tint ${
+    isActive
+      ? 'bg-tab-active text-tab-active-foreground'
+      : 'bg-tab-inactive text-tab-inactive-foreground hover:text-tab-active-foreground'
+  }`
 }
 
 export function getTabStripBorderClasses(
