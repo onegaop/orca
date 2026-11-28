@@ -1,0 +1,416 @@
+name: Fork macOS Release (arm64)
+
+run-name: Fork macOS Release ${{ inputs.version || github.ref_name }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号（如 1.4.299；留空则自动在最新 v1.4.x 标签上 +1）'
+        required: false
+        default: ''
+        type: string
+      title:
+        description: 'Release 标题（留空自动生成）'
+        required: false
+        default: ''
+        type: string
+      notes:
+        description: 'Release 说明（留空自动按提交记录生成）'
+        required: false
+        default: ''
+        type: string
+      mark_latest:
+        description: '设为 Latest 正式版（触发应用内自动更新）'
+        required: false
+        default: true
+        type: boolean
+      dry_run:
+        description: '仅构建校验，不打标签也不发布 Release'
+        required: false
+        default: false
+        type: boolean
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fork-mac-release-${{ inputs.version || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    if: github.repository == 'onegaop/orca'
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      ORCA_BACKGROUND_LAUNCH: '1'
+      ORCA_WEEKLY_RELEASE: '1'
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Resolve release version and guard duplicates
+        id: meta
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_TITLE: ${{ inputs.title }}
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          prev_tag="$(git tag -l 'v1.4.*' --sort=-v:refname | head -n 1 || true)"
+
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            tag="$REF_NAME"
+            version="${tag#v}"
+            # If a published release already exists (e.g. cut locally), skip cleanly.
+            if gh release view "$tag" -R "$GITHUB_REPOSITORY" --json isDraft --jq '.isDraft' 2>/dev/null | grep -qx 'false'; then
+              echo "skip=true" >>"$GITHUB_OUTPUT"
+              echo "Release $tag is already published; skipping duplicate CI build."
+              exit 0
+            fi
+            prev_tag="$(git tag -l 'v1.4.*' --sort=-v:refname | grep -vx "$tag" | head -n 1 || true)"
+          else
+            if [[ -n "$INPUT_VERSION" ]]; then
+              version="${INPUT_VERSION#v}"
+            elif [[ "$prev_tag" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+              version="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.$((BASH_REMATCH[3] + 1))"
+            else
+              echo "::error::无法自动递增版本号，请手动填写 version 参数（例如 1.4.299）"
+              exit 1
+            fi
+            tag="v${version}"
+          fi
+
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::非法版本号：$version"
+            exit 1
+          fi
+
+          commit_short="$(git rev-parse --short=12 HEAD)"
+          title="${INPUT_TITLE:-Orca ${tag} · macOS Apple Silicon}"
+
+          echo "skip=false" >>"$GITHUB_OUTPUT"
+          echo "version=$version" >>"$GITHUB_OUTPUT"
+          echo "tag=$tag" >>"$GITHUB_OUTPUT"
+          echo "prev_tag=$prev_tag" >>"$GITHUB_OUTPUT"
+          echo "commit_short=$commit_short" >>"$GITHUB_OUTPUT"
+          echo "title=$title" >>"$GITHUB_OUTPUT"
+          echo "Resolved release: tag=$tag version=$version commit=$commit_short prev_tag=${prev_tag:-none} dry_run=${DRY_RUN:-false}"
+
+      - name: Setup pnpm
+        if: steps.meta.outputs.skip != 'true'
+        uses: pnpm/setup@v2
+        with:
+          install: false
+
+      - name: Setup Node.js
+        if: steps.meta.outputs.skip != 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: package.json
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            mobile/pnpm-lock.yaml
+
+      - name: Configure Node runtime cache path
+        if: steps.meta.outputs.skip != 'true'
+        shell: bash
+        run: echo "ORCA_NODE_RUNTIME_CACHE_DIR=$HOME/Library/Caches/orca-node-runtime" >>"$GITHUB_ENV"
+
+      - name: Cache pinned Node runtime
+        if: steps.meta.outputs.skip != 'true'
+        uses: actions/cache@v5
+        with:
+          path: ~/Library/Caches/orca-node-runtime
+          key: orca-node-runtime-mac-${{ hashFiles('src/shared/node-runtime/node-runtime-pin.ts') }}
+
+      - name: Cache electron-builder downloads
+        if: steps.meta.outputs.skip != 'true'
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/Library/Caches/electron
+            ~/Library/Caches/electron-builder
+          key: electron-builder-mac-arm64-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            electron-builder-mac-arm64-
+
+      - name: Import macOS signing certificate (optional)
+        if: steps.meta.outputs.skip != 'true'
+        id: sign
+        shell: bash
+        env:
+          CERT_B64: ${{ secrets.MAC_CERT_P12_BASE64 }}
+          CERT_PASS: ${{ secrets.MAC_CERT_PASSWORD }}
+          CERT_IDENTITY: ${{ secrets.MAC_CERT_IDENTITY }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$CERT_B64" && -z "$CERT_PASS" ]]; then
+            echo "signed=false" >>"$GITHUB_OUTPUT"
+            echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >>"$GITHUB_ENV"
+            echo "::notice::未配置 MAC_CERT_P12_BASE64 / MAC_CERT_PASSWORD，本次将使用 ad-hoc 签名构建。"
+            exit 0
+          fi
+          if [[ -z "$CERT_B64" || -z "$CERT_PASS" ]]; then
+            echo "::error::MAC_CERT_P12_BASE64 和 MAC_CERT_PASSWORD 必须一起配置。"
+            exit 1
+          fi
+
+          keychain_path="$RUNNER_TEMP/orca-signing.keychain-db"
+          keychain_pass="$(openssl rand -hex 24)"
+          p12_path="$RUNNER_TEMP/orca-cert.p12"
+          umask 077
+          trap 'rm -f "$p12_path"' EXIT
+
+          printf '%s' "$CERT_B64" | base64 --decode >"$p12_path"
+          security create-keychain -p "$keychain_pass" "$keychain_path"
+          echo "keychain_path=$keychain_path" >>"$GITHUB_OUTPUT"
+          security set-keychain-settings -lut 3600 "$keychain_path"
+          security unlock-keychain -p "$keychain_pass" "$keychain_path"
+          security import "$p12_path" -P "$CERT_PASS" -A -t cert -f pkcs12 -k "$keychain_path"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_pass" "$keychain_path"
+          security list-keychains -d user -s "$keychain_path" login.keychain-db
+          identities="$(security find-identity -v -p codesigning "$keychain_path")"
+          identity_pattern='^[[:space:]]*[0-9]+\) ([0-9A-F]{40}) "([^"]+)"$'
+          fingerprint=""
+          while IFS= read -r line; do
+            if [[ "$line" =~ $identity_pattern ]]; then
+              if [[ -z "$CERT_IDENTITY" || "$CERT_IDENTITY" == "${BASH_REMATCH[2]}" || "$CERT_IDENTITY" == "${BASH_REMATCH[1]}" ]]; then
+                fingerprint="${BASH_REMATCH[1]}"
+                break
+              fi
+            fi
+          done <<<"$identities"
+          if [[ -z "$fingerprint" ]]; then
+            echo "::error::证书已导入但未找到匹配的有效签名身份。请检查证书私钥和 MAC_CERT_IDENTITY（如已设置）。"
+            exit 1
+          fi
+
+          echo "signed=true" >>"$GITHUB_OUTPUT"
+          echo "fingerprint=$fingerprint" >>"$GITHUB_OUTPUT"
+          echo "CSC_NAME=$fingerprint" >>"$GITHUB_ENV"
+          echo "ORCA_COMPUTER_MACOS_SIGN_IDENTITY=$fingerprint" >>"$GITHUB_ENV"
+
+      - name: Install dependencies
+        if: steps.meta.outputs.skip != 'true'
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: pnpm install --frozen-lockfile --cpu=current,arm64
+
+      - name: Install mobile dependencies
+        if: steps.meta.outputs.skip != 'true'
+        uses: ./.github/actions/install-mobile-dependencies
+
+      - name: Verify macOS entitlements
+        if: steps.meta.outputs.skip != 'true'
+        run: pnpm verify:macos-entitlements
+
+      - name: Build native helpers & Orca Inbox
+        if: steps.meta.outputs.skip != 'true'
+        id: inbox
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm run build:native
+          pnpm run verify:computer-native
+          swift test --disable-sandbox --package-path native/orca-inbox-macos
+          pnpm run build:orca-inbox-macos
+          inbox_ver="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' 'native/orca-inbox-macos/.build/release/Orca Inbox.app/Contents/Info.plist')"
+          echo "version=$inbox_ver" >>"$GITHUB_OUTPUT"
+          echo "Built Orca Inbox v$inbox_ver"
+
+      - name: Build desktop, CLI, web, and mobile-web assets
+        if: steps.meta.outputs.skip != 'true'
+        env:
+          ORCA_LOCAL_BUILD_VERSION: ${{ steps.meta.outputs.version }}
+          ORCA_BUILD_COMMIT: ${{ steps.meta.outputs.commit_short }}
+        run: pnpm run build:desktop:assets
+
+      - name: Package macOS arm64 artifacts
+        if: steps.meta.outputs.skip != 'true'
+        shell: bash
+        env:
+          ORCA_LOCAL_BUILD_VERSION: ${{ steps.meta.outputs.version }}
+          ORCA_BUILD_COMMIT: ${{ steps.meta.outputs.commit_short }}
+          ORCA_PACKAGE_OUTPUT_DIR: ${{ runner.temp }}/orca-release-out
+          INBOX_VERSION: ${{ steps.inbox.outputs.version }}
+        run: |
+          set -euo pipefail
+          rm -rf "$ORCA_PACKAGE_OUTPUT_DIR"
+          mkdir -p "$ORCA_PACKAGE_OUTPUT_DIR"
+          ditto -c -k --sequesterRsrc --keepParent \
+            "native/orca-inbox-macos/.build/release/Orca Inbox.app" \
+            "$ORCA_PACKAGE_OUTPUT_DIR/Orca-Inbox-${INBOX_VERSION}-arm64-mac.zip"
+          pnpm exec electron-builder \
+            --config config/scripts/desktop-distribution/macos/fork-arm64-builder-config.cjs \
+            --mac --arm64 --publish never
+          ls -lh "$ORCA_PACKAGE_OUTPUT_DIR"
+
+      - name: Verify codesign, bundled CLI, update feed, and SHA-512
+        if: steps.meta.outputs.skip != 'true'
+        shell: bash
+        env:
+          OUT: ${{ runner.temp }}/orca-release-out
+          VERSION: ${{ steps.meta.outputs.version }}
+          INBOX_VERSION: ${{ steps.inbox.outputs.version }}
+          SIGNING_FINGERPRINT: ${{ steps.sign.outputs.fingerprint }}
+        run: |
+          set -euo pipefail
+          codesign --verify --deep --strict "$OUT/mac-arm64/Orca.app"
+          codesign --verify --deep --strict "$OUT/mac-arm64/Orca.app/Contents/Resources/Orca Inbox.app"
+          if [[ -n "$SIGNING_FINGERPRINT" ]]; then
+            requirement="-R=certificate leaf = H\"$SIGNING_FINGERPRINT\""
+            codesign --verify --strict "$requirement" "$OUT/mac-arm64/Orca.app"
+            codesign --verify --strict "$requirement" "$OUT/mac-arm64/Orca.app/Contents/Resources/Orca Inbox.app"
+            codesign --verify --strict "$requirement" "native/orca-inbox-macos/.build/release/Orca Inbox.app"
+            echo "Signing certificate $SIGNING_FINGERPRINT verified for Orca and both Orca Inbox bundles."
+          fi
+
+          app_ver="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$OUT/mac-arm64/Orca.app/Contents/Info.plist")"
+          bundled_inbox_ver="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$OUT/mac-arm64/Orca.app/Contents/Resources/Orca Inbox.app/Contents/Info.plist")"
+          test "$app_ver" = "$VERSION"
+          test "$bundled_inbox_ver" = "$INBOX_VERSION"
+
+          grep -q 'owner: onegaop' "$OUT/mac-arm64/Orca.app/Contents/Resources/app-update.yml"
+          grep -q 'repo: orca' "$OUT/mac-arm64/Orca.app/Contents/Resources/app-update.yml"
+
+          agent_help="$(ORCA_CLI_COMMAND="" "$OUT/mac-arm64/Orca.app/Contents/Resources/bin/orca" agent --help)"
+          for command in requests reply respond; do
+            grep -qE "^[[:space:]]+${command}[[:space:]]" <<<"$agent_help"
+          done
+
+          test -s "$OUT/Orca-${VERSION}-arm64-mac.zip.blockmap"
+          test -s "$OUT/orca-macos-arm64.dmg.blockmap"
+
+          node -e '
+            const fs = require("node:fs"), crypto = require("node:crypto");
+            const out = process.env.OUT, ver = process.env.VERSION;
+            const yml = fs.readFileSync(out + "/latest-mac.yml", "utf8");
+            for (const f of [`Orca-${ver}-arm64-mac.zip`, "orca-macos-arm64.dmg"]) {
+              const b = fs.readFileSync(out + "/" + f);
+              const sha = crypto.createHash("sha512").update(b).digest("base64");
+              if (!yml.includes(sha) || !yml.includes("size: " + b.length)) {
+                throw new Error("SHA512/size mismatch for " + f);
+              }
+              console.log("VERIFIED", f, b.length, sha.slice(0, 20) + "...");
+            }
+          '
+
+      - name: Generate release notes
+        if: steps.meta.outputs.skip != 'true' && inputs.dry_run != true
+        shell: bash
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+          INBOX_VERSION: ${{ steps.inbox.outputs.version }}
+          PREV_TAG: ${{ steps.meta.outputs.prev_tag }}
+          CUSTOM_NOTES: ${{ inputs.notes }}
+          SIGNED: ${{ steps.sign.outputs.signed }}
+        run: |
+          set -euo pipefail
+          notes_file="$RUNNER_TEMP/release-notes.md"
+          if [[ -n "$CUSTOM_NOTES" ]]; then
+            printf '%s\n' "$CUSTOM_NOTES" >"$notes_file"
+          else
+            sign_label="ad-hoc"
+            if [[ "$SIGNED" == "true" ]]; then
+              sign_label="Apple Development"
+            fi
+            {
+              echo "## Orca 自编版 ${VERSION} · macOS Apple Silicon"
+              echo ""
+              echo "### 本次变更"
+              if [[ -n "$PREV_TAG" ]]; then
+                git log "${PREV_TAG}..HEAD" --no-merges --pretty=format:'- %s (%h)'
+                echo ""
+              else
+                git log -n 10 --no-merges --pretty=format:'- %s (%h)'
+                echo ""
+              fi
+              echo ""
+              echo "### 产物说明"
+              echo "- \`orca-macos-arm64.dmg\` / \`Orca-${VERSION}-arm64-mac.zip\`：Apple Silicon 主安装包与自动更新包（内置 Orca Inbox ${INBOX_VERSION}，签名方式：${sign_label}）。"
+              echo "- \`Orca-Inbox-${INBOX_VERSION}-arm64-mac.zip\`：独立版 Orca Inbox（v${INBOX_VERSION}）。"
+              echo "- \`latest-mac.yml\` 与 \`.blockmap\`：桌面端自动更新清单与差分块索引。"
+            } >"$notes_file"
+          fi
+          cat "$notes_file"
+
+      - name: Tag and publish GitHub Release
+        if: steps.meta.outputs.skip != 'true' && inputs.dry_run != true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OUT: ${{ runner.temp }}/orca-release-out
+          TAG: ${{ steps.meta.outputs.tag }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          INBOX_VERSION: ${{ steps.inbox.outputs.version }}
+          TITLE: ${{ steps.meta.outputs.title }}
+          EVENT_NAME: ${{ github.event_name }}
+          MARK_LATEST: ${{ inputs.mark_latest }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            git tag -f "$TAG" HEAD
+            git push origin "refs/tags/${TAG}"
+          fi
+
+          gh release create "$TAG" \
+            -R "$GITHUB_REPOSITORY" \
+            --draft \
+            --title "$TITLE" \
+            --notes-file "$RUNNER_TEMP/release-notes.md" \
+            "$OUT/latest-mac.yml" \
+            "$OUT/Orca-${VERSION}-arm64-mac.zip" \
+            "$OUT/Orca-${VERSION}-arm64-mac.zip.blockmap" \
+            "$OUT/orca-macos-arm64.dmg" \
+            "$OUT/orca-macos-arm64.dmg.blockmap" \
+            "$OUT/Orca-Inbox-${INBOX_VERSION}-arm64-mac.zip"
+
+          latest_flag="--latest=true"
+          if [[ "$MARK_LATEST" == "false" ]]; then
+            latest_flag="--latest=false"
+          fi
+          gh release edit "$TAG" -R "$GITHUB_REPOSITORY" --draft=false "$latest_flag"
+
+          {
+            echo "### 🎉 Orca ${TAG} 发布成功"
+            echo "- Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
+            echo "- 内置 Orca Inbox: \`v${INBOX_VERSION}\`"
+            echo "- 签名证书指纹: \`${CSC_NAME:-ad-hoc}\`"
+          } >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Upload dry-run artifacts
+        if: steps.meta.outputs.skip != 'true' && inputs.dry_run == true
+        uses: actions/upload-artifact@v7
+        with:
+          name: orca-fork-mac-arm64-${{ steps.meta.outputs.version }}
+          path: |
+            ${{ runner.temp }}/orca-release-out/latest-mac.yml
+            ${{ runner.temp }}/orca-release-out/Orca-${{ steps.meta.outputs.version }}-arm64-mac.zip
+            ${{ runner.temp }}/orca-release-out/Orca-${{ steps.meta.outputs.version }}-arm64-mac.zip.blockmap
+            ${{ runner.temp }}/orca-release-out/orca-macos-arm64.dmg
+            ${{ runner.temp }}/orca-release-out/orca-macos-arm64.dmg.blockmap
+            ${{ runner.temp }}/orca-release-out/Orca-Inbox-${{ steps.inbox.outputs.version }}-arm64-mac.zip
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Clean up temporary signing keychain
+        if: always() && steps.sign.outputs.keychain_path != ''
+        shell: bash
+        run: security delete-keychain "${{ steps.sign.outputs.keychain_path }}" || true
